@@ -1,0 +1,34 @@
+Privacy Policy for Skywise
+
+Last Updated: 1/23/24
+
+1. Introduction
+Skywise, a weather application developed by [Your Company Name], is committed to protecting the privacy of its users. This Privacy Policy outlines our practices concerning the collection, use, and sharing of your information when you use the Skywise app.
+
+2. Data Collection and Usage
+
+Location Data: To provide localized weather information, Skywise collects and uses your location data.
+Firebase Crashlytics: For improving app stability and performance, we use Firebase Crashlytics which may collect data pertaining to app crashes.
+ChatGPT API: Skywise utilizes ChatGPT APIs for certain functionalities within the app.
+Purpose: The collected data is exclusively used to deliver accurate weather forecasts and ensure smooth app functionality.
+3. Data Sharing
+Skywise does not share your personal data with any third parties. However, data may be processed by third-party services such as Firebase Crashlytics and ChatGPT APIs under their respective privacy policies.
+
+4. Data Security
+We employ standard data security practices to protect your information. As we primarily collect non-critical data like email addresses, we strive to ensure their security through our partnership with Firebase.
+
+5. Data Retention and Deletion
+
+Retention: User data is retained indefinitely as we currently do not have a system for automatic deletion.
+Deletion Requests: Users can request the deletion of their email address by contacting support@modrnmagic.app.
+6. User Rights and Controls
+Users have the right to request the deletion of their email address from our database by contacting us at support@modrnmagic.app.
+
+7. Compliance
+Skywise is intended for use exclusively within the United States and does not claim compliance with GDPR, CCPA, or other specific data protection regulations.
+
+8. Contact Information
+For any inquiries related to privacy or data protection, please contact support@modrnmagic.app.
+
+9. Changes to This Privacy Policy
+Users will be informed of any changes to this Privacy Policy through updates within the Skywise app or via a notification to the email address provided by the user.
