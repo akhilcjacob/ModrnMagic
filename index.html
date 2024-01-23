@@ -1,200 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
     <title>Portfolio Homepage</title>
-    <style>
-        body,
-        html {
-            height: 100%;
-            margin: 0;
-        }
-
-        .page {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            height: 100%;
-            background: #515461;
-        }
-
-        .icons-container {
-            display: flex;
-            /* Align icons horizontally */
-            justify-content: center;
-        }
-
-        .app-icon {
-            width: 100px;
-            height: 100px;
-            margin: 20px;
-            border-radius: 50%;
-        }
-
-
-        .detail-card {
-            width: 80%;
-            max-width: 600px;
-            min-height: 100px;
-            background-color: #fff;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-            border-radius: 10px;
-            padding: 20px;
-            box-sizing: border-box;
-            opacity: 0;
-            transition: transform 0.5s, opacity 0.5s;
-            /* Adjusted transition */
-            z-index: 1;
-            display: block;
-            transform: translateY(100%);
-            /* Start offscreen */
-        }
-
-
-
-        /* Specific styles for each icon */
-        .app-icon-1 {
-            background: #ABC7DB;
-        }
-
-        .app-icon-2 {
-            background: #EE8787;
-        }
-
-        .app-icon-3 {
-            background: #ECB38A;
-        }
-
-        .app-icon-4 {
-            background: #457B9D;
-        }
-
-        /* New styles for the close button to cover the entire app icon */
-        .close-btn {
-            position: absolute;
-            top: 0;
-            right: 0;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: white;
-            border-radius: 50%;
-            color: #515461;
-            /* Dark blue color to match the background of the page */
-            display: none;
-            /* Initially hidden */
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 32px;
-            /* Larger font size to match the size of the icon */
-            line-height: 1;
-            transition: opacity 0.3s, transform 0.5s, visibility 0.3s;
-            z-index: 3;
-            /* Above the app icon */
-        }
-
-        .close-btn::before {
-            content: '×';
-            /* This creates the 'X' */
-        }
-
-        .close-btn:hover {
-            background: #e6e6e6;
-            /* Light grey for hover effect */
-        }
-
-        /* Modify the app-icon hover effect to not scale when it's a close button */
-        .app-icon:hover:not(.is-selected) {
-            transform: scale(1.1);
-        }
-    </style>
+    <link rel="stylesheet" href="styles.css"> <!-- Externalize CSS -->
 </head>
-
 <body>
-
     <div class="page">
         <div class="icons-container">
-            <!-- App Icons -->
-            <!-- Icons for your apps with individual color classes -->
-            <div class="app-icon app-icon-1" onclick="showDetails('app1', this)">
-                <div class="close-btn hidden" onclick="closeDetails(event, this)"></div>
-            </div>
-            <div class="app-icon app-icon-2" onclick="showDetails('app2', this)">
-                <div class="close-btn hidden" onclick="closeDetails(event, this)"></div>
-            </div>
-            <div class="app-icon app-icon-3" onclick="showDetails('app3', this)">
-                <div class="close-btn hidden" onclick="closeDetails(event, this)"></div>
-            </div>
-            <div class="app-icon app-icon-4" onclick="showDetails('app4', this)">
-                <div class="close-btn hidden" onclick="closeDetails(event, this)"></div>
-            </div>
+            <!-- App Icons will be added here dynamically -->
         </div>
-
-        <!-- Detail card that will show information about the clicked app -->
         <div id="detail-card" class="detail-card">
             <!-- Content will be added dynamically -->
         </div>
     </div>
 
-    <script>
-        function showDetails(appId, icon) {
-            var icons = document.getElementsByClassName('app-icon');
-            var detailCard = document.getElementById('detail-card');
-
-            // Move all icons to the top and shrink them
-            for (var i = 0; i < icons.length; i++) {
-                icons[i].classList.remove('is-selected');
-                icons[i].style.transform = 'translateY(-50%)'; // Adjust to move up vertically
-                icons[i].style.width = '80px';
-                icons[i].style.height = '80px';
-                icons[i].querySelector('.close-btn').style.display = 'none'; // Hide close button
-            }
-
-            icon.classList.add('is-selected');
-            var closeBtn = icon.querySelector('.close-btn');
-            closeBtn.style.display = 'flex'; // Show close button for selected icon
-            closeBtn.style.opacity = '1';
-            closeBtn.style.visibility = 'visible';
-
-            // Show the detail card with the information
-            detailCard.innerHTML = '<h3>' + appId + ' Details</h3><p>Some details about ' + appId + '...</p>';
-            detailCard.style.top = '150px'; // Adjust as needed
-            detailCard.style.opacity = '1';
-            // detailCard.style.display = 'block'; // Show the detail card
-            detailCard.style.transform = 'translateY(0)'; // Slide up
-        }
-
-        function closeDetails(event, btn) {
-            event.stopPropagation(); // Prevent the icon click handler from firing
-            var icons = document.getElementsByClassName('app-icon');
-            var detailCard = document.getElementById('detail-card');
-
-            // Reset icon positions
-            for (var i = 0; i < icons.length; i++) {
-                icons[i].classList.remove('is-selected');
-                icons[i].style.transform = 'translateY(0%)'; // Reset to original position
-                icons[i].style.width = '100px';
-                icons[i].style.height = '100px';
-                icons[i].querySelector('.close-btn').style.display = 'none'; // Hide close button
-            }
-
-            // Hide the detail card
-            detailCard.style.top = '70%';
-            detailCard.style.opacity = '0';
-            event.stopPropagation();
-            detailCard.style.transform = 'translateY(100%)'; // Slide down
-            detailCard.style.opacity = '0';
-        }
-
-    </script>
-
+    <script src="script.js"></script> <!-- Externalize JavaScript -->
 </body>
-
 </html>

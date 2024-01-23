@@ -1,0 +1,90 @@
+body, html {
+    height: 100%;
+    margin: 0;
+}
+
+.page {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    background: #515461;
+}
+
+.icons-container {
+    display: flex;
+    justify-content: center;
+}
+
+.app-icon {
+    width: 100px;
+    height: 100px;
+    margin: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden; /* To maintain the circular shape */
+    position: relative;
+    cursor: pointer;
+    transition: transform 0.3s;
+}
+
+.app-icon img {
+    max-width: 80px; /* 100px - 10px padding on each side */
+    max-height: 80px; /* Same as width */
+    border-radius: 50%; /* To maintain the circular shape of the image */
+}
+
+
+.detail-card {
+    width: 80%;
+    max-width: 600px;
+    min-height: 100px;
+    background-color: #fff;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    padding: 20px;
+    box-sizing: border-box;
+    opacity: 0;
+    transition: transform 0.5s, opacity 0.5s;
+    z-index: 1;
+    display: block;
+    transform: translateY(100%);
+}
+
+.close-btn {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: white;
+    border-radius: 50%;
+    color: #515461;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 32px;
+    line-height: 1;
+    transition: opacity 0.3s, transform 0.5s, visibility 0.3s;
+    z-index: 3;
+}
+
+.close-btn::before {
+    content: '×';
+}
+
+.close-btn:hover {
+    background: #e6e6e6;
+}
+
+.app-icon:hover:not(.is-selected) {
+    transform: scale(1.1);
+}
+
