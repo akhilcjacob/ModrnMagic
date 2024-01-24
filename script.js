@@ -1,24 +1,25 @@
 const appsConfig = [
     {
-        name: "Skywise",
+        name: "SkyWise",
         path: "apps/skywise",
-        marketingPage: "apps/skywise/marketing/index.html",
+        marketingImages: [
+            "apps/skywise/marketing/1.jpg",
+            "apps/skywise/marketing/2.jpg",
+            "apps/skywise/marketing/3.jpg",
+            "apps/skywise/marketing/4.jpg"
+        ],
+        appScreenshots: [
+            "apps/skywise/screenshots/Photo Nov 8.png",
+            "apps/skywise/screenshots/Screenshot Nov 8.png"
+        ],
         privacyPolicy: "apps/skywise/privacy/index.html",
         descriptionsJson: "apps/skywise/descriptions.json",
         iconImage: "apps/skywise/icon.png",
         color: "#dceff3"
     },
-    {
-        name: "Skywise",
-        path: "apps/skywise",
-        marketingPage: "apps/skywise/marketing/index.html",
-        privacyPolicy: "apps/skywise/privacy/index.html",
-        descriptionsJson: "apps/skywise/descriptions.json",
-        iconImage: "apps/skywise/icon.png",
-        color: "yellow"
-    },
 ];
-particlesJS.load('particles-js', 'particles.json', function() {
+
+particlesJS.load('particles-js', 'particles.json', function () {
     console.log('callback - particles.js config loaded');
 });
 
@@ -48,6 +49,10 @@ window.onload = function () {
     });
     iconsContainer.style.top = '0px'; // Set initial top position
 };
+
+function getPngImagesFromFolder(){
+    // TODO FUNCTION TO FETCH THE IMAGES
+}
 
 function showDetails(app, icon) {
     var icons = document.getElementsByClassName('app-icon');
@@ -81,19 +86,26 @@ function showDetails(app, icon) {
     fetch(app.descriptionsJson)
         .then(response => response.json())
         .then(data => {
+            const marketingImages = getPngImagesFromFolder(app.marketingImages);
+            const appScreenshots = getPngImagesFromFolder(app.appScreenshots);
+            const combinedImages = [...marketingImages, ...appScreenshots];
+
             detailCard.innerHTML = `
-                <div class="detail-top">
+                <div class="detail-top pt-7 text-white" >
                     <img src="${app.iconImage}" alt="${app.name}" class="app-icon-detail">
                     <h2 class="app-name">${app.name}</h2>
                     <p class="app-oneliner">${data.oneliner}</p>
                 </div>
                 <div class="detail-bottom">
-                    <div class="screenshot-carousel"> <!-- Dynamic screenshots --> </div>
+                    <div class="image-carousel">
+                    // TODO: Add carousel
+                    </div>
                     <p class="app-description">${data.description}</p>
                 </div>
             `;
 
-            // TODO: Initialize and populate the carousel with screenshots
+            // Initialize carousel here (if using a plugin)
+            // e.g., $('.image-carousel').initCarouselPlugin();
 
             // Make sure the detail card is visible
             detailCard.style.opacity = '1';
@@ -107,6 +119,7 @@ function showDetails(app, icon) {
             detailCard.style.transform = 'translateY(0)';
         });
 }
+
 
 
 function closeDetails(event, btn) {
