@@ -1,4 +1,5 @@
-body, html {
+body,
+html {
     height: 100%;
     margin: 0;
 }
@@ -10,15 +11,18 @@ body, html {
     align-items: center;
     height: 100%;
     background: #515461;
-    z-index: 1; 
+    z-index: 1;
 }
 
 .icons-container {
     display: flex;
     justify-content: center;
-    position: relative; /* Set position to relative */
-    top: 0; /* Initialize top position */
-    transition: top 0.3s ease-in-out; /* Smooth transition for top property */
+    position: relative;
+    /* Set position to relative */
+    top: 0;
+    /* Initialize top position */
+    transition: top 0.5s ease-in-out;
+    /* Smooth transition for top property */
 
 }
 
@@ -31,17 +35,77 @@ body, html {
     display: flex;
     align-items: center;
     justify-content: center;
-    overflow: hidden; /* To maintain the circular shape */
+    overflow: hidden;
+    /* To maintain the circular shape */
     position: relative;
     cursor: pointer;
     transition: transform 0.3s;
 }
 
 .app-icon img {
-    max-width: 80px; /* 100px - 10px padding on each side */
-    max-height: 80px; /* Same as width */
-    border-radius: 50%; /* To maintain the circular shape of the image */
+    max-width: 80px;
+    /* 100px - 10px padding on each side */
+    max-height: 80px;
+    /* Same as width */
+    border-radius: 50%;
+    /* To maintain the circular shape of the image */
 }
+
+.swiper-button-next,
+.swiper-button-prev {
+    color: white;
+    /* Arrow color */
+    position: absolute;
+    top: 50%;
+    width: 50px;
+    /* Adjust the size as needed */
+    height: 50px;
+    /* Adjust the size as needed */
+    margin-top: -25px;
+    /* Half of the height to center vertically */
+    z-index: 10;
+    cursor: pointer;
+    background-size: 50%;
+    /* Adjust the size of the arrow icon */
+    background-position: center;
+    background-repeat: no-repeat;
+    outline: none;
+    border: none;
+    background-color: transparent;
+    /* Or any background color you prefer */
+    font-size: 24px;
+    /* Adjust the size of the arrow character */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    width: 30px;
+    /* Adjust as needed */
+    height: 30px;
+    /* Adjust as needed */
+    margin-top: -15px;
+    /* Half of the height */
+    position: absolute;
+    top: 50%;
+
+
+
+}
+
+.swiper-button-next {
+    right: 0px;
+    /* Adjust the position as needed */
+    content: '\u003e';
+    /* Unicode for right-pointing arrow */
+}
+
+.swiper-button-prev {
+    left: 0px;
+    /* Adjust the position as needed */
+    content: '\u003c';
+    /* Unicode for left-pointing arrow */
+}
+
 
 #particles-js {
     position: absolute;
@@ -50,9 +114,38 @@ body, html {
     width: 100%;
     height: 100%;
 
-    background-color: rgb(81, 84, 97); /* Muted white-grey background */
-    z-index: 0; /* Place it behind other content */
+    background-color: rgb(81, 84, 97);
+    /* Muted white-grey background */
+    z-index: 0;
+    /* Place it behind other content */
 }
+
+
+.carousel-image {
+    max-height: 40vh;
+    /* Adjust as needed */
+    width: auto;
+    /* Maintain aspect ratio */
+    object-fit: cover;
+    /* This ensures the image covers the area without stretching */
+}
+
+.swiper-slide {
+    height: 50vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.swiper {
+    width: 100%;
+    /* Adjust as needed */
+    height: auto;
+    /* Or set a specific height */
+    max-height: 100%;
+    /* Ensure it doesn't exceed the parent's height */
+}
+
 
 
 .detail-card {
@@ -69,8 +162,15 @@ body, html {
     z-index: 1;
     display: block;
     transform: translateY(100%);
-    background-color: rgba(81, 84, 97, 0.2); /* Semi-transparent white */
-    backdrop-filter: blur(5px); /* Blur effect */
+    background-color: rgba(81, 84, 97, 0.2);
+    /* Semi-transparent white */
+    backdrop-filter: blur(5px);
+    /* Blur effect */
+    overflow: hidden;
+    /* This will prevent contents from spilling over */
+    position: relative;
+    
+    
 }
 
 .close-btn {
@@ -109,11 +209,13 @@ body, html {
 
 
 .app-icon-detail {
-    width: 100px; /* Adjust size as needed */
+    width: 100px;
+    /* Adjust size as needed */
     height: 100px;
     border-radius: 50%;
     position: absolute;
-    top: -50px; /* Adjust to position half outside the card */
+    top: -50px;
+    /* Adjust to position half outside the card */
     left: 50%;
     transform: translateX(-50%);
 }
@@ -129,7 +231,7 @@ body, html {
 }
 
 .detail-bottom {
-    display: flex;
+    /* display: flex;
     justify-content: space-around;
-    align-items: center;
+    align-items: center; */
 }
