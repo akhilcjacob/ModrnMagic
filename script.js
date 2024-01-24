@@ -86,9 +86,7 @@ function showDetails(app, icon) {
     fetch(app.descriptionsJson)
         .then(response => response.json())
         .then(data => {
-            const marketingImages = getPngImagesFromFolder(app.marketingImages);
-            const appScreenshots = getPngImagesFromFolder(app.appScreenshots);
-            const combinedImages = [...marketingImages, ...appScreenshots];
+            const combinedImages = [...app.marketingImages, ...app.appScreenshots];
 
             detailCard.innerHTML = `
                 <div class="detail-top pt-7 text-white" >
