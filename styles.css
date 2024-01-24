@@ -169,7 +169,7 @@ html {
     overflow: hidden;
     /* This will prevent contents from spilling over */
     position: relative;
-    
+    border-radius: 25px;
     
 }
 
@@ -235,3 +235,5 @@ html {
     justify-content: space-around;
     align-items: center; */
 }
+
+img{border-radius: 25px;}
