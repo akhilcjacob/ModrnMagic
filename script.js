@@ -20,9 +20,17 @@ const appsConfig = [
 ];
 let mySwiper = null;
 
-particlesJS.load('particles-js', 'particles.json', function () {
-    console.log('callback - particles.js config loaded');
-});
+
+if (window.innerWidth > 768) { // pJS_desktop and pJS_mobile = my settings functions
+    particlesJS.load('particles-js', 'particles.json', function () {
+        console.log('callback - particles.js config loaded');
+    });
+} else {
+    particlesJS.load('particles-js', 'particles-mobile.json', function () {
+        console.log('callback - particles.js config loaded');
+    });
+}
+
 
 window.onload = function () {
     const iconsContainer = document.querySelector('.icons-container');
@@ -103,7 +111,7 @@ function showDetails(app, icon) {
                         <!-- Your slides go here -->
                     </div>
                     <div class="swiper-pagination"></div>
-                    <div class="swiper-button-prev"></div>
+                    <div class="swiper-button-prev -4"></div>
                     <div class="swiper-button-next"></div>
                 </div>
                 <p class="app-description">${data.description}</p>
@@ -120,7 +128,7 @@ function showDetails(app, icon) {
 
             // Initialize carousel here 
             const swiperWrapper = document.querySelector('.swiper-wrapper');
-            swiperWrapper.innerHTML = ''; 
+            swiperWrapper.innerHTML = '';
 
             combinedImages.forEach(image => {
                 console.log(image);
@@ -158,7 +166,7 @@ function showDetails(app, icon) {
             detailCard.style.opacity = '1';
             detailCard.style.transform = 'translateY(0)';
         });
-        
+
 }
 
 
@@ -174,8 +182,6 @@ function closeDetails(event, btn) {
     event.stopPropagation();
 
     var icons = document.getElementsByClassName('app-icon');
-
-
     var detailCard = document.getElementById('detail-card');
     detailCard.innerHTML = '';
     detailCard.style.display = 'none';
@@ -194,6 +200,5 @@ function closeDetails(event, btn) {
     detailCard.style.opacity = '0';
     detailCard.style.transform = 'translateY(100%)';
     centerIcons();
-
 }
 
