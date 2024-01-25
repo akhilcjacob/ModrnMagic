@@ -51,15 +51,14 @@ window.onload = function () {
     iconsContainer.style.top = '0px'; // Set initial top position
 };
 
-function getPngImagesFromFolder() {
-    // TODO FUNCTION TO FETCH THE IMAGES
-}
 
 function showDetails(app, icon) {
     var icons = document.getElementsByClassName('app-icon');
     var detailCard = document.getElementById('detail-card');
     var iconsContainer = document.querySelector('.icons-container');
+    iconsContainer.style.justifyContent = 'flex-start'; // This will align icons to the start
 
+    detailCard.style.display = 'block';
 
     // Reset and hide close buttons for all icons
     for (var i = 0; i < icons.length; i++) {
@@ -71,19 +70,12 @@ function showDetails(app, icon) {
         icons[i].querySelector('img').style.height = '50px';
     }
 
-    var page = document.querySelector('.page');
-    page.style.justifyContent = 'flex-start'; // This will remove 'center' alignment
+    iconsContainer.style.justifyContent = 'start'; // This will remove 'center' alignment
 
     // Mark the clicked icon as selected
     icon.classList.add('is-selected');
     var closeBtn = icon.querySelector('.close-btn');
     closeBtn.style.display = 'flex'; // Show close button for the selected icon
-
-    var iconsContainer = document.querySelector('.icons-container');
-    // Move the icons container up, leaving 10px from the top
-    // iconsContainer.style.top = `-${iconsContainer.offsetTop - desiredOffset}px`;
-// Move the icons container up to the top of the page
-iconsContainer.style.top = '0px'; // Pins the icons container to the top
 
 
     // Fetch and display content for the selected app
@@ -93,12 +85,11 @@ iconsContainer.style.top = '0px'; // Pins the icons container to the top
             const combinedImages = [...app.marketingImages, ...app.appScreenshots];
 
             detailCard.innerHTML = `
-            <div class="detail-top pt-7 text-white">
-            <img src="${app.iconImage}" alt="${app.name}" class="app-icon-detail">
-            <h2 class="app-name">${app.name}</h2>
-            <p class="app-oneliner">${data.oneliner}</p>
-        </div>
-        <div class="detail-bottom">
+            <div class="mt-8 text-white">
+                <img src="${app.iconImage}" alt="${app.name}" class="app-icon-detail">
+                <h2 class="app-name">${app.name}</h2>
+                <p class="app-oneliner">${data.oneliner}</p>
+            </div>
             <div class="image-carousel">
                 <div class="swiper">
                     <div class="swiper-wrapper">
@@ -110,7 +101,6 @@ iconsContainer.style.top = '0px'; // Pins the icons container to the top
                 </div>
                 <p class="app-description">${data.description}</p>
             </div>
-        </div>
             `;
 
 
@@ -121,10 +111,9 @@ iconsContainer.style.top = '0px'; // Pins the icons container to the top
             }
 
 
-            // Initialize carousel here (if using a plugin)
-            // e.g., $('.image-carousel').initCarouselPlugin();
+            // Initialize carousel here 
             const swiperWrapper = document.querySelector('.swiper-wrapper');
-            swiperWrapper.innerHTML = ''; // Clear existing slides
+            swiperWrapper.innerHTML = ''; 
 
             combinedImages.forEach(image => {
                 console.log(image);
@@ -161,6 +150,8 @@ iconsContainer.style.top = '0px'; // Pins the icons container to the top
             detailCard.style.transform = 'translateY(0)';
         });
 }
+
+
 function adjustDetailCardPosition() {
     const iconsContainer = document.querySelector('.icons-container');
     const detailCard = document.getElementById('detail-card');
@@ -169,19 +160,15 @@ function adjustDetailCardPosition() {
 }
 
 
-
 function closeDetails(event, btn) {
     event.stopPropagation();
 
     var icons = document.getElementsByClassName('app-icon');
 
-    var page = document.querySelector('.page');
-    page.style.justifyContent = 'center'; // This will reapply 'center' alignment
-
 
     var detailCard = document.getElementById('detail-card');
-    var iconsContainer = document.querySelector('.icons-container'); // Re-query the icons container
     detailCard.innerHTML = '';
+    detailCard.style.display = 'none';
 
     for (var i = 0; i < icons.length; i++) {
         icons[i].classList.remove('is-selected');
@@ -196,7 +183,7 @@ function closeDetails(event, btn) {
     detailCard.style.top = '0%';
     detailCard.style.opacity = '0';
     detailCard.style.transform = 'translateY(100%)';
-    iconsContainer.style.top = '0px'; // Reset to original position
+    // iconsContainer.style.top = '0px'; // Reset to original position
 
 }
 
