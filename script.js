@@ -49,8 +49,15 @@ window.onload = function () {
         iconsContainer.appendChild(icon);
     });
     iconsContainer.style.top = '0px'; // Set initial top position
+    centerIcons();
 };
 
+function centerIcons() {
+    const iconsContainer = document.querySelector('.icons-container');
+    iconsContainer.style.position = 'absolute';
+    iconsContainer.style.top = '50%';
+    iconsContainer.style.transform = 'translateY(-50%)';
+}
 
 function showDetails(app, icon) {
     var icons = document.getElementsByClassName('app-icon');
@@ -140,7 +147,9 @@ function showDetails(app, icon) {
             detailCard.style.opacity = '1';
             detailCard.style.transform = 'translateY(0)';
             adjustDetailCardPosition();
-
+            const iconsContainer = document.querySelector('.icons-container');
+            iconsContainer.style.position = 'static';
+            iconsContainer.style.transform = 'translateY(0)';
         })
         .catch(error => {
             console.error('Error fetching app details:', error);
@@ -149,6 +158,7 @@ function showDetails(app, icon) {
             detailCard.style.opacity = '1';
             detailCard.style.transform = 'translateY(0)';
         });
+        
 }
 
 
@@ -183,7 +193,7 @@ function closeDetails(event, btn) {
     detailCard.style.top = '0%';
     detailCard.style.opacity = '0';
     detailCard.style.transform = 'translateY(100%)';
-    // iconsContainer.style.top = '0px'; // Reset to original position
+    centerIcons();
 
 }
 

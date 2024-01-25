@@ -16,8 +16,7 @@ html {
 .icons-container {
     display: flex;
     justify-content: center;
-    transition: top 0.5s ease-in-out;
-
+    transition: bottom 0.5s ease-in-out, opacity 0.5s, transform 0.5s;
 }
 
 
@@ -164,6 +163,7 @@ html {
     /* This will prevent contents from spilling over */
     position: relative;
     border-radius: 25px;
+    
     
 }
 
