@@ -17,6 +17,60 @@ const appsConfig = [
         iconImage: "apps/skywise/icon.png",
         color: "#dceff3"
     },
+    {
+        name: "SkyWise",
+        path: "apps/skywise",
+        marketingImages: [
+            "apps/skywise/marketing/1.jpg",
+            "apps/skywise/marketing/2.jpg",
+            "apps/skywise/marketing/3.jpg",
+            "apps/skywise/marketing/4.jpg"
+        ],
+        appScreenshots: [
+            "apps/skywise/screenshots/Photo Nov 8.png",
+            "apps/skywise/screenshots/Screenshot Nov 8.png"
+        ],
+        privacyPolicy: "apps/skywise/privacy/index.html",
+        descriptionsJson: "apps/skywise/descriptions.json",
+        iconImage: "apps/skywise/icon.png",
+        color: "#dceff3"
+    },
+    {
+        name: "SkyWise",
+        path: "apps/skywise",
+        marketingImages: [
+            "apps/skywise/marketing/1.jpg",
+            "apps/skywise/marketing/2.jpg",
+            "apps/skywise/marketing/3.jpg",
+            "apps/skywise/marketing/4.jpg"
+        ],
+        appScreenshots: [
+            "apps/skywise/screenshots/Photo Nov 8.png",
+            "apps/skywise/screenshots/Screenshot Nov 8.png"
+        ],
+        privacyPolicy: "apps/skywise/privacy/index.html",
+        descriptionsJson: "apps/skywise/descriptions.json",
+        iconImage: "apps/skywise/icon.png",
+        color: "#dceff3"
+    },
+    {
+        name: "SkyWise",
+        path: "apps/skywise",
+        marketingImages: [
+            "apps/skywise/marketing/1.jpg",
+            "apps/skywise/marketing/2.jpg",
+            "apps/skywise/marketing/3.jpg",
+            "apps/skywise/marketing/4.jpg"
+        ],
+        appScreenshots: [
+            "apps/skywise/screenshots/Photo Nov 8.png",
+            "apps/skywise/screenshots/Screenshot Nov 8.png"
+        ],
+        privacyPolicy: "apps/skywise/privacy/index.html",
+        descriptionsJson: "apps/skywise/descriptions.json",
+        iconImage: "apps/skywise/icon.png",
+        color: "#dceff3"
+    },
 ];
 let mySwiper = null;
 
@@ -67,6 +121,9 @@ function centerIcons() {
     iconsContainer.style.transform = 'translateY(-50%)';
 }
 
+
+
+
 function showDetails(app, icon) {
     var icons = document.getElementsByClassName('app-icon');
     var detailCard = document.getElementById('detail-card');
@@ -79,14 +136,30 @@ function showDetails(app, icon) {
     for (var i = 0; i < icons.length; i++) {
         icons[i].classList.remove('is-selected');
         icons[i].querySelector('.close-btn').style.display = 'none';
-        icons[i].style.width = '60px'; // Shrinking size of the icon container
-        icons[i].style.height = '60px';
+      
+        if (window.innerWidth >= 768) {
+            icons[i].style.width = ' 3.5rem'; // Shrinking size of the icon container
+            icons[i].style.height = ' 3.5rem';
+            icons[i].style.margin ='20px';
+            icons[i].style.marginTop ='0.875rem';
+
+
+        }
+        else{
+            icons[i].style.width = '50px'; // Shrinking size of the icon container
+            icons[i].style.height = '50px';
+            icons[i].style.margin ='10px';
+
+            icons[i].style.marginTop ='0.5rem';
+
+        }
         icons[i].querySelector('img').style.width = '50px'; // Shrinking size of the icon image
         icons[i].querySelector('img').style.height = '50px';
+
     }
 
     iconsContainer.style.justifyContent = 'start'; // This will remove 'center' alignment
-
+    iconsContainer.style.flexDirection='row'
     // Mark the clicked icon as selected
     icon.classList.add('is-selected');
     var closeBtn = icon.querySelector('.close-btn');
@@ -114,8 +187,22 @@ function showDetails(app, icon) {
                     <div class="swiper-button-prev -4"></div>
                     <div class="swiper-button-next"></div>
                 </div>
-                <p class="app-description pt-4 text-white text-center">${data.description}</p>
             </div>
+            `;
+
+            let storeButtonsHtml = '';
+            if (data.googlePlayLink) {
+                storeButtonsHtml += `<a class="store-button" href='${data.googlePlayLink}'><img alt='Get it on Google Play' class="store-button" src='https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png'/></a>`;
+            }
+            if (data.appleStoreLink) {
+                // TODO, use apples mareketting aterail
+                storeButtonsHtml += `<a href="${data.appleStoreLink}" target="_blank" class="store-button app-store">App Store</a>`;
+            }
+
+            detailCard.innerHTML += `
+                <div class="flex flex-col justify-center items-center">
+                    ${storeButtonsHtml}
+                </div>
             `;
 
 
@@ -154,7 +241,7 @@ function showDetails(app, icon) {
             // Make sure the detail card is visible
             detailCard.style.opacity = '1';
             detailCard.style.transform = 'translateY(0)';
-            adjustDetailCardPosition();
+            // adjustDetailCardPosition();
             const iconsContainer = document.querySelector('.icons-container');
             iconsContainer.style.position = 'static';
             iconsContainer.style.transform = 'translateY(0)';
@@ -185,20 +272,28 @@ function closeDetails(event, btn) {
     var detailCard = document.getElementById('detail-card');
     detailCard.innerHTML = '';
     detailCard.style.display = 'none';
+    detailCard.style.opacity = '0';
+    detailCard.style.transform = 'translateY(100%)';
+
+    if (window.innerWidth <= 768) {
+        var iconsContainer = document.querySelector('.icons-container');
+        if (iconsContainer) {
+            iconsContainer.style.flexDirection = 'column';
+        }
+    }
 
     for (var i = 0; i < icons.length; i++) {
         icons[i].classList.remove('is-selected');
+        
         icons[i].style.transform = 'translateY(0%)';
         icons[i].style.width = '100px';
         icons[i].style.height = '100px';
+        icons[i].style.margin ='20px';
         icons[i].querySelector('img').style.width = '80px'; // Resetting icon image size to original
         icons[i].querySelector('img').style.height = '80px';
         icons[i].querySelector('.close-btn').style.display = 'none';
     }
 
-    detailCard.style.top = '0%';
-    detailCard.style.opacity = '0';
-    detailCard.style.transform = 'translateY(100%)';
     centerIcons();
 }
 
