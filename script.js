@@ -100,10 +100,10 @@ function showDetails(app, icon) {
             const combinedImages = [...app.marketingImages, ...app.appScreenshots];
 
             detailCard.innerHTML = `
-            <div class="mt-8 text-white">
+            <div class="mt-4 text-white">
                 <img src="${app.iconImage}" alt="${app.name}" class="app-icon-detail">
                 <h2 class="app-name">${app.name}</h2>
-                <p class="app-oneliner">${data.oneliner}</p>
+                <p class="app-oneliner pb-4">${data.oneliner}</p>
             </div>
             <div class="image-carousel">
                 <div class="swiper">
@@ -114,7 +114,7 @@ function showDetails(app, icon) {
                     <div class="swiper-button-prev -4"></div>
                     <div class="swiper-button-next"></div>
                 </div>
-                <p class="app-description">${data.description}</p>
+                <p class="app-description pt-4 text-white text-center">${data.description}</p>
             </div>
             `;
 

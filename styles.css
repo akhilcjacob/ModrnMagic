@@ -143,6 +143,7 @@ html {
 .detail-card {
     width: 90%;
     max-width: 600px;
+    font-family: 'Open Sans', sans-serif;
     min-height: 100px;
     background-color: rgba(255, 255, 255, 0.2); /* Semi-transparent white */
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
@@ -155,7 +156,13 @@ html {
     backdrop-filter: blur(15px); /* Blur effect */
 }
 
+.detail-card .app-name {
+    font-weight: 700; /* For a bolder font weight */
+}
 
+.detail-card .app-oneliner, .detail-card .app-description {
+    font-weight: 400; /* For regular font weight */
+}
 .close-btn {
     position: absolute;
     top: 0;
