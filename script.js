@@ -17,60 +17,6 @@ const appsConfig = [
         iconImage: "apps/skywise/icon.png",
         color: "#dceff3"
     },
-    {
-        name: "SkyWise",
-        path: "apps/skywise",
-        marketingImages: [
-            "apps/skywise/marketing/1.jpg",
-            "apps/skywise/marketing/2.jpg",
-            "apps/skywise/marketing/3.jpg",
-            "apps/skywise/marketing/4.jpg"
-        ],
-        appScreenshots: [
-            "apps/skywise/screenshots/Photo Nov 8.png",
-            "apps/skywise/screenshots/Screenshot Nov 8.png"
-        ],
-        privacyPolicy: "apps/skywise/privacy/index.html",
-        descriptionsJson: "apps/skywise/descriptions.json",
-        iconImage: "apps/skywise/icon.png",
-        color: "#dceff3"
-    },
-    {
-        name: "SkyWise",
-        path: "apps/skywise",
-        marketingImages: [
-            "apps/skywise/marketing/1.jpg",
-            "apps/skywise/marketing/2.jpg",
-            "apps/skywise/marketing/3.jpg",
-            "apps/skywise/marketing/4.jpg"
-        ],
-        appScreenshots: [
-            "apps/skywise/screenshots/Photo Nov 8.png",
-            "apps/skywise/screenshots/Screenshot Nov 8.png"
-        ],
-        privacyPolicy: "apps/skywise/privacy/index.html",
-        descriptionsJson: "apps/skywise/descriptions.json",
-        iconImage: "apps/skywise/icon.png",
-        color: "#dceff3"
-    },
-    {
-        name: "SkyWise",
-        path: "apps/skywise",
-        marketingImages: [
-            "apps/skywise/marketing/1.jpg",
-            "apps/skywise/marketing/2.jpg",
-            "apps/skywise/marketing/3.jpg",
-            "apps/skywise/marketing/4.jpg"
-        ],
-        appScreenshots: [
-            "apps/skywise/screenshots/Photo Nov 8.png",
-            "apps/skywise/screenshots/Screenshot Nov 8.png"
-        ],
-        privacyPolicy: "apps/skywise/privacy/index.html",
-        descriptionsJson: "apps/skywise/descriptions.json",
-        iconImage: "apps/skywise/icon.png",
-        color: "#dceff3"
-    },
 ];
 let mySwiper = null;
 
