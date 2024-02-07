@@ -1,9 +1,9 @@
 Privacy Policy for Skywise
 
-Last Updated: 1/23/24
+Last Updated: 2/6/24
 
 1. Introduction
-Skywise, a weather application developed by [Your Company Name], is committed to protecting the privacy of its users. This Privacy Policy outlines our practices concerning the collection, use, and sharing of your information when you use the Skywise app.
+Skywise, a weather application developed by Modrn Magic LLC, is committed to protecting the privacy of its users. This Privacy Policy outlines our practices concerning the collection, use, and sharing of your information when you use the Skywise app.
 
 2. Data Collection and Usage
 
@@ -20,7 +20,8 @@ We employ standard data security practices to protect your information. As we pr
 5. Data Retention and Deletion
 
 Retention: User data is retained indefinitely as we currently do not have a system for automatic deletion.
-Deletion Requests: Users can request the deletion of their email address by contacting support@modrnmagic.app.
+Deletion Requests: Users can request the deletion of their email address by contacting support@modrnmagic.app or filling out this form: https://forms.gle/LKrGRKfWGJFw8c5p9.
+
 6. User Rights and Controls
 Users have the right to request the deletion of their email address from our database by contacting us at support@modrnmagic.app.
 
