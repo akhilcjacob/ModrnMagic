@@ -20,7 +20,7 @@ We employ standard data security practices to protect your information. As we pr
 5. Data Retention and Deletion
 
 Retention: User data is retained indefinitely as we currently do not have a system for automatic deletion.
-Deletion Requests: Users can request the deletion of their email address by contacting support@modrnmagic.app or filling out this form: https://forms.gle/LKrGRKfWGJFw8c5p9.
+Deletion Requests: Users can request the deletion of their email address by contacting support@modrnmagic.app or filling out this form: https://forms.gle/1nCjYqTZCjtSJAhH8.
 
 6. User Rights and Controls
 Users have the right to request the deletion of their email address from our database by contacting us at support@modrnmagic.app.
