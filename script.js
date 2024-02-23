@@ -17,7 +17,34 @@ const appsConfig = [
         iconImage: "apps/skywise/icon.png",
         color: "#dceff3"
     },
+    // New app config for Astro Defender
+    {
+        name: "Astro Defender",
+        path: "apps/astrodefender",
+        marketingImages: [
+            "apps/astrodefender/marketing/1.png",
+            "apps/astrodefender/marketing/2.png",
+            "apps/astrodefender/marketing/3.png"
+        ],
+        appScreenshots: [
+            "apps/astrodefender/screenshots/1.png",
+            "apps/astrodefender/screenshots/2.png",
+            "apps/astrodefender/screenshots/3.png",
+            "apps/astrodefender/screenshots/4.png",
+            "apps/astrodefender/screenshots/5.png",
+            "apps/astrodefender/screenshots/6.png",
+            "apps/astrodefender/screenshots/7.png",
+            "apps/astrodefender/screenshots/8.png",
+            "apps/astrodefender/screenshots/9.png",
+            "apps/astrodefender/screenshots/10.png"
+        ],
+        privacyPolicy: "apps/astrodefender/privacy/index.html",
+        descriptionsJson: "apps/astrodefender/descriptions.json",
+        iconImage: "apps/astrodefender/icon.png",
+        color: "rgb(1,5,28)" 
+    }
 ];
+
 let mySwiper = null;
 
 
@@ -137,14 +164,14 @@ function showDetails(app, icon) {
             `;
 
             let storeButtonsHtml = '';
-            if (data.googlePlayLink) {
-                storeButtonsHtml += `<a class="store-button" href='${data.googlePlayLink}'><img alt='Get it on Google Play' class="store-button" src='https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png'/></a>`;
-            }
             if (data.appleStoreLink) {
-                // TODO, use apples mareketting aterail
-                storeButtonsHtml += `<a href="${data.appleStoreLink}" target="_blank" class="store-button app-store">App Store</a>`;
+                storeButtonsHtml += `<div class="store-button"  onclick="location.href='${data.appleStoreLink}'"  href='${data.appleStoreLink}'><img alt='Get it on Apple App store' class="store-button apple" src='https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg'/></a>`;
             }
 
+            if (data.googlePlayLink) {
+                storeButtonsHtml += `<div class="store-button" href='${data.googlePlayLink}'  onclick="location.href='${data.googlePlayLink}'" ><img alt='Get it on Google Play' class="store-button google"  style="height: 70px !important" src='https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png'/></a>`;
+            }
+  
             detailCard.innerHTML += `
                 <div class="flex flex-col justify-center items-center">
                     ${storeButtonsHtml}

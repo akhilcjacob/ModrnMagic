@@ -27,22 +27,24 @@ html {
     }
 }
 
+
 .store-button {
     display: inline-block;
-    width: 150px;
+    /* This will allow you to set a width and height */
+    margin: 10px;
+    /* Add some space around the buttons */
+    text-decoration: none;
+    /* Removes underline from links */
+    border-radius: 0px;
+    padding: 0;
 }
 
-.google-play {
-    background-color: #34A853; /* Google Play green color */
+.google {
+    height: 50px;
 }
 
-.app-store {
-    background-color: #0000FF; /* Apple blue color */
-}
-
-.store-buttons-container {
-    padding-top: 10px;
-    text-align: center;
+.apple {
+    height: 47px;
 }
 
 .app-icon {
@@ -60,17 +62,15 @@ html {
     transition: transform 0.3s;
 }
 
+
 .app-icon img {
-    
+
     max-width: 80px;
     /* 100px - 10px padding on each side */
     max-height: 80px;
     /* Same as width */
     border-radius: 50%;
     overflow-y: visible;
-    /* Enable vertical scrolling */
-
-    /* To maintain the circular shape of the image */
 }
 
 .swiper-button-next,
