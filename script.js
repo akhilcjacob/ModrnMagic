@@ -165,15 +165,15 @@ function showDetails(app, icon) {
 
             let storeButtonsHtml = '';
             if (data.appleStoreLink) {
-                storeButtonsHtml += `<div class="store-button"  onclick="location.href='${data.appleStoreLink}'"  href='${data.appleStoreLink}'><img alt='Get it on Apple App store' class="store-button apple" src='https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg'/></a>`;
+                storeButtonsHtml += `<div class="store-button apple-store-button" onclick="location.href='${data.appleStoreLink}'"><img alt='Get it on Apple App store' src='https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg'/></div>`;
             }
 
             if (data.googlePlayLink) {
-                storeButtonsHtml += `<div class="store-button" href='${data.googlePlayLink}'  onclick="location.href='${data.googlePlayLink}'" ><img alt='Get it on Google Play' class="store-button google"  style="height: 70px !important" src='https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png'/></a>`;
+                storeButtonsHtml += `<div class="store-button google-play-button" onclick="location.href='${data.googlePlayLink}'"><img alt='Get it on Google Play' src='https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png'/></div>`;
             }
   
             detailCard.innerHTML += `
-                <div class="flex flex-col justify-center items-center">
+                <div class="store-buttons-container">
                     ${storeButtonsHtml}
                 </div>
             `;
@@ -269,4 +269,5 @@ function closeDetails(event, btn) {
 
     centerIcons();
 }
+
 
