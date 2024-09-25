@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Astro Defender Privacy Policy</title>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+
+<body>
+
+
+<div id="termsOfService">
+  <!-- The privacy policy text will be loaded here -->
+</div>
+
+<script>
+// JavaScript to load the privacy policy text and render markdown
+fetch('privacy-policy.md')
+  .then(response => response.text())
+  .then(markdown => {
+    const html = marked.parse(markdown); // Convert markdown to HTML
+    document.getElementById('termsOfService').innerHTML = html;
+  })
+  .catch(error => {
+    console.error('Error fetching the terms of service:', error);
+    document.getElementById('termsOfService').innerHTML = 'Error loading the privacy policy.';
+  });
+
+</script>
+
+</body>
+</html>

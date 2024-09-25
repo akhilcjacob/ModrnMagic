@@ -21,3 +21,6 @@
 .ionide
 
 # End of https://www.toptal.com/developers/gitignore/api/visualstudiocode
+.DS_Store
+apps/.DS_Store
+apps/00_Future App Template/.DS_Store
