@@ -34,7 +34,7 @@ body {
   border-radius: 30px;
 
   position: fixed;
-  top:10%;
+  top: 10%;
   left: 50%;
   transform: translateX(-50%);
   z-index: 10;
@@ -153,14 +153,20 @@ header p {
 .scroll-sections .section {
   height: 100vh;
 }
+
 /* Logo styling */
 .logo {
   margin-top: 20px;
-  position: fixed; /* Fix the logo position */
-  top: 0; /* Stick it to the top */
-  left: 50%; /* Center horizontally */
-  transform: translateX(-50%); /* Align properly to the center */
-  z-index: 100; /* Ensure it stays on top of other elements */
+  position: fixed;
+  /* Fix the logo position */
+  top: 0;
+  /* Stick it to the top */
+  left: 50%;
+  /* Center horizontally */
+  transform: translateX(-50%);
+  /* Align properly to the center */
+  z-index: 100;
+  /* Ensure it stays on top of other elements */
 }
 
 .logo img {
@@ -189,45 +195,54 @@ h3,
 p {
   font-family: 'Roboto', sans-serif;
 }
+
 .text-card h3 {
-  margin-top: 35px; /* Reduce margin between title and oneliner */
+  margin-top: 35px;
+  /* Reduce margin between title and oneliner */
 }
 
 .text-card p {
-  margin-bottom: 15px; /* Reduce margin above the oneliner */
+  margin-bottom: 15px;
+  /* Reduce margin above the oneliner */
 }
 
 /* Mobile styles for reducing space between title and oneliner */
 @media (max-width: 767px) {
-  
+
   .logo img {
     width: 60px;
   }
+
   .text-card h3 {
-    margin-bottom: 5px; /* Reduce margin between title and oneliner */
+    margin-bottom: 5px;
+    /* Reduce margin between title and oneliner */
   }
 
   .text-card p {
-    margin-top: 5px; /* Reduce margin above the oneliner */
+    margin-top: 5px;
+    /* Reduce margin above the oneliner */
   }
 
   /* Adjust the card height and positioning for smaller screens */
   .card {
-  top:9%;
+    top: 13%;
 
-    height: 85%; /* Allow card to adjust to content height */
-    padding-bottom: 20px; /* Add padding at the bottom for buttons */
+    height: 80%;
+    /* Allow card to adjust to content height */
   }
 
   /* Ensure store links are always visible */
   .store-links {
-    margin-top: 5px; /* Add space for buttons */
-    padding-bottom: 50px; /* Add padding to ensure visibility */
+    margin-top: 5px;
+    /* Add space for buttons */
+    padding-bottom: 50px;
+    /* Add padding to ensure visibility */
   }
 
   /* Adjusting the height of the iPhone frame for shorter screens */
   .iphone-frame {
-    max-width: 60%; /* Slightly reduce size to fit content better */
+    max-width: 60%;
+    /* Slightly reduce size to fit content better */
   }
 }
 
@@ -253,13 +268,17 @@ p {
 }
 
 @keyframes bounce {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateY(0);
   }
+
   50% {
     transform: translateY(5px);
   }
 }
+
 .scroll-dots {
   position: fixed;
   right: 10px;
@@ -286,7 +305,9 @@ p {
 .made-by {
   position: fixed;
   bottom: 5px;
-  left: 50%; /* Center horizontally */
-  transform: translateX(-50%); /* Align properly to the center */
+  left: 50%;
+  /* Center horizontally */
+  transform: translateX(-50%);
+  /* Align properly to the center */
   color: rgb(100, 100, 100);
 }
