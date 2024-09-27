@@ -4,31 +4,41 @@
   "appleStoreLink": "https://apps.apple.com/app/flowmoro-pomodoro-timer/id1234567890",
   "screenshots": [
     "1.png",
+    "1.png",
+    "6.png",
+    "4.png",
     "2.png",
     "3.png",
-    "4.png",
     "5.png"
   ],
   "textSections": [
     {
-      "title": "Manage Your Time",
+      "title": "Master Your Productivity",
       "oneliner": "Simple and effective time management."
     },
     {
       "title": "Stay Focused",
-      "oneliner": "Avoid distractions and stay on task."
-    },
-    {
-      "title": "Track Progress",
-      "oneliner": "See how much you've accomplished."
+      "oneliner": "Effective productivity with the Pomodoro technique."
     },
     {
       "title": "Customize Sessions",
-      "oneliner": "Adjust timings to fit your workflow."
+      "oneliner": "Customize work, breaks, and sessions to fit your workflow."
     },
     {
-      "title": "Take Breaks",
-      "oneliner": "Scheduled breaks to keep you fresh."
+      "title": "Simple Theming",
+      "oneliner": "Themed to your liking."
+    },
+    {
+      "title": "Simple Theming",
+      "oneliner": "Themed to your liking."
+    },
+    {
+      "title": "Simple Theming",
+      "oneliner": "Themed to your liking."
+    },
+    {
+      "title": "Dark Mode",
+      "oneliner": "Clean dark mode."
     }
   ]
 }

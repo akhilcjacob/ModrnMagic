@@ -32,8 +32,9 @@ body {
   height: 80%;
   background-color: rgba(241, 244, 251, 1);
   border-radius: 30px;
-  margin: 150px auto;
+
   position: fixed;
+  top:10%;
   left: 50%;
   transform: translateX(-50%);
   z-index: 10;
@@ -197,7 +198,8 @@ p {
 }
 
 /* Mobile styles for reducing space between title and oneliner */
-@media (max-width: 768px) {
+@media (max-width: 767px) {
+  
   .logo img {
     width: 60px;
   }
@@ -211,20 +213,21 @@ p {
 
   /* Adjust the card height and positioning for smaller screens */
   .card {
-    margin: 90px auto; /* Reduce top margin */
-    height: auto; /* Allow card to adjust to content height */
+  top:9%;
+
+    height: 85%; /* Allow card to adjust to content height */
     padding-bottom: 20px; /* Add padding at the bottom for buttons */
   }
 
   /* Ensure store links are always visible */
   .store-links {
-    margin-top: 10px; /* Add space for buttons */
-    padding-bottom: 10px; /* Add padding to ensure visibility */
+    margin-top: 5px; /* Add space for buttons */
+    padding-bottom: 50px; /* Add padding to ensure visibility */
   }
 
   /* Adjusting the height of the iPhone frame for shorter screens */
   .iphone-frame {
-    max-width: 70%; /* Slightly reduce size to fit content better */
+    max-width: 60%; /* Slightly reduce size to fit content better */
   }
 }
 
