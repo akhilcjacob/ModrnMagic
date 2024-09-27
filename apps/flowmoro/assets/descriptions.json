@@ -1,0 +1,34 @@
+{
+  "title": "Flowmoro",
+  "googlePlayLink": "https://play.google.com/store/apps/details?id=com.modrnmagic.flowmoro",
+  "appleStoreLink": "https://apps.apple.com/app/flowmoro-pomodoro-timer/id1234567890",
+  "screenshots": [
+    "1.png",
+    "2.png",
+    "3.png",
+    "4.png",
+    "5.png"
+  ],
+  "textSections": [
+    {
+      "title": "Manage Your Time",
+      "oneliner": "Simple and effective time management."
+    },
+    {
+      "title": "Stay Focused",
+      "oneliner": "Avoid distractions and stay on task."
+    },
+    {
+      "title": "Track Progress",
+      "oneliner": "See how much you've accomplished."
+    },
+    {
+      "title": "Customize Sessions",
+      "oneliner": "Adjust timings to fit your workflow."
+    },
+    {
+      "title": "Take Breaks",
+      "oneliner": "Scheduled breaks to keep you fresh."
+    }
+  ]
+}

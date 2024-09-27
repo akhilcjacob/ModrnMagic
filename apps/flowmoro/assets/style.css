@@ -1,0 +1,202 @@
+/* Reset default styles */
+* {
+  box-sizing: border-box;
+}
+
+/* Body styling */
+body {
+  background-color: #fff;
+  color: #333;
+  margin: 0;
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+/* Logo styling */
+.logo {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.logo img {
+  width: 80px; /* Adjust size as needed */
+  height: auto;
+}
+
+/* Card styling */
+.card {
+  width: 90%;
+  height: 80%;
+  background-color: rgba(241, 244, 251,1);
+  /* background-color: rgba(255, 255, 255, 0.5); */
+  border-radius: 30px;
+  margin: 20px auto;
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+}
+
+
+.container {
+  width: 100%;
+}
+
+header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+header h1 {
+  font-size: 2em;
+  margin: 0;
+}
+
+header h2 {
+  font-size: 1.2em;
+  margin: 10px 0;
+  color: #555;
+}
+
+header p {
+  font-size: 1em;
+  color: #777;
+}
+
+.main-content {
+  padding-top: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.iphone-frame {
+  width: 100%;
+  max-width: 300px;
+  margin-bottom: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.iphone-frame img {
+  width: 100%;
+  height: auto;
+}
+
+.text-card {
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.text-card h3 {
+  font-size: 1.5em;
+  margin-top: 5;
+}
+
+.text-card p {
+  font-size: 1em;
+  color: #555;
+}
+/* Wipe transition controlled by CSS variable */
+
+/* Wipe transition controlled by CSS variable */
+.wipe-transition::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: calc(100% - var(--wipe-progress, 0%));
+  height: 100%;
+  background-color: inherit;
+  z-index: 2;
+  transition: width 0.1s linear;
+}
+
+/* Scroll sections styling */
+.scroll-sections {
+  /* Height will be set dynamically in JavaScript */
+}
+
+.scroll-sections .section {
+  height: 100vh; /* Each section takes up the full viewport height */
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .card {
+    width: 90%;
+    padding: 15px;
+  }
+
+  .logo img {
+    width: 60px;
+  }
+
+  header h1 {
+    font-size: 1.8em;
+  }
+}
+
+
+
+body {
+  margin: 0;
+}
+
+.animation-container {
+  position: fixed;
+  height: 100%;
+  width: 100%;
+}
+
+.shape1 {
+  position: absolute;
+  top: 42%;
+  left: 70%;
+  width: 25rem;
+  height: 25rem;
+  background: #5092da;
+  border-radius: 24% 76% 77% 23% / 30% 30% 70% 70%;
+  filter: blur(6rem);
+  animation: shape1 20s infinite;
+}
+
+@keyframes shape1 {
+  0% {
+    transform: translate(0, 0);
+    border-radius: 24% 76% 77% 23% / 30% 30% 70% 70%;
+  }
+  25% {
+    transform: translate(-55%, -10%);
+    border-radius: 28% 72% 81% 19% / 78% 25% 75% 22%;
+    height: 50rem;
+    width: 80rem;
+  }
+  50% {
+    transform: translate(-90%, -10%);
+    border-radius: 60% 40% 0% 100% / 1% 74% 26% 99%;
+  }
+  75% {
+    transform: translate(-30%, -10%);
+    border-radius: 0% 100% 100% 0% / 0% 100% 100% 0%;
+    height: 30rem;
+    width: 45rem;
+  }
+  100% {
+    transform: translate(0%, 0%);
+    border-radius: 24% 76% 77% 23% / 30% 30% 70% 70%;
+  }
+}
+
+.shape2 {
+  position: absolute;
+  top: 33%;
+  left: 40%;
+  width: 35rem;
+  height: 25rem;
+  background: lightblue;
+  border-radius: 73% 27% 77% 23% / 53% 4% 96% 47%;
+  filter: blur(12rem);
+  animation: shape2 35s infinite;
+}
+

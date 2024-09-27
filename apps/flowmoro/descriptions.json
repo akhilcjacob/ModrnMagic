@@ -1,5 +1,14 @@
 {
-    "oneliner": "",
-    "googlePlayLink":"https://play.google.com/store/apps",
-    "appleStoreLink": "https://apps.apple.com/us/app/"
-}
+    "title": "FlowMoro",
+    "subtitle": "Focus Better",
+    "description": "Boost your productivity with the ultimate Pomodoro timer app.",
+    "oneliner": "Stay focused, stay productive.",
+    "googlePlayLink": "https://play.google.com/store/apps/details?id=com.modrnmagic.flowmoro",
+    "appleStoreLink": "https://apps.apple.com/app/flowmoro-pomodoro-timer/id1234567890",
+    "screenshots": [
+      "1.png",
+      "2.png",
+      "3.png"
+    ],
+    "accentColor": "rgb(241, 244, 251)"
+  }
