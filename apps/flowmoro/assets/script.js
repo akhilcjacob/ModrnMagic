@@ -32,6 +32,27 @@ fetch('descriptions.json')
       scrollSectionsContainer.appendChild(sectionDiv);
     }
 
+    // Create scroll dots dynamically
+    const scrollDotsContainer = document.querySelector('.scroll-dots');
+    for (let i = 0; i < totalSections; i++) {
+      const dot = document.createElement('div');
+      dot.classList.add('dot');
+      if (i === 0) dot.classList.add('active'); // Set first dot as active by default
+      scrollDotsContainer.appendChild(dot);
+    }
+
+    const scrollDots = document.querySelectorAll('.scroll-dots .dot');
+
+    function updateScrollDots(index) {
+      scrollDots.forEach((dot, dotIndex) => {
+        if (dotIndex === index) {
+          dot.classList.add('active');
+        } else {
+          dot.classList.remove('active');
+        }
+      });
+    }
+
     // Set initial content
     let currentIndex = 0;
     updateContent(currentIndex);
@@ -51,15 +72,15 @@ fetch('descriptions.json')
 
       // Update wipe progress
       const wipeProgress = sectionScrollProgress * 100;
-
       wipeElements.forEach(el => {
         el.style.setProperty('--wipe-progress', `${wipeProgress}%`);
       });
 
-      // If index changed, update content
+      // If index changed, update content and scroll dots
       if (newIndex !== currentIndex) {
         currentIndex = newIndex;
         updateContent(currentIndex);
+        updateScrollDots(currentIndex);  // Update scroll dots
       }
     });
 
@@ -81,6 +102,5 @@ fetch('descriptions.json')
       void textCardElement.offsetWidth; // Trigger reflow to restart animation
       textCardElement.classList.add('visible');
     }
-
   })
   .catch(error => console.error('Error fetching data:', error));
