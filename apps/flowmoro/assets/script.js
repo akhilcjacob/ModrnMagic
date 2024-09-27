@@ -4,11 +4,6 @@ fetch('descriptions.json')
     // Update page title
     document.getElementById('app-title').textContent = data.title;
 
-    // Update static content
-    // document.getElementById('title').textContent = data.title;
-    // document.getElementById('subtitle').textContent = data.subtitle;
-    // document.getElementById('description').textContent = data.description;
-
     const screenshots = data.screenshots;
     const textSections = data.textSections;
     const totalSections = screenshots.length;
@@ -17,7 +12,11 @@ fetch('descriptions.json')
     const sectionTitleElement = document.getElementById('section-title');
     const sectionOnelinerElement = document.getElementById('section-oneliner');
 
+    document.getElementById('google-play-link').href = data.googlePlayLink;
+    document.getElementById('app-store-link').href = data.appleStoreLink;
+
     const wipeElements = document.querySelectorAll('.wipe-transition');
+    const textCardElement = document.getElementById('text-card');
 
     // Preload images
     screenshots.forEach(src => {
@@ -51,7 +50,7 @@ fetch('descriptions.json')
       const sectionScrollProgress = sectionScrollTop / viewportHeight;
 
       // Update wipe progress
-      const wipeProgress = sectionScrollProgress * 100; // percentage
+      const wipeProgress = sectionScrollProgress * 100;
 
       wipeElements.forEach(el => {
         el.style.setProperty('--wipe-progress', `${wipeProgress}%`);
@@ -65,7 +64,10 @@ fetch('descriptions.json')
     });
 
     function updateContent(index) {
+      // Update screenshot
       screenshotElement.src = `screenshots/${screenshots[index]}`;
+
+      // Update text content
       sectionTitleElement.textContent = textSections[index].title;
       sectionOnelinerElement.textContent = textSections[index].oneliner;
 
@@ -73,6 +75,11 @@ fetch('descriptions.json')
       wipeElements.forEach(el => {
         el.style.setProperty('--wipe-progress', `0%`);
       });
+
+      // Trigger text animation
+      textCardElement.classList.remove('visible');
+      void textCardElement.offsetWidth; // Trigger reflow to restart animation
+      textCardElement.classList.add('visible');
     }
 
   })

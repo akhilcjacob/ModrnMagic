@@ -8,7 +8,7 @@ body {
   background-color: #fff;
   color: #333;
   margin: 0;
-  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-family: 'Roboto', sans-serif;
 }
 
 /* Logo styling */
@@ -18,7 +18,7 @@ body {
 }
 
 .logo img {
-  width: 80px; /* Adjust size as needed */
+  width: 80px;
   height: auto;
 }
 
@@ -26,16 +26,15 @@ body {
 .card {
   width: 90%;
   height: 80%;
-  background-color: rgba(241, 244, 251,1);
-  /* background-color: rgba(255, 255, 255, 0.5); */
+  background-color: rgba(241, 244, 251, 1);
   border-radius: 30px;
-  margin: 20px auto;
+  margin: 150px auto;
   position: fixed;
   left: 50%;
   transform: translateX(-50%);
   z-index: 10;
+  overflow: hidden;
 }
-
 
 .container {
   width: 100%;
@@ -90,16 +89,44 @@ header p {
 
 .text-card h3 {
   font-size: 1.5em;
-  margin-top: 5;
+  margin-top: 5px;
 }
 
 .text-card p {
   font-size: 1em;
   color: #555;
 }
-/* Wipe transition controlled by CSS variable */
+
+/* Store links styling */
+.store-links {
+  display: flex;
+  justify-content: center;
+}
+
+.store-links a {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  color: #333;
+  padding: 20px;
+  border-radius: 15px;
+  background-color: rgb(255, 255, 255);
+
+  font-weight: 700;
+  margin: 0 15px;
+}
+
+.store-links img {
+  height: 24px;
+  width: 24px;
+  margin-right: 8px;
+}
 
 /* Wipe transition controlled by CSS variable */
+.wipe-transition {
+  position: relative;
+}
+
 .wipe-transition::before {
   content: '';
   position: absolute;
@@ -118,14 +145,50 @@ header p {
 }
 
 .scroll-sections .section {
-  height: 100vh; /* Each section takes up the full viewport height */
+  height: 100vh;
 }
+/* Logo styling */
+.logo {
+  margin-top: 20px;
+  position: fixed; /* Fix the logo position */
+  top: 0; /* Stick it to the top */
+  left: 50%; /* Center horizontally */
+  transform: translateX(-50%); /* Align properly to the center */
+  z-index: 100; /* Ensure it stays on top of other elements */
+}
+
+.logo img {
+  width: 80px;
+  height: auto;
+}
+
+/* Animation for text */
+.text-card h3,
+.text-card p {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+
+.text-card.visible h3,
+.text-card.visible p {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Font styles */
+h1,
+h2,
+h3,
+p {
+  font-family: 'Roboto', sans-serif;
+}
+
 
 /* Responsive design */
 @media (max-width: 768px) {
   .card {
-    width: 90%;
-    padding: 15px;
+    margin: 120px auto;
   }
 
   .logo img {
@@ -135,68 +198,10 @@ header p {
   header h1 {
     font-size: 1.8em;
   }
-}
 
-
-
-body {
-  margin: 0;
-}
-
-.animation-container {
-  position: fixed;
-  height: 100%;
-  width: 100%;
-}
-
-.shape1 {
-  position: absolute;
-  top: 42%;
-  left: 70%;
-  width: 25rem;
-  height: 25rem;
-  background: #5092da;
-  border-radius: 24% 76% 77% 23% / 30% 30% 70% 70%;
-  filter: blur(6rem);
-  animation: shape1 20s infinite;
-}
-
-@keyframes shape1 {
-  0% {
-    transform: translate(0, 0);
-    border-radius: 24% 76% 77% 23% / 30% 30% 70% 70%;
+  .iphone-frame {
+    max-width: 60%;
   }
-  25% {
-    transform: translate(-55%, -10%);
-    border-radius: 28% 72% 81% 19% / 78% 25% 75% 22%;
-    height: 50rem;
-    width: 80rem;
-  }
-  50% {
-    transform: translate(-90%, -10%);
-    border-radius: 60% 40% 0% 100% / 1% 74% 26% 99%;
-  }
-  75% {
-    transform: translate(-30%, -10%);
-    border-radius: 0% 100% 100% 0% / 0% 100% 100% 0%;
-    height: 30rem;
-    width: 45rem;
-  }
-  100% {
-    transform: translate(0%, 0%);
-    border-radius: 24% 76% 77% 23% / 30% 30% 70% 70%;
-  }
-}
 
-.shape2 {
-  position: absolute;
-  top: 33%;
-  left: 40%;
-  width: 35rem;
-  height: 25rem;
-  background: lightblue;
-  border-radius: 73% 27% 77% 23% / 53% 4% 96% 47%;
-  filter: blur(12rem);
-  animation: shape2 35s infinite;
-}
 
+}
