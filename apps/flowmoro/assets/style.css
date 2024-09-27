@@ -24,6 +24,10 @@ body {
 
 /* Card styling */
 .card {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
   width: 90%;
   height: 80%;
   background-color: rgba(241, 244, 251, 1);
@@ -71,9 +75,10 @@ header p {
 .iphone-frame {
   width: 100%;
   max-width: 300px;
-  margin-bottom: 20px;
   position: relative;
   overflow: hidden;
+  justify-content: center;
+
 }
 
 .iphone-frame img {
@@ -183,28 +188,46 @@ h3,
 p {
   font-family: 'Roboto', sans-serif;
 }
+.text-card h3 {
+  margin-top: 35px; /* Reduce margin between title and oneliner */
+}
 
+.text-card p {
+  margin-bottom: 15px; /* Reduce margin above the oneliner */
+}
 
-/* Responsive design */
+/* Mobile styles for reducing space between title and oneliner */
 @media (max-width: 768px) {
-  .card {
-    margin: 120px auto;
-  }
-
   .logo img {
     width: 60px;
   }
-
-  header h1 {
-    font-size: 1.8em;
+  .text-card h3 {
+    margin-bottom: 5px; /* Reduce margin between title and oneliner */
   }
 
+  .text-card p {
+    margin-top: 5px; /* Reduce margin above the oneliner */
+  }
+
+  /* Adjust the card height and positioning for smaller screens */
+  .card {
+    margin: 90px auto; /* Reduce top margin */
+    height: auto; /* Allow card to adjust to content height */
+    padding-bottom: 20px; /* Add padding at the bottom for buttons */
+  }
+
+  /* Ensure store links are always visible */
+  .store-links {
+    margin-top: 10px; /* Add space for buttons */
+    padding-bottom: 10px; /* Add padding to ensure visibility */
+  }
+
+  /* Adjusting the height of the iPhone frame for shorter screens */
   .iphone-frame {
-    max-width: 60%;
+    max-width: 70%; /* Slightly reduce size to fit content better */
   }
-
-
 }
+
 
 .scroll-indicator {
   position: absolute;
@@ -254,4 +277,13 @@ p {
 
 .scroll-dots .dot.active {
   background-color: #333;
+}
+
+
+.made-by {
+  position: fixed;
+  bottom: 5px;
+  left: 50%; /* Center horizontally */
+  transform: translateX(-50%); /* Align properly to the center */
+  color: rgb(100, 100, 100);
 }
