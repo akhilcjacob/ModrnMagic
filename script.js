@@ -41,8 +41,28 @@ const appsConfig = [
         privacyPolicy: "apps/astrodefender/privacy/index.html",
         descriptionsJson: "apps/astrodefender/descriptions.json",
         iconImage: "apps/astrodefender/icon.png",
-        color: "rgb(1,5,28)" 
-    }
+        color: "rgb(1,5,28)"
+    },
+    {
+        name: "Flowmoro",
+        path: "apps/flowmoro",
+        marketingImages: [
+            "apps/flowmoro/marketing/1.png",
+            "apps/flowmoro/marketing/2.png",
+            "apps/flowmoro/marketing/3.png",
+            "apps/flowmoro/marketing/4.png"
+        ],
+        appScreenshots: [
+            "apps/flowmoro/screenshots/1.png",
+            "apps/flowmoro/screenshots/2.png",
+            "apps/flowmoro/screenshots/3.png",
+            "apps/flowmoro/screenshots/4.png"
+        ],
+        privacyPolicy: "apps/flowmoro/privacy/index.html",
+        descriptionsJson: "apps/flowmoro/home/descriptions.json",
+        iconImage: "apps/flowmoro/icon.png",
+        color: "rgb(254,150,121	)"
+    },
 ];
 
 let mySwiper = null;
@@ -109,21 +129,21 @@ function showDetails(app, icon) {
     for (var i = 0; i < icons.length; i++) {
         icons[i].classList.remove('is-selected');
         icons[i].querySelector('.close-btn').style.display = 'none';
-      
+
         if (window.innerWidth >= 768) {
             icons[i].style.width = ' 3.5rem'; // Shrinking size of the icon container
             icons[i].style.height = ' 3.5rem';
-            icons[i].style.margin ='20px';
-            icons[i].style.marginTop ='0.875rem';
+            icons[i].style.margin = '20px';
+            icons[i].style.marginTop = '0.875rem';
 
 
         }
-        else{
+        else {
             icons[i].style.width = '50px'; // Shrinking size of the icon container
             icons[i].style.height = '50px';
-            icons[i].style.margin ='10px';
+            icons[i].style.margin = '10px';
 
-            icons[i].style.marginTop ='0.5rem';
+            icons[i].style.marginTop = '0.5rem';
 
         }
         icons[i].querySelector('img').style.width = '50px'; // Shrinking size of the icon image
@@ -132,7 +152,7 @@ function showDetails(app, icon) {
     }
 
     iconsContainer.style.justifyContent = 'start'; // This will remove 'center' alignment
-    iconsContainer.style.flexDirection='row'
+    iconsContainer.style.flexDirection = 'row'
     // Mark the clicked icon as selected
     icon.classList.add('is-selected');
     var closeBtn = icon.querySelector('.close-btn');
@@ -171,7 +191,7 @@ function showDetails(app, icon) {
             if (data.googlePlayLink) {
                 storeButtonsHtml += `<div class="store-button google-play-button" onclick="location.href='${data.googlePlayLink}'"><img alt='Get it on Google Play' src='https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png'/></div>`;
             }
-  
+
             detailCard.innerHTML += `
                 <div class="store-buttons-container">
                     ${storeButtonsHtml}
@@ -257,11 +277,11 @@ function closeDetails(event, btn) {
 
     for (var i = 0; i < icons.length; i++) {
         icons[i].classList.remove('is-selected');
-        
+
         icons[i].style.transform = 'translateY(0%)';
         icons[i].style.width = '100px';
         icons[i].style.height = '100px';
-        icons[i].style.margin ='20px';
+        icons[i].style.margin = '20px';
         icons[i].querySelector('img').style.width = '80px'; // Resetting icon image size to original
         icons[i].querySelector('img').style.height = '80px';
         icons[i].querySelector('.close-btn').style.display = 'none';
