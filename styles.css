@@ -255,6 +255,6 @@ img {
 }
 
 .homepage-link:hover {
-    color: blue; /* Change link color to blue when hovered */
+    color: rgb(94, 115, 201); /* Change link color to blue when hovered */
     text-decoration: none; /* Remove underline on hover if desired */
 }
