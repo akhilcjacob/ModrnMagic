@@ -15,7 +15,7 @@ const appsConfig = [
             "apps/flowmoro/screenshots/4.png"
         ],
         privacyPolicy: "apps/flowmoro/privacy/index.html",
-        descriptionsJson: "apps/flowmoro/home/descriptions.json",
+        descriptionsJson: "apps/flowmoro/descriptions.json",
         iconImage: "apps/flowmoro/icon.png",
         color: "rgb(254,150,121	)",
         specificLink:"https://modrnmagic.app/apps/flowmoro/home"
@@ -165,7 +165,7 @@ function showDetails(app, icon) {
         .then(response => response.json())
         .then(data => {
             const combinedImages = [...app.marketingImages, ...app.appScreenshots];
-
+console.log(data);
             detailCard.innerHTML = `
             <div class="mt-4 text-white">
                 <img src="${app.iconImage}" alt="${app.name}" class="app-icon-detail">
