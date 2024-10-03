@@ -31,7 +31,7 @@ html {
     justify-content: center;
     align-items: center;
     flex-wrap: wrap;
-    padding: 10px;
+    /* padding: 10px; */
     overflow: hidden;
 }
 
@@ -242,4 +242,19 @@ img {
     height: 40px;
     max-width: 100%;
     border-radius: 0;
+}
+.homepage-link-container {
+    text-align: center; /* Center the link container horizontally */
+    margin-top: 20px; /* Add some spacing */
+}
+
+.homepage-link {
+    color: white; /* Set the link color to white */
+    text-decoration: underline; /* Underline the link by default */
+    font-size: 1.2rem; /* Adjust font size as needed */
+}
+
+.homepage-link:hover {
+    color: blue; /* Change link color to blue when hovered */
+    text-decoration: none; /* Remove underline on hover if desired */
 }

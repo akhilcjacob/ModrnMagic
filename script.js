@@ -1,5 +1,26 @@
 const appsConfig = [
     {
+        name: "Flowmoro",
+        path: "apps/flowmoro",
+        marketingImages: [
+            "apps/flowmoro/marketing/1.png",
+            "apps/flowmoro/marketing/2.png",
+            "apps/flowmoro/marketing/3.png",
+            "apps/flowmoro/marketing/4.png"
+        ],
+        appScreenshots: [
+            "apps/flowmoro/screenshots/1.png",
+            "apps/flowmoro/screenshots/2.png",
+            "apps/flowmoro/screenshots/3.png",
+            "apps/flowmoro/screenshots/4.png"
+        ],
+        privacyPolicy: "apps/flowmoro/privacy/index.html",
+        descriptionsJson: "apps/flowmoro/home/descriptions.json",
+        iconImage: "apps/flowmoro/icon.png",
+        color: "rgb(254,150,121	)",
+        specificLink:"https://modrnmagic.app/apps/flowmoro/home"
+    },
+    {
         name: "SkyWise",
         path: "apps/skywise",
         marketingImages: [
@@ -17,7 +38,6 @@ const appsConfig = [
         iconImage: "apps/skywise/icon.png",
         color: "#dceff3"
     },
-    // New app config for Astro Defender
     {
         name: "Astro Defender",
         path: "apps/astrodefender",
@@ -43,26 +63,7 @@ const appsConfig = [
         iconImage: "apps/astrodefender/icon.png",
         color: "rgb(1,5,28)"
     },
-    {
-        name: "Flowmoro",
-        path: "apps/flowmoro",
-        marketingImages: [
-            "apps/flowmoro/marketing/1.png",
-            "apps/flowmoro/marketing/2.png",
-            "apps/flowmoro/marketing/3.png",
-            "apps/flowmoro/marketing/4.png"
-        ],
-        appScreenshots: [
-            "apps/flowmoro/screenshots/1.png",
-            "apps/flowmoro/screenshots/2.png",
-            "apps/flowmoro/screenshots/3.png",
-            "apps/flowmoro/screenshots/4.png"
-        ],
-        privacyPolicy: "apps/flowmoro/privacy/index.html",
-        descriptionsJson: "apps/flowmoro/home/descriptions.json",
-        iconImage: "apps/flowmoro/icon.png",
-        color: "rgb(254,150,121	)"
-    },
+ 
 ];
 
 let mySwiper = null;
@@ -184,6 +185,7 @@ function showDetails(app, icon) {
             `;
 
             let storeButtonsHtml = '';
+            let appSpecificButton = '';
             if (data.appleStoreLink) {
                 storeButtonsHtml += `<div class="store-button apple-store-button" onclick="location.href='${data.appleStoreLink}'"><img alt='Get it on Apple App store' src='https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg'/></div>`;
             }
@@ -191,13 +193,20 @@ function showDetails(app, icon) {
             if (data.googlePlayLink) {
                 storeButtonsHtml += `<div class="store-button google-play-button" onclick="location.href='${data.googlePlayLink}'"><img alt='Get it on Google Play' src='https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png'/></div>`;
             }
-
+            if (app.specificLink) {
+                appSpecificButton = `
+                    <div class="homepage-link-container">
+                        <a href="${app.specificLink}" class="homepage-link">Visit Homepage &gt;</a>
+                    </div>`;
+            }
+            
             detailCard.innerHTML += `
                 <div class="store-buttons-container">
                     ${storeButtonsHtml}
                 </div>
-            `;
+                ${appSpecificButton}
 
+            `;
 
             // Destroy previous Swiper instance if it exists
             if (mySwiper) {
