@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  
+  <!-- Root URL -->
+  <url>
+    <loc>https://modrnmagic.app/</loc>
+    <lastmod>2024-10-05</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+
+  <!-- FlowMoro App -->
+  <url>
+    <loc>https://modrnmagic.app/apps/flowmoro/home/</loc>
+    <lastmod>2024-10-05</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://modrnmagic.app/apps/flowmoro/home/privacy/index.html</loc>
+    <lastmod>2024-10-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://modrnmagic.app/apps/flowmoro/home/tos/index.html</loc>
+    <lastmod>2024-10-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- AstroDefender App -->
+  <url>
+    <loc>https://modrnmagic.app/apps/astrodefender/</loc>
+    <lastmod>2024-10-05</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://modrnmagic.app/apps/astrodefender/privacy/index.html</loc>
+    <lastmod>2024-10-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://modrnmagic.app/apps/astrodefender/tos/index.html</loc>
+    <lastmod>2024-10-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Skywise App -->
+  <url>
+    <loc>https://modrnmagic.app/apps/skywise/</loc>
+    <lastmod>2024-10-05</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://modrnmagic.app/apps/skywise/privacy/index.html</loc>
+    <lastmod>2024-10-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://modrnmagic.app/apps/skywise/tos/index.html</loc>
+    <lastmod>2024-10-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- App Template -->
+  <url>
+    <loc>https://modrnmagic.app/apps/00_Future%20App%20Template/</loc>
+    <lastmod>2024-10-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://modrnmagic.app/apps/00_Future%20App%20Template/privacy/index.html</loc>
+    <lastmod>2024-10-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://modrnmagic.app/apps/00_Future%20App%20Template/tos/index.html</loc>
+    <lastmod>2024-10-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Favicon and Misc -->
+  <url>
+    <loc>https://modrnmagic.app/favicon.ico</loc>
+    <lastmod>2024-10-05</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.5</priority>
+  </url>
+
+</urlset>
