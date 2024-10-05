@@ -5,19 +5,24 @@
   <meta charset="UTF-8">
   <title id="app-title">FlowMoro</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="style.css">
+  <!-- <link rel="stylesheet" href="style.css"> -->
+  <link rel="preload" href="style.css" as="style" onload="this.rel='stylesheet'">
+  <title>Flowmoro - Simple and Minimalist Pomodoro Timer App</title>
+  <meta name="description" content="Flowmoro: Master your productivity with a simple, minimalist Pomodoro timer app available on iOS and Android. Customize work sessions and themes for maximum focus.">
+  <meta name="keywords" content="Pomodoro timer, productivity app, focus timer, simple timer, minimal app, work sessions, time management, dark mode, Google Play, App Store">
   <!-- Include Google Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" as="style">
   <link rel="stylesheet"
     href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.6.0/css/fontawesome.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="script.js"></script>
 
 </head>
 
 <body>
   <!-- Logo at the top-center -->
   <div class="logo">
-    <img src="icon.png" alt="App Logo">
+    <img src="icon.png" alt="App Logo" loading="lazy">
   </div>
 
   <!-- Fixed card containing all content except the logo -->
@@ -29,7 +34,7 @@
         </div>
 
         <div class="iphone-frame wipe-transition">
-          <img id="screenshot" src="" alt="App Screenshot">
+          <img id="screenshot" src="" alt="Flowmoro App Screenshot" loading="lazy">
         </div>
         <div class="row">
           <div class="text-card wipe-transition" id="text-card">
@@ -69,7 +74,6 @@
     <!-- The number of divs should match the number of content sections -->
   </div>
 
-  <script src="script.js"></script>
 </body>
 
 </html>
