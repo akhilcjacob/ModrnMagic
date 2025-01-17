@@ -24,8 +24,9 @@ const appsConfig = [
         privacyPolicy: "apps/nookly/privacy/index.html",
         descriptionsJson: "apps/nookly/descriptions.json",
         iconImage: "apps/nookly/icon.png",
-        color: "rgb(50,150,200)", // Light blue color that complements dark blue
+        color: "rgb(173, 216, 230)", // Light blue color that complements dark blue
         specificLink: "https://nookly.co"
+        
     },
 
     {
