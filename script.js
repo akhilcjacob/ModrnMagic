@@ -1,5 +1,34 @@
 const appsConfig = [
     {
+        name: "inboxhiiv",
+        path: "apps/inboxhiiv",
+        marketingImages: [
+
+        ],
+        appScreenshots: [
+            "apps/inboxhiiv/screenshots/shot1.png"
+
+        ],
+        privacyPolicy: "apps/inboxhiiv/privacy/index.html",
+        descriptionsJson: "apps/inboxhiiv/descriptions.json",
+        iconImage: "apps/inboxhiiv/icon.png",
+        color: "rgb(255,255,255	)",
+        specificLink: "https://inboxhiiv.com"
+    }, {
+        name: "nookly",
+        path: "apps/nookly",
+        marketingImages: [
+        ],
+        appScreenshots: [
+        ],
+        privacyPolicy: "apps/nookly/privacy/index.html",
+        descriptionsJson: "apps/nookly/descriptions.json",
+        iconImage: "apps/nookly/icon.png",
+        color: "rgb(50,150,200)", // Light blue color that complements dark blue
+        specificLink: "https://nookly.co"
+    },
+
+    {
         name: "Flowmoro",
         path: "apps/flowmoro",
         marketingImages: [
@@ -18,7 +47,7 @@ const appsConfig = [
         descriptionsJson: "apps/flowmoro/descriptions.json",
         iconImage: "apps/flowmoro/icon.png",
         color: "rgb(254,150,121	)",
-        specificLink:"https://modrnmagic.app/apps/flowmoro/home"
+        specificLink: "https://modrnmagic.app/apps/flowmoro/home"
     },
     {
         name: "SkyWise",
@@ -63,7 +92,7 @@ const appsConfig = [
         iconImage: "apps/astrodefender/icon.png",
         color: "rgb(1,5,28)"
     },
- 
+
 ];
 
 let mySwiper = null;
@@ -165,7 +194,7 @@ function showDetails(app, icon) {
         .then(response => response.json())
         .then(data => {
             const combinedImages = [...app.marketingImages, ...app.appScreenshots];
-console.log(data);
+            console.log(data);
             detailCard.innerHTML = `
             <div class="mt-4 text-white">
                 <img src="${app.iconImage}" alt="${app.name}" class="app-icon-detail">
@@ -199,7 +228,7 @@ console.log(data);
                         <a href="${app.specificLink}" class="homepage-link">Visit Homepage &gt;</a>
                     </div>`;
             }
-            
+
             detailCard.innerHTML += `
                 <div class="store-buttons-container">
                     ${storeButtonsHtml}
