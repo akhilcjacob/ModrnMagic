@@ -1,0 +1,16 @@
+{
+  "name": "Modrn Magic MVP Development",
+  "short_name": "Modrn MVP",
+  "description": "Get your MVP built in 1 week - Professional rapid prototyping and MVP development services",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a202c",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64",
+      "type": "image/x-icon"
+    }
+  ]
+}

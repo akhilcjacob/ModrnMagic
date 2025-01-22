@@ -5,9 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rapid MVP Development Services | 1-Week MVP Building | Modrn Magic</title>
-    <link rel="stylesheet" href="styles.css">
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <script type="text/javascript">
         (function() {
@@ -61,39 +62,73 @@
       "areaServed": "Worldwide"
     }
     </script>
+    <style>
+        html, body {
+            overscroll-behavior: none;
+        }
+    </style>
 </head>
 
-<body class="bg-gray-900 text-white min-h-screen">
-    <nav class="p-4 flex justify-between items-center">
+<body x-data="{ darkMode: true }" 
+    :class="darkMode ? 'bg-gradient-to-br from-gray-900 via-gray-900 to-gray-800' : 'bg-gradient-to-br from-white via-gray-50 to-blue-50'" 
+    class="min-h-screen transition-colors duration-200">
+    <div class="fixed inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))]" 
+        :class="darkMode ? 'from-blue-900/10 via-transparent to-transparent' : 'from-blue-200/20 via-transparent to-transparent'">
+    </div>
+    <nav class="p-4 flex justify-between items-center backdrop-blur-lg bg-opacity-90 relative z-10 border-b" 
+        :class="darkMode ? 'bg-gray-900/70 border-gray-800' : 'bg-white/70 border-gray-100'" 
+        style="position: sticky; top: 0;">
         <a href="/" class="flex items-center">
             <img src="favicon.ico" alt="Modrn Magic Logo" class="w-8 h-8 mr-2">
-            <span class="text-xl font-bold">Modrn Magic</span>
+            <span class="text-xl font-bold" :class="darkMode ? 'text-white' : 'text-gray-900'">Modrn Magic</span>
         </a>
-        <a href="#contact-form" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-200">
-            Start Now
-        </a>
+        <div class="flex items-center space-x-4">
+            <button @click="darkMode = !darkMode" class="p-2 rounded-lg hover:bg-gray-700/50 transition-colors">
+                <svg x-show="darkMode" class="w-6 h-6 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                </svg>
+                <svg x-show="!darkMode" class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+                </svg>
+            </button>
+            <a href="#contact-form" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-200">
+                Start Now
+            </a>
+        </div>
     </nav>
 
-    <main class="container mx-auto px-4 py-12">
+    <main class="container mx-auto px-4 py-8 relative z-0">
         <div class="max-w-4xl mx-auto">
             <header class="text-center mb-12">
-                <h1 class="text-4xl md:text-5xl font-bold mb-4">Transform Your Idea into Reality</h1>
-                <p class="text-xl text-gray-300 mb-8">Get Your MVP Built in Just 1 Week</p>
-                <div class="flex justify-center space-x-8 text-gray-300">
-                    <div class="flex items-center">
-                        <svg class="w-6 h-6 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <h1 class="text-4xl md:text-6xl font-bold mb-2 bg-gradient-to-r from-blue-500 via-blue-400 to-purple-600 bg-clip-text text-transparent">Transform Your Idea into Reality</h1>
+                <p class="text-xl mb-6" :class="darkMode ? 'text-gray-300' : 'text-gray-600'">Get Your MVP Built in Just 1 Week</p>
+                <div class="flex justify-center mb-8">
+                    <a href="/" class="inline-flex items-center px-6 py-3 rounded-lg backdrop-blur-lg border transition-all duration-200 hover:scale-105"
+                        :class="darkMode ? 'bg-blue-600/20 border-blue-500/30 text-blue-300 hover:bg-blue-600/30' : 'bg-blue-500/20 border-blue-400/30 text-blue-700 hover:bg-blue-500/30'">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                        View Previous Work
+                    </a>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl mx-auto">
+                    <div class="flex items-center justify-center p-3 rounded-lg backdrop-blur-lg shadow-lg border" 
+                        :class="darkMode ? 'bg-gray-800/40 border-gray-700/30 text-gray-200' : 'bg-white/40 border-gray-200/30 text-gray-700'">
+                        <svg class="w-5 h-5 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
                         <span>1 Week Delivery</span>
                     </div>
-                    <div class="flex items-center">
-                        <svg class="w-6 h-6 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="flex items-center justify-center p-3 rounded-lg backdrop-blur-lg shadow-lg border" 
+                        :class="darkMode ? 'bg-gray-800/40 border-gray-700/30 text-gray-200' : 'bg-white/40 border-gray-200/30 text-gray-700'">
+                        <svg class="w-5 h-5 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
                         <span>Quality Code</span>
                     </div>
-                    <div class="flex items-center">
-                        <svg class="w-6 h-6 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="flex items-center justify-center p-3 rounded-lg backdrop-blur-lg shadow-lg border" 
+                        :class="darkMode ? 'bg-gray-800/40 border-gray-700/30 text-gray-200' : 'bg-white/40 border-gray-200/30 text-gray-700'">
+                        <svg class="w-5 h-5 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                         </svg>
                         <span>Fast Iterations</span>
@@ -101,128 +136,126 @@
                 </div>
             </header>
             
-            <div class="bg-gray-800 rounded-lg p-8 mb-12">
-                <h2 class="text-2xl font-bold mb-4">1-Week MVP Development</h2>
-                <p class="text-gray-300 mb-6">
-                    Need to validate your idea quickly? Get a working MVP in just one week. Perfect for:
-                </p>
-                <ul class="list-disc list-inside text-gray-300 mb-8 space-y-2">
-                    <li>Startup pitch demonstrations</li>
-                    <li>Proof of concept for investors</li>
-                    <li>Quick market validation</li>
-                    <li>Testing core features</li>
-                </ul>
-                <div class="bg-blue-600 rounded-lg p-6">
-                    <h3 class="text-xl font-bold mb-4">What's Included:</h3>
+            <div class="grid md:grid-cols-2 gap-6 mb-8">
+                <div class="rounded-xl p-6 backdrop-blur-lg shadow-lg border" 
+                    :class="darkMode ? 'bg-gray-800/40 border-gray-700/30 hover:bg-gray-800/50' : 'bg-white/40 border-gray-200/30 hover:bg-white/50'"
+                    class="transition-all duration-300">
+                    <h2 class="text-2xl font-bold mb-3" :class="darkMode ? 'text-white' : 'text-gray-900'">1-Week MVP Development</h2>
+                    <p class="mb-4 leading-relaxed" :class="darkMode ? 'text-gray-200' : 'text-gray-700'">
+                        Need to validate your idea quickly? Get a working MVP in just one week. Perfect for:
+                    </p>
+                    <ul class="list-disc list-inside space-y-1 mb-4 leading-relaxed" :class="darkMode ? 'text-gray-200' : 'text-gray-700'">
+                        <li>Startup pitch demonstrations</li>
+                        <li>Proof of concept for investors</li>
+                        <li>Quick market validation</li>
+                        <li>Testing core features</li>
+                    </ul>
+                </div>
+                
+                <div class="rounded-xl p-6 backdrop-blur-lg shadow-lg border" 
+                    :class="darkMode ? 'bg-blue-900/30 border-blue-800/30 hover:bg-blue-900/40' : 'bg-blue-500/30 border-blue-300/30 hover:bg-blue-500/40'"
+                    class="transition-all duration-300">
+                    <h3 class="text-xl font-bold mb-3 text-white">What's Included:</h3>
                     <ul class="space-y-3">
                         <li class="flex items-start">
-                            <svg class="w-6 h-6 mr-2 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-5 h-5 mr-2 text-green-400 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                             </svg>
-                            Core functionality implementation
+                            <span class="text-gray-100 leading-relaxed">Core functionality implementation</span>
                         </li>
                         <li class="flex items-start">
-                            <svg class="w-6 h-6 mr-2 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-5 h-5 mr-2 text-green-400 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                             </svg>
-                            Modern, responsive UI design
+                            <span class="text-gray-100 leading-relaxed">Modern, responsive UI design</span>
                         </li>
                         <li class="flex items-start">
-                            <svg class="w-6 h-6 mr-2 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-5 h-5 mr-2 text-green-400 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                             </svg>
-                            Basic user authentication
+                            <span class="text-gray-100 leading-relaxed">Basic user authentication</span>
                         </li>
                         <li class="flex items-start">
-                            <svg class="w-6 h-6 mr-2 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-5 h-5 mr-2 text-green-400 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                             </svg>
-                            Deployment to production
+                            <span class="text-gray-100 leading-relaxed">Deployment to production</span>
                         </li>
                     </ul>
                 </div>
             </div>
 
             <!-- Process Section -->
-            <div class="mb-12">
-                <h2 class="text-2xl font-bold mb-8 text-center">Our MVP Development Process</h2>
-                <div class="grid md:grid-cols-3 gap-8">
-                    <div class="bg-gray-800 p-6 rounded-lg">
-                        <div class="text-blue-500 text-4xl font-bold mb-4">01</div>
-                        <h3 class="text-xl font-bold mb-2">Discovery</h3>
-                        <p class="text-gray-300">Quick but thorough analysis of your requirements and project scope</p>
+            <div class="mb-8">
+                <h2 class="text-2xl font-bold mb-6 text-center" :class="darkMode ? 'text-white' : 'text-gray-900'">Our MVP Development Process</h2>
+                <div class="grid md:grid-cols-3 gap-6">
+                    <div class="rounded-xl p-5 backdrop-blur-lg shadow-lg border transform hover:scale-[1.02] transition-all duration-300" 
+                        :class="darkMode ? 'bg-gray-800/40 border-gray-700/30 hover:bg-gray-800/50' : 'bg-white/40 border-gray-200/30 hover:bg-white/50'">
+                        <div class="text-blue-500 text-3xl font-bold mb-2">01</div>
+                        <h3 class="text-lg font-bold mb-1" :class="darkMode ? 'text-white' : 'text-gray-900'">Discovery</h3>
+                        <p :class="darkMode ? 'text-gray-200' : 'text-gray-700'" class="text-sm leading-relaxed">Quick but thorough analysis of your requirements</p>
                     </div>
-                    <div class="bg-gray-800 p-6 rounded-lg">
-                        <div class="text-blue-500 text-4xl font-bold mb-4">02</div>
-                        <h3 class="text-xl font-bold mb-2">Development</h3>
-                        <p class="text-gray-300">Rapid development with daily updates and feedback integration</p>
+                    <div class="rounded-xl p-5 backdrop-blur-lg shadow-lg border transform hover:scale-[1.02] transition-all duration-300" 
+                        :class="darkMode ? 'bg-gray-800/40 border-gray-700/30 hover:bg-gray-800/50' : 'bg-white/40 border-gray-200/30 hover:bg-white/50'">
+                        <div class="text-blue-500 text-3xl font-bold mb-2">02</div>
+                        <h3 class="text-lg font-bold mb-1" :class="darkMode ? 'text-white' : 'text-gray-900'">Development</h3>
+                        <p :class="darkMode ? 'text-gray-200' : 'text-gray-700'" class="text-sm leading-relaxed">Rapid development with daily updates</p>
                     </div>
-                    <div class="bg-gray-800 p-6 rounded-lg">
-                        <div class="text-blue-500 text-4xl font-bold mb-4">03</div>
-                        <h3 class="text-xl font-bold mb-2">Delivery</h3>
-                        <p class="text-gray-300">Complete deployment and handover of your working MVP</p>
+                    <div class="rounded-xl p-5 backdrop-blur-lg shadow-lg border transform hover:scale-[1.02] transition-all duration-300" 
+                        :class="darkMode ? 'bg-gray-800/40 border-gray-700/30 hover:bg-gray-800/50' : 'bg-white/40 border-gray-200/30 hover:bg-white/50'">
+                        <div class="text-blue-500 text-3xl font-bold mb-2">03</div>
+                        <h3 class="text-lg font-bold mb-1" :class="darkMode ? 'text-white' : 'text-gray-900'">Delivery</h3>
+                        <p :class="darkMode ? 'text-gray-200' : 'text-gray-700'" class="text-sm leading-relaxed">Complete deployment and handover</p>
                     </div>
                 </div>
             </div>
 
-            <div class="bg-gray-800 rounded-lg p-8" id="contact-form">
-                <h2 class="text-2xl font-bold mb-6">Let's Build Your MVP</h2>
+            <div class="rounded-xl p-6 backdrop-blur-lg shadow-lg border" 
+                :class="darkMode ? 'bg-gray-800/40 border-gray-700/30' : 'bg-white/40 border-gray-200/30'" 
+                id="contact-form">
+                <h2 class="text-2xl font-bold mb-6" :class="darkMode ? 'text-white' : 'text-gray-900'">Let's Build Your MVP</h2>
                 <form id="contact-form" class="space-y-6">
                     <div class="grid md:grid-cols-2 gap-6">
                         <div>
-                            <label for="name" class="block text-sm font-medium text-gray-300 mb-1">Your Name</label>
+                            <label for="name" class="block text-sm font-medium mb-2" :class="darkMode ? 'text-gray-200' : 'text-gray-700'">Your Name</label>
                             <input type="text" id="name" name="name" required
-                                class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                class="w-full px-4 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                                :class="darkMode ? 'bg-gray-700/70 border-gray-600 text-white placeholder-gray-400' : 'bg-white/70 border-gray-300 text-gray-900 placeholder-gray-500'">
                         </div>
                         <div>
-                            <label for="email" class="block text-sm font-medium text-gray-300 mb-1">Email Address</label>
+                            <label for="email" class="block text-sm font-medium mb-2" :class="darkMode ? 'text-gray-200' : 'text-gray-700'">Email Address</label>
                             <input type="email" id="email" name="email" required
-                                class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                class="w-full px-4 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                                :class="darkMode ? 'bg-gray-700/70 border-gray-600 text-white placeholder-gray-400' : 'bg-white/70 border-gray-300 text-gray-900 placeholder-gray-500'">
                         </div>
                     </div>
                     <div>
-                        <label for="project-description" class="block text-sm font-medium text-gray-300 mb-1">Project Description</label>
-                        <textarea id="project-description" name="project-description" rows="4" required
-                            class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            placeholder="Tell me about your idea and what you want to achieve..."></textarea>
+                        <label for="message" class="block text-sm font-medium mb-2" :class="darkMode ? 'text-gray-200' : 'text-gray-700'">Project Details</label>
+                        <textarea id="message" name="message" rows="4" required
+                            class="w-full px-4 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                            :class="darkMode ? 'bg-gray-700/70 border-gray-600 text-white placeholder-gray-400' : 'bg-white/70 border-gray-300 text-gray-900 placeholder-gray-500'"></textarea>
                     </div>
-                    <div class="grid md:grid-cols-2 gap-6">
-                        <div>
-                            <label for="timeline" class="block text-sm font-medium text-gray-300 mb-1">Desired Timeline</label>
-                            <select id="timeline" name="timeline" required
-                                class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                <option value="1-week">1 Week (Standard MVP)</option>
-                                <option value="2-weeks">2 Weeks (Enhanced MVP)</option>
-                                <option value="custom">Custom Timeline</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label for="budget" class="block text-sm font-medium text-gray-300 mb-1">Budget Range</label>
-                            <select id="budget" name="budget" required
-                                class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                <option value="5k-10k">$5,000 - $10,000</option>
-                                <option value="10k-20k">$10,000 - $20,000</option>
-                                <option value="20k+">$20,000+</option>
-                            </select>
-                        </div>
+                    <div>
+                        <button type="submit"
+                            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition-colors duration-200 flex items-center justify-center">
+                            <span>Send Message</span>
+                            <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                            </svg>
+                        </button>
                     </div>
-                    <button type="submit"
-                        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition-colors duration-200 flex items-center justify-center">
-                        <span>Get Started</span>
-                        <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
-                        </svg>
-                    </button>
                 </form>
             </div>
         </div>
     </main>
 
-    <footer class="bg-gray-800 mt-16">
+    <footer class="mt-16 backdrop-blur-lg border-t" :class="darkMode ? 'bg-gray-800/40 border-gray-700' : 'bg-white/40 border-gray-200'">
         <div class="container mx-auto px-4 py-8">
-            <div class="text-center text-gray-400">
-                <p class="mb-4">An <a href="https://akhilcjacob.com" class="underline hover:text-blue-400">Akhil Jacob</a> company</p>
-                <p class="text-sm">&copy; 2025 Modrn Magic. All rights reserved.</p>
+            <div class="text-center">
+                <p class="mb-4" :class="darkMode ? 'text-gray-300' : 'text-gray-600'">
+                    An <a href="https://akhilcjacob.com" class="text-blue-500 hover:text-blue-400 font-medium">Akhil Jacob</a> company
+                </p>
+                <p :class="darkMode ? 'text-gray-400' : 'text-gray-500'"> 2025 Modrn Magic. All rights reserved.</p>
             </div>
         </div>
     </footer>
@@ -241,9 +274,7 @@
             const formData = {
                 name: form.querySelector('#name').value,
                 email: form.querySelector('#email').value,
-                projectDescription: form.querySelector('#project-description').value,
-                timeline: form.querySelector('#timeline').value,
-                budget: form.querySelector('#budget').value
+                message: form.querySelector('#message').value,
             };
 
             try {
@@ -253,9 +284,7 @@
                     {
                         from_name: formData.name,
                         from_email: formData.email,
-                        project_description: formData.projectDescription,
-                        timeline: formData.timeline,
-                        budget: formData.budget,
+                        message: formData.message,
                         to_name: "Akhil",
                         to_email: "akhil@modrnmagic.app"
                     }
