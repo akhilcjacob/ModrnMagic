@@ -4,9 +4,17 @@
   <!-- Root URL -->
   <url>
     <loc>https://modrnmagic.app/</loc>
-    <lastmod>2024-10-05</lastmod>
+    <lastmod>2025-01-22</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
+  </url>
+
+  <!-- MVP Development Page -->
+  <url>
+    <loc>https://modrnmagic.app/mvp</loc>
+    <lastmod>2025-01-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
   </url>
 
   <!-- FlowMoro App -->
