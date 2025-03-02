@@ -107,6 +107,7 @@ header p {
 .store-links {
   display: flex;
   justify-content: center;
+  flex-direction: row;
 }
 
 .store-links a {
@@ -117,7 +118,6 @@ header p {
   padding: 20px;
   border-radius: 15px;
   background-color: rgb(255, 255, 255);
-
   font-weight: 700;
   margin: 0 15px;
 }
@@ -126,6 +126,21 @@ header p {
   height: 24px;
   width: 24px;
   margin-right: 8px;
+}
+
+/* Responsive adjustments for small screens */
+@media screen and (max-width: 500px) {
+  .store-links {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .store-links a {
+    margin: 10px 0;
+    padding: 15px;
+    width: 200px;
+    justify-content: center;
+  }
 }
 
 /* Wipe transition controlled by CSS variable */
@@ -246,6 +261,147 @@ p {
   }
 }
 
+/* Responsive adjustments for tablets */
+@media screen and (min-width: 601px) and (max-width: 1024px) {
+  .card {
+    width: 90%;
+    height: 82%;
+    top: 9%;
+  }
+
+  .store-links {
+    flex-direction: column;
+    align-items: center;
+    margin-top: 15px;
+  }
+
+  .store-links a {
+    margin: 10px 0;
+    padding: 18px;
+    width: 250px;
+    justify-content: center;
+  }
+
+  .main-content {
+    padding-top: 30px;
+  }
+
+  .iphone-frame {
+    max-width: 350px;
+  }
+
+  .text-card h3 {
+    margin-top: 25px;
+    font-size: 1.4em;
+  }
+
+  .text-card p {
+    font-size: 1em;
+  }
+}
+
+/* Responsive adjustments for mobile */
+@media screen and (max-width: 600px) {
+  .card {
+    width: 95%;
+    height: 90%; /* Increased height to give more space */
+    top: 5%; /* Adjusted top positioning */
+    padding-bottom: 30px; /* Added bottom padding */
+  }
+
+  .logo {
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .logo img {
+    width: 60px;
+    height: auto;
+  }
+
+  .store-links {
+    flex-direction: column;
+    align-items: center;
+    margin-top: 20px;
+    margin-bottom: 20px; /* Added bottom margin */
+    position: absolute;
+    bottom: 20px; /* Position at bottom of card */
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .store-links a {
+    margin: 10px 0;
+    padding: 15px;
+    width: 200px;
+    justify-content: center;
+  }
+
+  .main-content {
+    padding-top: 20px;
+    padding-bottom: 80px; /* Added bottom padding */
+  }
+
+  .iphone-frame {
+    max-width: 250px;
+  }
+
+  .text-card h3 {
+    margin-top: 20px;
+    font-size: 1.3em;
+  }
+
+  .text-card p {
+    font-size: 0.9em;
+  }
+}
+
+/* Similar adjustments for tablet */
+@media screen and (min-width: 601px) and (max-width: 1024px) {
+  .card {
+    width: 90%;
+    height: 85%; /* Increased height */
+    top: 7%;
+    padding-bottom: 20px;
+  }
+
+  .store-links {
+    flex-direction: column;
+    align-items: center;
+    margin-top: 15px;
+    margin-bottom: 15px;
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .store-links a {
+    margin: 10px 0;
+    padding: 18px;
+    width: 250px;
+    justify-content: center;
+  }
+
+  .main-content {
+    padding-top: 30px;
+    padding-bottom: 60px;
+  }
+
+  .iphone-frame {
+    max-width: 350px;
+  }
+
+  .text-card h3 {
+    margin-top: 25px;
+    font-size: 1.4em;
+  }
+
+  .text-card p {
+    font-size: 1em;
+  }
+}
 
 .scroll-indicator {
   position: absolute;

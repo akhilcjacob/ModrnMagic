@@ -10,6 +10,20 @@
     <script src="https://unpkg.com/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
     <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script>
+        function gtagSendEvent(url) {
+            var callback = function () {
+                if (typeof url === 'string') {
+                    window.location = url;
+                }
+            };
+            gtag('event', 'conversion_event_submit_lead_form', {
+                'event_callback': callback,
+                'event_timeout': 2000
+            });
+            return false;
+        }
+    </script>
     <script type="text/javascript">
         (function() {
             // https://dashboard.emailjs.com/admin
@@ -308,7 +322,7 @@
                         successMessage.style.transform = 'translateY(-100%)';
                         setTimeout(() => successMessage.remove(), 500);
                     }, 5000);
-                    
+                    gtagSendEvent('/#');
                     form.reset(); // Reset the form using the form element
                 }
             } catch (error) {
