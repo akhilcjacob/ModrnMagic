@@ -1,0 +1,86 @@
+{
+  "id": "nookly",
+  "name": "Nookly",
+  "status": "live",
+  "kind": "web",
+  "oneliner": "Home maintenance, handled.",
+  "summary": "Nookly books home services without the research. Pick the service, a date, and a time, and a vetted professional takes care of it. Nookly is live in San Diego.",
+  "description": [
+    "Keeping a home in shape means a steady stream of small jobs: cleaning, repairs, handyman work. Nookly makes each one a booking instead of a research project.",
+    "Choose the service you need, pick a date and time, and Nookly matches the job with a vetted professional. You can request an estimate before you book.",
+    "Nookly is live in San Diego at nookly.co."
+  ],
+  "features": [
+    {
+      "title": "Book in a few taps",
+      "body": "Pick a service, a date, and a time. No calling around."
+    },
+    {
+      "title": "Vetted pros",
+      "body": "Jobs go to reliable, vetted professionals."
+    },
+    {
+      "title": "Estimates first",
+      "body": "Request an estimate before you commit to a booking."
+    }
+  ],
+  "faq": [
+    {
+      "q": "What is Nookly?",
+      "a": "Nookly is a home services booking service from Modrn Magic. You pick a service, a date, and a time, and a vetted professional handles the job."
+    },
+    {
+      "q": "Where is Nookly available?",
+      "a": "Nookly is live in San Diego, California."
+    }
+  ],
+  "category": "LifestyleApplication",
+  "genre": "Home services",
+  "stack": [
+    "Next.js",
+    "Firebase"
+  ],
+  "dates": {
+    "started": null,
+    "shipped": null,
+    "updated": null,
+    "ended": null
+  },
+  "platforms": [
+    "web"
+  ],
+  "links": {
+    "appStore": null,
+    "googlePlay": null,
+    "web": "https://nookly.co",
+    "writing": null,
+    "source": null
+  },
+  "price": null,
+  "wasOn": [],
+  "icon": "icon.png",
+  "color": "rgb(173,216,230)",
+  "screenshots": [
+    {
+      "from": "screenshots/home-desktop.png",
+      "alt": "Nookly home page with the headline Your Home Maintenance, Handled",
+      "w": 1280,
+      "h": 800,
+      "shape": "wide",
+      "src": "media/screenshots-home-desktop.webp"
+    },
+    {
+      "from": "screenshots/home-mobile.png",
+      "alt": "Nookly home page on a phone with a service search box",
+      "w": 390,
+      "h": 844,
+      "shape": "phone",
+      "src": "media/screenshots-home-mobile.webp"
+    }
+  ],
+  "lessons": [],
+  "legal": {
+    "privacy": "privacy/",
+    "terms": "tos/"
+  }
+}

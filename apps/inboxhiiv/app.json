@@ -1,0 +1,96 @@
+{
+  "id": "inboxhiiv",
+  "name": "InboxHiive",
+  "status": "live",
+  "kind": "web",
+  "oneliner": "Podcast episodes, turned into newsletters you can read in minutes.",
+  "summary": "InboxHiive turns podcast episodes into clean, readable newsletters. Subscribe to the shows you follow and get an AI-written summary, key insights, and a chapter-by-chapter breakdown of each new episode in your inbox.",
+  "description": [
+    "Podcast backlogs pile up. InboxHiive lets you keep up without listening to every minute. Pick the shows you follow, and each new episode arrives as a short newsletter.",
+    "Every issue has episode highlights, the key insights as a scannable list, and a chapter breakdown with timestamps so you can jump to the part worth hearing.",
+    "Behind it is an event-driven pipeline on Firebase: a new episode kicks off audio processing and parallel, schema-validated summaries with Gemini, then delivery. Akhil wrote up how it works in Building InboxHiive."
+  ],
+  "features": [
+    {
+      "title": "Follow any show",
+      "body": "Subscribe to the podcasts you care about from one dashboard."
+    },
+    {
+      "title": "Highlights and insights",
+      "body": "Each episode becomes a short summary and a list of key takeaways."
+    },
+    {
+      "title": "Chapters with timestamps",
+      "body": "Skim the breakdown, then jump to the part worth hearing."
+    }
+  ],
+  "faq": [
+    {
+      "q": "What is InboxHiive?",
+      "a": "InboxHiive is a web app by Modrn Magic that turns podcast episodes into email newsletters with AI summaries, key insights, and chapter breakdowns."
+    },
+    {
+      "q": "How does InboxHiive work?",
+      "a": "A new episode triggers a pipeline on Firebase Functions and Firestore that processes the audio, generates structured summaries with Gemini, and sends the newsletter."
+    }
+  ],
+  "category": "WebApplication",
+  "genre": "News",
+  "stack": [
+    "Next.js",
+    "Firebase Functions",
+    "Firestore",
+    "Gemini"
+  ],
+  "dates": {
+    "started": null,
+    "shipped": null,
+    "updated": null,
+    "ended": null
+  },
+  "platforms": [
+    "web"
+  ],
+  "links": {
+    "appStore": null,
+    "googlePlay": null,
+    "web": "https://inboxhiive.com",
+    "writing": "https://engineering.akhilcjacob.com/building-inboxhiive",
+    "source": null
+  },
+  "price": null,
+  "wasOn": [],
+  "icon": "icon.png",
+  "color": "#ffffff",
+  "screenshots": [
+    {
+      "from": "screenshots/dashboard.webp",
+      "alt": "InboxHiive dashboard showing active podcast subscriptions and shows to follow by category",
+      "w": 1600,
+      "h": 976,
+      "shape": "wide",
+      "src": "media/screenshots-dashboard.webp"
+    },
+    {
+      "from": "screenshots/summary.webp",
+      "alt": "An InboxHiive newsletter with episode highlights and key insights",
+      "w": 1600,
+      "h": 1080,
+      "shape": "wide",
+      "src": "media/screenshots-summary.webp"
+    },
+    {
+      "from": "screenshots/chapters.webp",
+      "alt": "An InboxHiive chapter breakdown with timestamps",
+      "w": 1600,
+      "h": 1108,
+      "shape": "wide",
+      "src": "media/screenshots-chapters.webp"
+    }
+  ],
+  "lessons": [],
+  "legal": {
+    "privacy": "privacy/",
+    "terms": "tos/"
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "id": "",
+  "name": "",
+  "status": "lab",
+  "kind": "app",
+  "oneliner": "",
+  "summary": "",
+  "description": [
+    ""
+  ],
+  "features": [],
+  "faq": [],
+  "category": null,
+  "genre": null,
+  "stack": [],
+  "dates": {
+    "started": null,
+    "shipped": null,
+    "updated": null,
+    "ended": null
+  },
+  "platforms": [],
+  "links": {
+    "appStore": null,
+    "googlePlay": null,
+    "web": null,
+    "writing": null,
+    "source": null
+  },
+  "price": null,
+  "wasOn": [],
+  "icon": null,
+  "color": "#dddddd",
+  "screenshots": [],
+  "lessons": [],
+  "legal": {}
+}

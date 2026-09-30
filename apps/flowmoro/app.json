@@ -1,0 +1,115 @@
+{
+  "id": "flowmoro",
+  "name": "Flowmoro",
+  "status": "live",
+  "kind": "app",
+  "oneliner": "A minimalist Pomodoro timer for focused work.",
+  "summary": "Flowmoro is a Pomodoro focus timer for iPhone and Android. It keeps the screen quiet, lets you set your own work and break lengths, and collects no data.",
+  "description": [
+    "Flowmoro is a focus timer built around the Pomodoro Technique: work in short, timed sessions and take regular breaks so you stay sharp through the day without burning out.",
+    "The interface is deliberately uncluttered. You see the time left, a simple fill that drains as the session runs, and one button. Work length, break length, and the number of cycles are all adjustable, and a set of theme colors plus a dark mode let it match your setup.",
+    "Flowmoro does not collect or share any data. There is no account and no sign-in."
+  ],
+  "features": [
+    {
+      "title": "Custom sessions",
+      "body": "Set work and break lengths and the number of cycles to fit how you work."
+    },
+    {
+      "title": "Nothing in the way",
+      "body": "One timer, one button. No feeds, no streaks, no clutter."
+    },
+    {
+      "title": "Themes and dark mode",
+      "body": "Pick a theme color and switch to a clean dark mode for late sessions."
+    },
+    {
+      "title": "Private by design",
+      "body": "No account, no tracking. Flowmoro does not collect or share data."
+    }
+  ],
+  "faq": [
+    {
+      "q": "What is Flowmoro?",
+      "a": "Flowmoro is a minimalist Pomodoro timer app for iPhone and Android made by Modrn Magic. It alternates timed work sessions with breaks to help you focus."
+    },
+    {
+      "q": "How much does Flowmoro cost?",
+      "a": "On the App Store in the US, Flowmoro is a one-time $0.99 purchase. It is also on Google Play."
+    },
+    {
+      "q": "Does Flowmoro collect my data?",
+      "a": "No. Flowmoro has no account system and does not collect or share personal data."
+    }
+  ],
+  "category": "ProductivityApplication",
+  "genre": "Productivity",
+  "stack": [
+    "Flutter",
+    "Dart"
+  ],
+  "dates": {
+    "started": null,
+    "shipped": "2024-10-05",
+    "updated": "2024-10-05",
+    "ended": null
+  },
+  "platforms": [
+    "ios",
+    "android"
+  ],
+  "links": {
+    "appStore": "https://apps.apple.com/us/app/flowmoro/id6717611672",
+    "googlePlay": "https://play.google.com/store/apps/details?id=com.modrnmagic.flowmoro",
+    "web": null,
+    "home": "home/",
+    "writing": null,
+    "source": null
+  },
+  "price": {
+    "appStore": "0.99",
+    "currency": "USD"
+  },
+  "wasOn": [],
+  "icon": "icon.png",
+  "color": "rgb(254,150,121)",
+  "screenshots": [
+    {
+      "from": "marketing/1.png",
+      "alt": "Flowmoro timer screen with a coral session fill and the headline Minimalistic Productivity Timer",
+      "w": 640,
+      "h": 1138,
+      "shape": "phone",
+      "src": "media/marketing-1.webp"
+    },
+    {
+      "from": "marketing/2.png",
+      "alt": "Flowmoro session settings for work length, break length, and cycles",
+      "w": 640,
+      "h": 1138,
+      "shape": "phone",
+      "src": "media/marketing-2.webp"
+    },
+    {
+      "from": "marketing/3.png",
+      "alt": "Flowmoro running a focus session in the middle of the day",
+      "w": 640,
+      "h": 1138,
+      "shape": "phone",
+      "src": "media/marketing-3.webp"
+    },
+    {
+      "from": "marketing/4.png",
+      "alt": "Flowmoro theme picker and dark mode",
+      "w": 640,
+      "h": 1138,
+      "shape": "phone",
+      "src": "media/marketing-4.webp"
+    }
+  ],
+  "lessons": [],
+  "legal": {
+    "privacy": "privacy/",
+    "terms": "tos/"
+  }
+}

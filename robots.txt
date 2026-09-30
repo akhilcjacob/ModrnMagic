@@ -1,4 +1,7 @@
 User-agent: *
 Allow: /
+Disallow: /apps/00_Future%20App%20Template/
+Disallow: /scripts/
+Disallow: /docs/
 
 Sitemap: https://modrnmagic.app/sitemap.xml
