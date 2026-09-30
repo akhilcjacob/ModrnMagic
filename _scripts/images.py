@@ -6,7 +6,7 @@ Reads each apps/<id>/app.json and writes apps/<id>/media/*.webp from the
 the nav mark from favicon.ico. Needs Pillow (with WebP support). Only rerun
 when source images change; the output is committed.
 
-    python3 scripts/images.py
+    python3 _scripts/images.py
 """
 import json
 import os

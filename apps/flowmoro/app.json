@@ -75,16 +75,8 @@
   "color": "rgb(254,150,121)",
   "screenshots": [
     {
-      "from": "marketing/1.png",
-      "alt": "Flowmoro timer screen with a coral session fill and the headline Minimalistic Productivity Timer",
-      "w": 640,
-      "h": 1138,
-      "shape": "phone",
-      "src": "media/marketing-1.webp"
-    },
-    {
       "from": "marketing/2.png",
-      "alt": "Flowmoro session settings for work length, break length, and cycles",
+      "alt": "Flowmoro timer at 16:52 with the line Built to focus",
       "w": 640,
       "h": 1138,
       "shape": "phone",
@@ -92,7 +84,7 @@
     },
     {
       "from": "marketing/3.png",
-      "alt": "Flowmoro running a focus session in the middle of the day",
+      "alt": "Flowmoro settings for total, work, and break duration with the headline Configurable",
       "w": 640,
       "h": 1138,
       "shape": "phone",
@@ -100,7 +92,7 @@
     },
     {
       "from": "marketing/4.png",
-      "alt": "Flowmoro theme picker and dark mode",
+      "alt": "Flowmoro advanced settings and a dark-mode timer with the headline Customizable",
       "w": 640,
       "h": 1138,
       "shape": "phone",

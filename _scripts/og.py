@@ -4,7 +4,7 @@
 Needs Google Chrome and Pillow. Rerun when a product's name, one-liner, icon,
 or color changes; the output is committed.
 
-    python3 scripts/og.py
+    python3 _scripts/og.py
 """
 import html
 import json

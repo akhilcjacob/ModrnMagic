@@ -64,20 +64,20 @@
   "color": "#ffffff",
   "screenshots": [
     {
-      "from": "screenshots/dashboard.webp",
-      "alt": "InboxHiive dashboard showing active podcast subscriptions and shows to follow by category",
+      "from": "screenshots/site-home-desktop.png",
+      "alt": "The inboxhiive home page: Never miss the key moments from your favorite shows",
       "w": 1600,
-      "h": 976,
+      "h": 1000,
       "shape": "wide",
-      "src": "media/screenshots-dashboard.webp"
+      "src": "media/screenshots-site-home-desktop.webp"
     },
     {
-      "from": "screenshots/summary.webp",
-      "alt": "An InboxHiive newsletter with episode highlights and key insights",
-      "w": 1600,
-      "h": 1080,
-      "shape": "wide",
-      "src": "media/screenshots-summary.webp"
+      "from": "screenshots/site-home-mobile.png",
+      "alt": "The inboxhiive home page on a phone",
+      "w": 640,
+      "h": 1385,
+      "shape": "phone",
+      "src": "media/screenshots-site-home-mobile.webp"
     },
     {
       "from": "screenshots/chapters.webp",

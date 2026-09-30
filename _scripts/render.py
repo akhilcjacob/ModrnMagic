@@ -5,8 +5,8 @@ Writes: index.html, apps/<id>/index.html, contact/index.html, mvp.html,
 404.html, sitemap.xml, llms.txt. Standard library only. The output is
 committed, so GitHub Pages serves plain files with no build step.
 
-    python3 scripts/render.py          # write files
-    python3 scripts/render.py --check  # exit 1 if committed output is stale
+    python3 _scripts/render.py          # write files
+    python3 _scripts/render.py --check  # exit 1 if committed output is stale
 
 Bump SITE_DATE when page content changes; it feeds sitemap lastmod.
 """
@@ -180,6 +180,7 @@ def inline_css():
 
 def head(title, description, path, og_image, graph, noindex=False, extra=""):
     canonical = SITE + path
+    canonical_tag = "" if noindex else f'<link rel="canonical" href="{canonical}">\n'
     robots = '<meta name="robots" content="noindex">' if noindex else '<meta name="robots" content="index, follow, max-image-preview:large">'
     og = SITE + og_image
     return f"""<!doctype html>
@@ -189,8 +190,7 @@ def head(title, description, path, og_image, graph, noindex=False, extra=""):
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>{e(title)}</title>
 <meta name="description" content="{e(description)}">
-<link rel="canonical" href="{canonical}">
-{robots}
+{canonical_tag}{robots}
 <meta name="author" content="Akhil Jacob">
 <meta name="theme-color" content="#eef0f4" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0c0d10" media="(prefers-color-scheme: dark)">
@@ -215,7 +215,7 @@ def head(title, description, path, og_image, graph, noindex=False, extra=""):
 <link rel="alternate" type="text/plain" href="/llms.txt" title="llms.txt">
 <link rel="preload" href="/assets/fonts/figtree-var.woff2" as="font" type="font/woff2" crossorigin>
 <style>{inline_css()}</style>
-<script>(function(){{var d=document.documentElement;d.classList.add("js");try{{var t=localStorage.getItem("theme");if(t)d.setAttribute("data-theme",t)}}catch(e){{}}}})();</script>
+<script>try{{var t=localStorage.getItem("theme");if(t)document.documentElement.setAttribute("data-theme",t)}}catch(e){{}}</script>
 <script src="/assets/js/site.js" defer></script>
 {extra}{jsonld({"@context": "https://schema.org", "@graph": graph})}
 </head>
@@ -234,7 +234,7 @@ def nav(current=""):
     {link("/#lab", "Lab", "lab")}
     {link("/contact/", "Contact", "contact")}
   </nav>
-  <button class="theme-toggle" type="button" aria-label="Toggle dark mode">{icon("moon", "i-moon")}{icon("sun", "i-sun")}</button>
+  <button class="theme-toggle" type="button" aria-label="Dark mode" aria-pressed="false">{icon("moon", "i-moon")}{icon("sun", "i-sun")}</button>
 </header>
 """
 
@@ -313,11 +313,10 @@ def render_home(apps):
 </a>"""
 
     bento = "\n".join([
-        cell(live["flowmoro"], f'<div class="cell-shots">{shot("flowmoro", 2)}{shot("flowmoro", 3)}</div>'),
-        cell(live["skywise"]),
-        cell(live["astrodefender"], dark=True),
-        cell(live["inboxhiiv"], f'<div class="cell-shots">{shot("inboxhiiv", 1)}</div>'),
-        cell(live["nookly"], f'<div class="cell-shots">{shot("nookly", 1)}</div>'),
+        cell(live["flowmoro"], f'<div class="cell-shots">{shot("flowmoro", 0)}{shot("flowmoro", 2)}</div>'),
+        cell(live["skywise"], f'<div class="peek" aria-hidden="true">{shot("skywise", 0)}</div>'),
+        cell(live["astrodefender"], f'<div class="peek" aria-hidden="true">{shot("astrodefender", 2)}</div>', dark=True),
+        cell(live["inboxhiiv"], f'<div class="cell-shots">{shot("inboxhiiv", 0)}</div>'),
     ])
 
     shelf = "\n".join(f"""<a class="shelf-row reveal" style="--i:{i}" href="/apps/{a['id']}/">
@@ -344,7 +343,7 @@ def render_home(apps):
     hero_art = f"""<div class="hero-art" aria-hidden="true">
   <div class="phone p1">{shot("skywise", 1)}</div>
   <div class="phone p2">{shot("astrodefender", 0)}</div>
-  <div class="phone p0">{shot("flowmoro", 0, eager=True)}</div>
+  <div class="phone p0">{shot("flowmoro", 1, eager=True)}</div>
 </div>"""
 
     body = f"""<body>
@@ -409,7 +408,6 @@ def render_home(apps):
   <div class="contact-band glass reveal">
     <h2 class="h2">Questions, feedback, or press?</h2>
     <a class="mail" href="mailto:{EMAIL}">{EMAIL}</a>
-    <p class="meta">Email the studio. A person reads every message.</p>
   </div>
 </section>
 </main>
@@ -588,7 +586,7 @@ def render_contact(apps):
   <section class="page-hero">
     <h1>Contact</h1>
     <p class="lead">For app support, feedback, or press, email the studio. Include the app name if it is about a specific product.</p>
-    <div class="btns"><a class="btn btn-accent" href="mailto:{EMAIL}">{icon("envelope-simple")}{EMAIL}</a></div>
+    <div class="btns"><a class="btn btn-primary" href="mailto:{EMAIL}">{icon("envelope-simple")}{EMAIL}</a></div>
   </section>
   <section class="section" style="padding-top:var(--s-6)" aria-labelledby="s-title">
     <h2 class="h3" id="s-title" style="margin-bottom:var(--s-4)">Support for a specific app</h2>

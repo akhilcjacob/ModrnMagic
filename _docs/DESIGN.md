@@ -116,4 +116,4 @@ Only `transform` and `opacity` animate. No scroll listeners, no loops, no parall
 
 ## Data
 
-Products live in `apps/<id>/app.json`, listed in order by `apps/index.json`. `scripts/render.py` turns them into the home page, product pages, sitemap, llms.txt, and JSON-LD. Edit the JSON, run the script, commit the output. See `docs/APPS.md`.
+Products live in `apps/<id>/app.json`, listed in order by `apps/index.json`. `_scripts/render.py` turns them into the home page, product pages, sitemap, llms.txt, and JSON-LD. Edit the JSON, run the script, commit the output. See `_docs/APPS.md`.

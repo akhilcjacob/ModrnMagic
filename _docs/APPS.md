@@ -4,20 +4,20 @@ Every product on modrnmagic.app comes from one file: `apps/<id>/app.json`. `apps
 
 ## Add or change a product
 
-1. Create or edit `apps/<id>/app.json` (copy an existing one; `docs/app-template.json` is a blank).
+1. Create or edit `apps/<id>/app.json` (copy an existing one; `_docs/app-template.json` is a blank).
 2. Put source screenshots in `apps/<id>/screenshots/` or `marketing/` and list them under `screenshots` with a `from` path.
 3. Run:
 
 ```
-python3 scripts/images.py   # web-sized WebP copies in apps/<id>/media/ (needs Pillow)
-python3 scripts/render.py   # pages, sitemap.xml, llms.txt, JSON-LD
-python3 scripts/og.py       # 1200x630 share cards in assets/og/ (needs Chrome)
+python3 _scripts/images.py   # web-sized WebP copies in apps/<id>/media/ (needs Pillow)
+python3 _scripts/render.py   # pages, sitemap.xml, llms.txt, JSON-LD
+python3 _scripts/og.py       # 1200x630 share cards in assets/og/ (needs Chrome)
 python3 -m http.server      # preview at http://localhost:8000
 ```
 
-4. Commit the JSON and the generated files together. `python3 scripts/render.py --check` fails if the committed HTML is stale.
+4. Commit the JSON and the generated files together. `python3 _scripts/render.py --check` fails if the committed HTML is stale.
 
-GitHub Pages serves the committed files as they are. There is no build step on deploy.
+GitHub Pages serves the committed files as they are. Its default Jekyll pass copies plain HTML untouched and skips `_`-prefixed folders, so `_docs/` and `_scripts/` are not published. Do not add a `.nojekyll` file unless those folders move out of the repo root.
 
 ## Fields
 

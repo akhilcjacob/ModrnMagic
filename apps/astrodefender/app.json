@@ -4,8 +4,8 @@
   "storeName": "Astro Defender: Cosmic Crusade",
   "status": "live",
   "kind": "game",
-  "oneliner": "A low-effort arcade shooter. Rotate, aim, and defend Earth.",
-  "summary": "Astro Defender is a casual space shooter for iPhone and Android. You sit at the center of the screen, rotate, and shoot down incoming enemies before they reach Earth, earning upgrades as you go.",
+  "oneliner": "A fast arcade space shooter. Rotate, aim, and defend Earth.",
+  "summary": "Astro Defender is an arcade space shooter for iPhone and Android. You hold the center of the screen, rotate, and shoot down incoming enemies before they reach Earth, earning upgrades as you go.",
   "description": [
     "Astro Defender is the kind of game you open for two minutes and play for twenty. Earth sits in the middle of the screen and enemies close in. You rotate your ship and fire.",
     "As you play you earn upgrades for your ship. The game plays fully offline, so it works on a plane or on the subway.",
@@ -28,7 +28,7 @@
   "faq": [
     {
       "q": "What is Astro Defender?",
-      "a": "Astro Defender: Cosmic Crusade is a casual arcade space shooter for iPhone and Android by Modrn Magic. You rotate around Earth and shoot down incoming enemies."
+      "a": "Astro Defender: Cosmic Crusade is an arcade space shooter for iPhone and Android by Modrn Magic. You rotate around Earth and shoot down incoming enemies."
     },
     {
       "q": "Is Astro Defender free?",

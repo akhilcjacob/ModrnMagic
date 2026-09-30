@@ -1,49 +1,50 @@
 {
   "id": "nookly",
-  "name": "Nookly",
-  "status": "live",
+  "name": "Nookly OS",
+  "status": "lab",
   "kind": "web",
-  "oneliner": "Home maintenance, handled.",
-  "summary": "Nookly books home services without the research. Pick the service, a date, and a time, and a vetted professional takes care of it. Nookly is live in San Diego.",
+  "oneliner": "A back office for trade businesses that you run by talking to your own AI.",
+  "summary": "Nookly OS is a CRM and back office for trade businesses, such as leads, estimates, jobs, scheduling, invoices, and follow-ups. The owner drives it from their own Claude or Codex session through an MCP server. It is in development.",
   "description": [
-    "Keeping a home in shape means a steady stream of small jobs: cleaning, repairs, handyman work. Nookly makes each one a booking instead of a research project.",
-    "Choose the service you need, pick a date and time, and Nookly matches the job with a vetted professional. You can request an estimate before you book.",
-    "Nookly is live in San Diego at nookly.co."
+    "Nookly OS is being built as the operating system for a trade business. It notices what needs doing, does it, and follows up, so the operator stays on the tools while the software runs the back office.",
+    "It covers the day-to-day records of a service business: leads and customers, estimates from the business's own price book, jobs and the schedule, invoices, recurring plans, follow-ups, and a daily brief of what needs attention.",
+    "Instead of building an assistant into the app, Nookly OS exposes the same tools the web app uses through an MCP server. The owner connects their own Claude or Codex session and runs the business by talking to it. Nookly never runs an AI model itself, and deterministic code owns every price and total, so the AI proposes and the operator approves."
   ],
   "features": [
     {
-      "title": "Book in a few taps",
-      "body": "Pick a service, a date, and a time. No calling around."
+      "title": "Bring your own AI",
+      "body": "Connect your own Claude or Codex session to your business through an MCP endpoint and an access token."
     },
     {
-      "title": "Vetted pros",
-      "body": "Jobs go to reliable, vetted professionals."
+      "title": "The whole back office",
+      "body": "Leads, customers, estimates, jobs, schedule, invoices, recurring plans, and follow-ups in one place."
     },
     {
-      "title": "Estimates first",
-      "body": "Request an estimate before you commit to a booking."
+      "title": "Numbers you control",
+      "body": "Estimates come from your own price book. The AI drafts; your prices and totals are computed, not guessed."
     }
   ],
   "faq": [
     {
-      "q": "What is Nookly?",
-      "a": "Nookly is a home services booking service from Modrn Magic. You pick a service, a date, and a time, and a vetted professional handles the job."
+      "q": "What is Nookly OS?",
+      "a": "Nookly OS is a CRM and back office for trade businesses from Modrn Magic. The owner runs it by talking to their own AI assistant through an MCP server."
     },
     {
-      "q": "Where is Nookly available?",
-      "a": "Nookly is live in San Diego, California."
+      "q": "Does Nookly OS include its own AI?",
+      "a": "No. Nookly OS never runs an AI model. You connect your own Claude or Codex session, which calls Nookly's tools."
     }
   ],
-  "category": "LifestyleApplication",
-  "genre": "Home services",
+  "category": "BusinessApplication",
+  "genre": "Business",
   "stack": [
     "Next.js",
-    "Firebase"
+    "Firebase",
+    "Model Context Protocol"
   ],
   "dates": {
     "started": null,
     "shipped": null,
-    "updated": null,
+    "updated": "2026-09",
     "ended": null
   },
   "platforms": [
@@ -52,35 +53,24 @@
   "links": {
     "appStore": null,
     "googlePlay": null,
-    "web": "https://nookly.co",
+    "web": null,
     "writing": null,
     "source": null
   },
   "price": null,
   "wasOn": [],
-  "icon": "icon.png",
-  "color": "rgb(173,216,230)",
+  "icon": "icon-os.png",
+  "color": "#237a50",
   "screenshots": [
     {
-      "from": "screenshots/home-desktop.png",
-      "alt": "Nookly home page with the headline Your Home Maintenance, Handled",
+      "from": "screenshots/os-connect-ai.png",
+      "alt": "Nookly OS Connect your AI screen with an MCP endpoint, access tokens, and setup commands for Claude Code and Codex",
       "w": 1280,
       "h": 800,
       "shape": "wide",
-      "src": "media/screenshots-home-desktop.webp"
-    },
-    {
-      "from": "screenshots/home-mobile.png",
-      "alt": "Nookly home page on a phone with a service search box",
-      "w": 390,
-      "h": 844,
-      "shape": "phone",
-      "src": "media/screenshots-home-mobile.webp"
+      "src": "media/screenshots-os-connect-ai.webp"
     }
   ],
   "lessons": [],
-  "legal": {
-    "privacy": "privacy/",
-    "terms": "tos/"
-  }
+  "legal": {}
 }
