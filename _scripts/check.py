@@ -9,7 +9,8 @@ publish (everything outside `_`-prefixed and hidden folders):
 - every href, src, srcset, and CSS url() that points inside the site resolves
   to a file, including absolute https://modrnmagic.app/ URLs in meta tags and
   JSON-LD
-- every relative path in product JSON (app.json, flowmoro/home) resolves
+- every relative path in product JSON (app.json, flowmoro/home) resolves;
+  app.json `icon` and screenshot `from` point at originals in _src/apps/<id>/
 - every sitemap.xml <loc> maps to a file
 - nothing still mentions the removed "00_Future App Template" folder
 """
@@ -82,21 +83,30 @@ class Refs(HTMLParser):
                 self.refs += [part.split()[0] for part in v.split(",") if part.strip()]
 
 
-def json_paths(data, key=None):
+SOURCE_KEYS = ("icon", "from")   # app.json keys that name originals in _src/apps/<id>/
+
+
+def json_paths(data, key=None, skip=()):
     """Yield relative file paths in product JSON: strings with an asset extension or ending in /."""
     if isinstance(data, dict):
         for k, v in data.items():
-            yield from json_paths(v, k)
+            if k not in skip:
+                yield from json_paths(v, k, skip)
     elif isinstance(data, list):
         for v in data:
-            yield from json_paths(v, key)
+            yield from json_paths(v, key, skip)
     elif isinstance(data, str) and "://" not in data and not data.startswith(SKIP_SCHEMES):
         is_file = os.path.splitext(data)[1].lower() in ASSET_EXT
-        if "/" in data and (is_file or data.endswith("/")) and " " not in data:
+        if ("/" in data or key == "icon") and (is_file or data.endswith("/")) and " " not in data:
             yield data
-        elif is_file and key in ("icon", "screenshots"):
-            # flowmoro/home/script.js loads bare screenshot names from screenshots/
-            yield f"screenshots/{data}" if key == "screenshots" else data
+
+
+def source_paths(data):
+    """Originals named by app.json: the icon and each screenshot's `from`."""
+    if data.get("icon"):
+        yield data["icon"]
+    for shot in data.get("screenshots", []):
+        yield shot["from"]
 
 
 def check():
@@ -127,9 +137,18 @@ def check():
             refs += MD_LINK.findall(text)
         elif ext == ".json" and f.startswith(os.path.join(ROOT, "apps") + os.sep):
             try:
-                refs += list(json_paths(json.loads(text)))
+                data = json.loads(text)
             except ValueError as err:
                 errors.append(f"{os.path.relpath(f, ROOT)}: bad JSON ({err})")
+                data = None
+            if os.path.basename(f) == "app.json" and isinstance(data, dict):
+                refs += list(json_paths(data, skip=SOURCE_KEYS))
+                src = os.path.join(ROOT, "_src", os.path.relpath(os.path.dirname(f), ROOT))
+                for rel in source_paths(data):
+                    if not os.path.isfile(os.path.join(src, rel)):
+                        errors.append(f"{os.path.relpath(f, ROOT)}: missing original _src/{os.path.relpath(os.path.join(src, rel), os.path.join(ROOT, '_src'))}")
+            elif data is not None:
+                refs += list(json_paths(data))
         for ref in dict.fromkeys(refs):
             need(target(ref, f), f, ref)
 

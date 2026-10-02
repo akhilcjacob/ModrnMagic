@@ -2,7 +2,8 @@
 """Make web-sized copies of product images and the site icons.
 
 Reads each apps/<id>/app.json and writes apps/<id>/media/*.webp from the
-`from` path of every screenshot, plus a small icon. Also writes favicons and
+`from` path of every screenshot, plus a small icon. Those originals live in
+_src/apps/<id>/, outside the published tree, so only the WebP copies ship. Also writes favicons and
 the nav mark from favicon.ico. Needs Pillow (with WebP support). Only rerun
 when source images change; the output is committed.
 
@@ -33,14 +34,15 @@ def main():
     ids = json.load(open(os.path.join(ROOT, "apps/index.json")))
     for app_id in ids:
         folder = os.path.join(ROOT, "apps", app_id)
+        src = os.path.join(ROOT, "_src/apps", app_id)
         path = os.path.join(folder, "app.json")
         app = json.load(open(path))
         for shot in app.get("screenshots", []):
-            im = Image.open(os.path.join(folder, shot["from"])).convert("RGB")
+            im = Image.open(os.path.join(src, shot["from"])).convert("RGB")
             width = WIDE_W if shot.get("shape") == "wide" else PHONE_W
             shot["w"], shot["h"] = save_webp(im, os.path.join(folder, shot["src"]), width)
         if app.get("icon"):
-            icon = Image.open(os.path.join(folder, app["icon"])).convert("RGBA")
+            icon = Image.open(os.path.join(src, app["icon"])).convert("RGBA")
             for size in (96, 256):
                 out = os.path.join(folder, "media", f"icon-{size}.webp")
                 icon.resize((size, size), Image.LANCZOS).save(out, "WEBP", quality=88, method=6)

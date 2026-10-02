@@ -5,7 +5,7 @@ Every product on modrnmagic.app comes from one file: `apps/<id>/app.json`. `apps
 ## Add or change a product
 
 1. Create or edit `apps/<id>/app.json` (copy an existing one; `_docs/app-template.json` is a blank).
-2. Put source screenshots in `apps/<id>/screenshots/` or `marketing/` and list them under `screenshots` with a `from` path.
+2. Put the source icon and screenshots in `_src/apps/<id>/` (not published) and list them under `icon` and `screenshots[].from`, relative to that folder. Only the WebP copies in `apps/<id>/media/` ship.
 3. Run:
 
 ```
