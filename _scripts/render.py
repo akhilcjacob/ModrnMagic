@@ -2,7 +2,8 @@
 """Render the static site from apps/index.json and apps/<id>/app.json.
 
 Writes: index.html, apps/<id>/index.html, contact/index.html, mvp.html,
-404.html, sitemap.xml, llms.txt. Standard library only. The output is
+404.html, sitemap.xml, llms.txt, and the legal pages apps/<id>/privacy/,
+apps/<id>/tos/, and apps/<id>/privacy/delete-account/ from their Markdown. Standard library only. The output is
 committed, so GitHub Pages serves plain files with no build step.
 
     python3 _scripts/render.py          # write files
@@ -642,6 +643,146 @@ def render_mvp():
 """
 
 
+# ---------------------------------------------------------------- legal pages
+
+# Store listings link to these URLs. The Markdown next to each page is the
+# source and stays published; the page is plain HTML so it reads with
+# JavaScript off and never depends on a CDN.
+LEGAL = {"privacy": ("privacy-policy.md", "Privacy policy"), "tos": ("terms_of_service.md", "Terms of service")}
+SUPPORT = "support@modrnmagic.app"   # the address the legal text itself names
+
+
+def md_inline(text):
+    import re
+    out = e(text, quote=False)
+    out = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", out)
+    out = re.sub(r"\[([^\]]+)\]\((https?://[^)\s]+)\)", r'<a href="\2" rel="noopener">\1</a>', out)
+    out = re.sub(r"(?<![\w.@/])([\w.+-]+@[\w-]+\.[\w.]+\w)", r'<a href="mailto:\1">\1</a>', out)
+    return out
+
+
+def md_to_html(md, title_words):
+    """The small Markdown subset the legal files use: headings, bold-only
+    lines used as headings, bullet lists, links, bold, and hard breaks.
+    The first line is dropped when it is the document title."""
+    import re
+    md = re.sub(r"(?m)^(#{1,6} .*)$", r"\n\1\n", md)   # a heading is its own block
+    blocks = [b.strip("\n") for b in re.split(r"\n\s*\n", md.strip()) if b.strip()]
+    if blocks:
+        first = re.sub(r"[#*\s]+", " ", blocks[0].split("\n")[0]).strip().lower()
+        if any(w in first for w in title_words) and len(first) < 60 and "\n" not in blocks[0].strip():
+            blocks = blocks[1:]
+    html_out = []
+    used = set()
+
+    def heading(level, text):
+        slug = re.sub(r"[^a-z0-9]+", "-", re.sub(r"\*\*", "", text).lower()).strip("-") or "section"
+        base, n = slug, 2
+        while slug in used:
+            slug, n = f"{base}-{n}", n + 1
+        used.add(slug)
+        return f'<h{level} id="{slug}">{md_inline(text)}</h{level}>'
+
+    for b in blocks:
+        lines = b.split("\n")
+        m = re.match(r"^(#{1,6})\s+(.*)$", lines[0])
+        if m and len(lines) == 1:
+            html_out.append(heading(3 if len(m.group(1)) >= 3 else 2, m.group(2).strip()))
+        elif re.fullmatch(r"\*\*[^*]+\*\*\s*", b):
+            html_out.append(heading(2, b.strip()[2:-2].strip()))
+        elif all(re.match(r"^\s*[*+-]\s+", ln) for ln in lines):
+            items = "".join("<li>" + md_inline(re.sub(r"^\s*[*+-]\s+", "", ln)) + "</li>" for ln in lines)
+            html_out.append(f"<ul>{items}</ul>")
+        else:
+            parts = [md_inline(ln.rstrip()) + ("<br>" if ln.endswith("  ") and i < len(lines) - 1 else "")
+                     for i, ln in enumerate(lines)]
+            html_out.append("<p>" + "\n".join(parts) + "</p>")
+    return "\n".join(html_out)
+
+
+def legal_shell(app_name, aid, path, title, description, crumb, inner, apps, side=""):
+    graph = [{"@type": "WebPage", "@id": SITE + path, "url": SITE + path, "name": title,
+              "isPartOf": {"@id": SITE_ID}, "inLanguage": "en-US",
+              "breadcrumb": {"@type": "BreadcrumbList", "itemListElement": [
+                  {"@type": "ListItem", "position": 1, "name": "Modrn Magic", "item": f"{SITE}/"},
+                  {"@type": "ListItem", "position": 2, "name": app_name, "item": f"{SITE}/apps/{aid}/"},
+                  {"@type": "ListItem", "position": 3, "name": crumb, "item": SITE + path}]}},
+              org_node()]
+    body = f"""<body>
+{nav()}
+<main id="main" class="wrap">
+  <nav class="crumbs" aria-label="Breadcrumb"><a href="/">Modrn Magic</a> / <a href="/apps/{aid}/">{e(app_name)}</a> / <span aria-current="page">{e(crumb)}</span></nav>
+  <div class="legal">
+{inner}
+    <aside class="legal-side" aria-label="About this page">
+      <div class="facts glass">
+        <p class="meta">Questions about this page</p>
+        <p><a href="mailto:{SUPPORT}?subject={e(app_name)}">{SUPPORT}</a></p>
+{side}
+      </div>
+    </aside>
+  </div>
+</main>
+{footer(apps)}</body>
+</html>
+"""
+    og = f"/assets/og/{aid}.jpg" if os.path.exists(os.path.join(ROOT, f"assets/og/{aid}.jpg")) else "/assets/og/home.jpg"
+    return head(title, description, path, og, graph) + body
+
+
+def render_legal(aid, apps):
+    """Pages for every apps/<id>/privacy/ and apps/<id>/tos/ folder with a Markdown source."""
+    meta = json.load(open(os.path.join(ROOT, "apps", aid, "app.json")))
+    name = meta["name"]
+    files = {}
+    present = [k for k, (src, _) in LEGAL.items() if os.path.exists(os.path.join(ROOT, "apps", aid, k, src))]
+    for key in present:
+        src, label = LEGAL[key]
+        md = open(os.path.join(ROOT, "apps", aid, key, src), encoding="utf-8").read()
+        path = f"/apps/{aid}/{key}/"
+        words = ("privacy",) if key == "privacy" else ("terms",)
+        if md.strip():
+            doc = md_to_html(md, words)
+        else:
+            doc = (f'<p>The {label.lower()} for {e(name)} is not published on this page yet. '
+                   f'For a copy, or with any question about it, email <a href="mailto:{SUPPORT}?subject={e(name)}%20{e(label)}">{SUPPORT}</a>.</p>')
+        inner = f"""    <article class="legal-doc">
+      <header class="page-hero"><h1>{e(name)} {label.lower()}</h1><p class="lead">{e(name)} is made by Modrn Magic LLC.</p></header>
+      <div class="legal-body glass">
+{doc}
+      </div>
+    </article>"""
+        others = [f'<li><a href="/apps/{aid}/{k}/">{LEGAL[k][1]}</a></li>' for k in present if k != key]
+        if key == "privacy" and os.path.exists(os.path.join(ROOT, "apps", aid, "privacy/delete-account/index.html")):
+            others.append(f'<li><a href="/apps/{aid}/privacy/delete-account/">Delete your account</a></li>')
+        others.append(f'<li><a href="/apps/{aid}/">About {e(name)}</a></li>')
+        side = f'        <p class="meta">Related</p>\n        <ul class="legal-links">{"".join(others)}</ul>'
+        files[f"apps/{aid}/{key}/index.html"] = legal_shell(
+            name, aid, path, f"{name} {label.lower()} | Modrn Magic",
+            f"The {label.lower()} for {name}, an app by Modrn Magic.", label, inner, apps, side)
+    if os.path.exists(os.path.join(ROOT, "apps", aid, "privacy/delete-account/index.html")):
+        path = f"/apps/{aid}/privacy/delete-account/"
+        subject = "Account%20Deletion%20Request"
+        inner = f"""    <article class="legal-doc">
+      <header class="page-hero"><h1>Delete your {e(name)} account</h1>
+        <p class="lead">To delete your account, email the support team with the request.</p>
+        <div class="btns"><a class="btn btn-primary" href="mailto:{SUPPORT}?subject={subject}">{icon("envelope-simple")}Request account deletion</a></div>
+      </header>
+    </article>"""
+        side = (f'        <p class="meta">Related</p>\n        <ul class="legal-links"><li><a href="/apps/{aid}/privacy/">Privacy policy</a></li>'
+                f'<li><a href="/apps/{aid}/">About {e(name)}</a></li></ul>')
+        files[f"apps/{aid}/privacy/delete-account/index.html"] = legal_shell(
+            name, aid, path, f"Delete your {name} account | Modrn Magic",
+            f"How to delete your {name} account and its data.", "Delete account", inner, apps, side)
+    return files
+
+
+def legal_ids():
+    apps_dir = os.path.join(ROOT, "apps")
+    return sorted(d for d in os.listdir(apps_dir)
+                  if any(os.path.exists(os.path.join(apps_dir, d, k, src)) for k, (src, _) in LEGAL.items()))
+
+
 # ---------------------------------------------------------------- sitemap, llms.txt
 
 def git_date(rel):
@@ -737,6 +878,9 @@ def outputs():
     for name, text in files.items():
         if "\u2014" in text or "\u2013" in text:
             raise SystemExit(f"{name}: contains an em or en dash")
+    # Legal text is reproduced verbatim, dashes included.
+    for aid in legal_ids():
+        files.update(render_legal(aid, apps))
     return files
 
 
