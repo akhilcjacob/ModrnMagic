@@ -58,6 +58,12 @@ VERBOSE = "-v" in sys.argv
 results = []   # (ok, name, detail)
 
 
+def settle(page, timeout=5000):
+    """Wait until no animation or view transition is running (after two frames, so one just started counts)."""
+    page.evaluate("() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))")
+    page.wait_for_function("document.getAnimations().every(a => a.playState !== 'running')", timeout=timeout, polling="raf")
+
+
 def record(ok, name, detail=""):
     results.append((ok, name, detail))
     if VERBOSE or not ok:
@@ -233,6 +239,37 @@ def filter_tests(browser, base, seen, tested):
     p4.locator('.fchip[data-filter="archived"]').click()
     p4.wait_for_timeout(450)
     record(p4.evaluate("window.__vt") == 1, "/work/ filter change runs one view transition")
+    # Two fast clicks: the aborted first transition must not drop the faster
+    # timing (filter-vt) while the second still runs (review item 11).
+    p4.goto(base + "/work/")
+    settle(p4)
+    # Sample every frame: any frame with view-transition animations running but no filter-vt is the bug.
+    p4.evaluate("""() => { window.__frames = []; const t0 = performance.now(); (function tick() {
+        const vt = document.getAnimations().some(a => (a.effect.pseudoElement || '').startsWith('::view-transition'));
+        window.__frames.push([vt, document.documentElement.classList.contains('filter-vt')]);
+        if (performance.now() - t0 < 1500) requestAnimationFrame(tick); })(); }""")
+    p4.evaluate("""() => { document.querySelector('.fchip[data-filter="live"]').click();
+        setTimeout(() => document.querySelector('.fchip[data-filter="experiments"]').click(), 60); }""")
+    p4.wait_for_function("window.__frames.filter(f => f[0]).length > 0")
+    settle(p4)
+    p4.wait_for_timeout(1600)   # let the sampler finish its window
+    frames = p4.evaluate("window.__frames")
+    vt_frames = [f for f in frames if f[0]]
+    dropped = sum(1 for f in vt_frames if not f[1])
+    end = p4.evaluate("[document.documentElement.classList.contains('filter-vt'), location.hash]")
+    record(vt_frames and not dropped and end == [False, "#experiments"],
+           "/work/ two fast filter clicks keep the faster timing until the last transition ends",
+           f"{len(vt_frames)} transition frames, {dropped} without filter-vt, end {end}")
+    # Space on a chip filters like Enter and never scrolls the page (review item 12).
+    p4.set_viewport_size({"width": 390, "height": 600})
+    p4.goto(base + "/work/")
+    p4.evaluate("scrollTo(0, 120)")
+    y0 = p4.evaluate("scrollY")
+    p4.locator('.fchip[data-filter="archived"]').focus()
+    p4.keyboard.press(" ")
+    settle(p4)
+    got = p4.evaluate("[location.hash, scrollY, document.activeElement.dataset.filter]")
+    record(got == ["#archived", y0, "archived"], "/work/ Space on a filter chip filters, keeps focus, and does not scroll", str(got))
     p4.close()
 
 

@@ -115,6 +115,7 @@
   if (filters) {
     var chipsEls = filters.querySelectorAll(".fchip");
     var live = document.getElementById("work-live");
+    var running = 0;   // filter view transitions in flight
     var syncFilters = function (announce) {
       var id = location.hash.slice(1);
       if (!document.querySelector('.filters [data-filter="' + id + '"]')) id = "all";
@@ -138,12 +139,23 @@
         chip.focus({ preventScroll: true });
       }
       if (location.hash !== chip.hash && document.startViewTransition && !still.matches) {
+        // A second click aborts the running transition, whose done() still
+        // fires: count them, so the faster timing holds until the last ends.
+        running++;
         root.classList.add("filter-vt");
         document.startViewTransition(go).finished.then(done, done);
       } else {
         go();
       }
-      function done() { root.classList.remove("filter-vt"); }
+      function done() { if (--running === 0) root.classList.remove("filter-vt"); }
+    });
+    // Chips are links (so they work without JavaScript) but read as a
+    // segmented control: Space selects, like Enter, instead of scrolling.
+    filters.addEventListener("keydown", function (ev) {
+      var chip = ev.target.closest(".fchip");
+      if (!chip || (ev.key !== " " && ev.key !== "Spacebar")) return;
+      ev.preventDefault();
+      chip.click();
     });
     addEventListener("hashchange", function () { syncFilters(true); });
     if (document.startViewTransition) root.classList.add("vt-filters");

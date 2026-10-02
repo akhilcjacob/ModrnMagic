@@ -727,6 +727,9 @@ dl, dd { margin: 0; }
   /* A filter change is a small move: every group finishes within --d-base, so the page is interactive again quickly. */
   :root.filter-vt::view-transition-group(*), :root.filter-vt::view-transition-old(root), :root.filter-vt::view-transition-new(root) { animation-duration: var(--d-base); }
   ::view-transition-old(*.work-item) { animation-duration: var(--d-fast); }
+  /* The active chip is its own shared element, so the pill slides from chip to chip instead of two half pills cross-fading. */
+  .filters .fchip[aria-current="true"] { view-transition-name: fchip-active; }
+  ::view-transition-old(fchip-active), ::view-transition-new(fchip-active) { height: 100%; }   /* chips differ in width, never in height */
 
   .js .reveal { opacity: 0; transform: translateY(12px); transition: opacity var(--d-slow) var(--ease-out), transform var(--d-slow) var(--ease-out); transition-delay: calc(var(--i, 0) * var(--d-stagger)); }
   .js .reveal.in { opacity: 1; transform: none; }
