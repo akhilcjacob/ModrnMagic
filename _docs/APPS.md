@@ -26,6 +26,15 @@ python3 _scripts/check.py serve   # serve the repo at http://localhost:8000 (POR
 python3 _scripts/check.py         # exit 1 if any internal link, asset, or sitemap URL is missing
 ```
 
+Click tests (dev only, need Playwright for Python with Chromium: `pip install playwright && playwright install chromium`):
+
+```
+python3 _tests/run.py      # click every link, button, toggle, FAQ, and rail control on every page; exit 1 on failure
+python3 _tests/run.py -v   # same, printing every passing check
+```
+
+It also fails on any request off the local server, any console error, sideways scroll at 320px, and any legal URL that stops answering bare, with a slash, as `/index.html`, or as its `.md` source. It ends with an interaction coverage line.
+
 The check reads every published HTML, CSS, JS, JSON, XML, TXT, and MD file (anything outside `_` and dot folders). It resolves each internal `href`, `src`, `srcset`, CSS `url()`, `https://modrnmagic.app/` URL, and relative path in `apps/**/*.json`, confirms each `sitemap.xml` URL maps to a file, and fails on any mention of the removed `00_Future App Template` folder. Run it before every push.
 
 GitHub Pages serves the committed files as they are. Its default Jekyll pass copies plain HTML untouched and skips `_`-prefixed folders, so `_docs/` and `_scripts/` are not published. Do not add a `.nojekyll` file unless those folders move out of the repo root.
@@ -60,6 +69,8 @@ Rules: no invented metrics, ratings, or testimonials. Archived apps never link t
 Store listings and AdMob point at these. Do not move or delete them:
 
 - `apps/<id>/privacy/` and `apps/<id>/tos/` for every app that was on a store, plus `apps/skywise/privacy/delete-account/`
+
+Legal pages are generated: edit `apps/<id>/privacy/privacy-policy.md` or `apps/<id>/tos/terms_of_service.md` and run `render.py`. The text is reproduced verbatim inside the site chrome, and the `.md` files stay published at their paths. An empty Markdown file renders a page that says the policy is not published yet and gives the support address.
 - `app-ads.txt`
-- `apps/flowmoro/home/`
+- `apps/flowmoro/home/` (rendered from `home/descriptions.json`; its `icon.png` and `screenshots/*.png` stay at their old paths)
 - `CNAME`

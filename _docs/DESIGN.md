@@ -99,11 +99,44 @@ box-shadow: inset 0 1px 0 var(--highlight), var(--shadow-1);
 What moves and why:
 
 - Hover lift on cards (`translateY(-2px)`) and press (`scale(.98)`): feedback.
+- Link hover: color and underline color ease over `--d-fast`, so the pointer reads as a response, not a flicker.
+- Theme switch: the whole page cross-fades over `--d-slow` through a same-document view transition, and the new sun or moon icon pops in with `--ease-spring`. Browsers without the View Transitions API switch instantly.
+- FAQ: the answer fades and settles 6px over `--d-base` on open and lifts out over `--d-fast` on close (`site.js` holds the close until the animation ends). The box height snaps on purpose: animating height is layout work, and the eye follows the text, not the box.
+- Rail buttons: lift on hover, press to `scale(.94)`, fade to 40% when there is nowhere to go. The rail itself uses the browser's smooth scroll, whose curve the browser owns.
+- Skip link: slides down from above the viewport with `--ease-spring` when focused.
 - Reveal on scroll (opacity plus 12px rise, 50ms stagger, once): shows the order to read a section.
 - Cross-page view transitions: the app icon morphs from the home card into the product page hero (`view-transition-name: icon-<id>`), so the user sees where they went. Progressive; browsers without the API just navigate.
 - Hero screenshots settle in once on load.
 
-Only `transform` and `opacity` animate. No scroll listeners, no loops, no parallax. `prefers-reduced-motion: reduce` turns all of it off, including view transitions.
+Only `transform` and `opacity` animate, plus hover `color`, `background`, and `box-shadow` on controls (see the audit). No scroll-driven animation, no loops, no parallax; the rail's one passive scroll listener only updates its position readout. `prefers-reduced-motion: reduce` turns all of it off, including view transitions and the theme cross-fade.
+
+Written exceptions: the focus ring appears instantly (focus must never lag), the rail position number changes instantly (it is a readout), and the hero settle uses 900ms with 120 and 220ms delays because it plays once per load and is meant to be slower than any interaction.
+
+### Motion audit
+
+Every state change on the site, checked 2026-10-02 on `site/studio-index`.
+
+| State change | Motion | Status |
+|---|---|---|
+| Link hover (body, footer, crumbs, legal) | color, underline color, `--d-fast` | Done |
+| Nav link, shelf row, "more" link, founder link hover | background and color, `--d-fast` | Done, see open item 1 |
+| Button and bento cell hover and press | lift and spring press, `--d-base`; shadow `--d-base` | Done, see open item 1 |
+| Bento arrow and peek | transform, `--d-base` | Done |
+| Theme toggle hover and press | background, `scale(.94)`, `--d-fast` | Done |
+| Theme switch | page cross-fade `--d-slow`, icon pop `--d-base` | Done |
+| FAQ open and close | answer opacity and transform, `--d-base` in, `--d-fast` out | Done, height snaps by design |
+| Rail previous and next | button lift and press; smooth scroll | Done |
+| Section reveal | opacity and 12px rise, `--d-slow`, 50ms stagger | Done |
+| Hero settle | 900ms once per load | Written exception |
+| Page-to-page view transition | `--d-base` root fade, `--d-slow` icon morph | Done |
+| Skip link | slide, `--d-base` spring | Done |
+| Focus ring | instant | Written exception |
+
+Open items:
+
+1. `LANGUAGE.md` allows only transform and opacity, but hover backgrounds, colors, and button and cell shadows animate here, and its own token table lists "hover color" for `--d-fast`. Needs a studio call: allow color, background, and shadow on hover, or replace them with opacity layers.
+2. The 50ms reveal stagger and the hero settle timings are raw values, not tokens.
+3. No screen recording of the motion yet; timings were checked in code and by tests, not watched by a reviewer.
 
 ## Components
 
@@ -111,7 +144,9 @@ Only `transform` and `opacity` animate. No scroll listeners, no loops, no parall
 - Buttons: pill. Primary is `--accent` fill with `--accent-ink`. Secondary is glass with `--ink`. One label per intent per page ("Email the studio" is the only contact label).
 - Store buttons: pill buttons with the store name in text. Only rendered when a live store link exists. Archived apps show "Was on" as plain text.
 - Status: text label with color (`Live`, `In the lab`, `Archived`). No dots.
-- Screenshot rail: horizontal scroll-snap row, native scrolling, visible edge fade, keyboard focusable.
+- Screenshot rail: horizontal scroll-snap row, native scrolling, visible edge fade, keyboard focusable. Below it, previous and next pill buttons (44px) and an "n of N" readout; `site.js` shows them only when the rail overflows, so without JavaScript there are no dead buttons. Framed shots (images that already include the device) drop the card border and use a drop shadow. Built by `rail_html()` in `render.py`.
+- Legal page: breadcrumb, title, one glass card with the policy text (68ch), and a sticky side card with the support address and related legal links. Rendered from the Markdown next to the page.
+- Product site (`apps/<id>/home/`): the store-facing page for one product, from `home/descriptions.json`: hero with framed phones, a tour rail with captions, the product's features, and a closing band with the legal links.
 - Facts panel: definition list in a card, two columns on desktop.
 
 ## Data
