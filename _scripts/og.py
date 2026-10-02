@@ -86,7 +86,7 @@ h1 span {{ color: #5f6674; }}
         shoot(home, os.path.join(out_dir, "home.jpg"))
         print("ok home")
 
-    status = {"live": "", "lab": "In the lab", "archived": "Archived"}
+    status = {"live": "", "lab": "Experiment", "archived": "Archived"}
     for app in apps:
         if only and app["id"] not in only:
             continue

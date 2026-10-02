@@ -8,6 +8,10 @@ committed, so GitHub Pages serves plain files with no build step.
 
     python3 _scripts/render.py          # write files
     python3 _scripts/render.py --check  # exit 1 if committed output is stale
+    python3 _scripts/render.py --release  # the public build: no drafts anywhere
+
+The default build is the local one: drafts show on /work/ (marked) and on
+their own pages. The release build leaves them out entirely.
 
 Bump SITE_DATE when page content changes; it feeds sitemap lastmod.
 """
@@ -35,7 +39,12 @@ FOUNDER = {
         "https://www.linkedin.com/in/akhilcjacob",
     ],
 }
-STATUS_LABEL = {"live": "Live", "lab": "In the lab", "archived": "Archived"}
+STATUS_LABEL = {"live": "Live", "lab": "Experiment", "archived": "Archived"}
+GROUP_LABEL = {"live": "Live", "lab": "Experiments", "archived": "Archived"}   # /work/ filters
+GROUP_ID = {"live": "live", "lab": "experiments", "archived": "archived"}
+KIND_LABEL = {"app": "Apps", "game": "Games", "web": "Web", "tool": "Tools"}
+KIND_ONE = {"app": "App", "game": "Game", "web": "Web", "tool": "Tool"}
+RELEASE = "--release" in sys.argv
 PLATFORM_LABEL = {"ios": "iPhone", "android": "Android", "web": "Web"}
 OS_LABEL = {"ios": "iOS", "android": "Android", "web": "Web browser"}
 
@@ -60,7 +69,13 @@ def load_apps():
     problems = validate(ids, apps)
     if problems:
         raise SystemExit("app.json problems:\n  " + "\n  ".join(problems))
-    return [fill(a, a["name"]) for a in apps]
+    apps = [fill(a, a["name"]) for a in apps]
+    if RELEASE:   # the public build carries no unconfirmed text
+        for a in apps:
+            if a.get("outcome") and a["outcome"]["draft"]:
+                a["outcome"] = None
+            a["lessons"] = [x for x in a["lessons"] if not x["draft"]]
+    return apps
 
 
 def fill(value, name):
@@ -105,8 +120,8 @@ def validate(ids, apps):
             bad("`draft` must be true or false")
         if not isinstance(a.get("flagship"), bool):
             bad("`flagship` must be true or false")
-        elif a["flagship"] and (a.get("status") == "archived" or a.get("draft")):
-            bad("an archived or draft product cannot be the flagship")
+        elif a["flagship"] and a.get("status") == "archived":
+            bad("an archived product cannot be the flagship")
         o = a.get("outcome")
         if o is not None:
             if not isinstance(o, dict) or set(o) != {"label", "date", "line", "draft"}:
@@ -151,6 +166,34 @@ def validate(ids, apps):
 def listed(apps):
     """Products shown on shared pages. Drafts get their own page only."""
     return [a for a in apps if not a.get("draft")]
+
+
+def shown(apps):
+    """Products this build renders at all: drafts only in the local build."""
+    return [a for a in apps if not (RELEASE and a.get("draft"))]
+
+
+def flagship(apps):
+    """The one flagged product this build may show, or None."""
+    return next((a for a in shown(apps) if a.get("flagship")), None)
+
+
+def latest(app):
+    d = app["dates"]
+    return max(v for v in (d.get("updated"), d.get("ended"), d.get("shipped"), d.get("started"), "0000") if v)
+
+
+def numbers(apps):
+    """One line of counts, computed from the products given. Never typed."""
+    count = {k: sum(1 for a in apps if a["status"] == k) for k in STATUS_LABEL}
+    since = min((latest_start(a) for a in apps), default="")[:4]
+    parts = [f"{count['live']} live", f"{count['lab']} experiment{'s' if count['lab'] != 1 else ''}", f"{count['archived']} archived"]
+    return f"{len(apps)} products since {since}: " + ", ".join(parts[:-1]) + f", and {parts[-1]}."
+
+
+def latest_start(app):
+    d = app["dates"]
+    return min(v for v in (d.get("started"), d.get("shipped"), d.get("updated"), "9999") if v)
 
 
 def draft_mark():
@@ -335,7 +378,7 @@ def nav(current=""):
   <a class="brand" href="/" aria-label="Modrn Magic home"><img src="/assets/img/mark-96.webp" alt="" width="30" height="30"><span>Modrn Magic</span></a>
   <nav class="nav-links" aria-label="Main">
     {link("/#products", "Products", "products")}
-    {link("/#lab", "Lab", "lab")}
+    {link("/work/", "Work", "work")}
     {link("/contact/", "Contact", "contact")}
   </nav>
   <button class="theme-toggle" type="button" aria-label="Dark mode" aria-pressed="false">{icon("moon", "i-moon")}{icon("sun", "i-sun")}</button>
@@ -356,7 +399,7 @@ def footer(apps):
     </div>
     <div><h2>Products</h2><ul>{items}</ul></div>
     <div><h2>Studio</h2><ul>
-      <li><a href="/#lab">Lab and archive</a></li>
+      <li><a href="/work/">All work</a></li>
       <li><a href="/#about">About</a></li>
       <li><a href="/contact/">Contact</a></li>
       <li><a href="https://akhilcjacob.com/">Akhil's portfolio</a></li>
@@ -415,10 +458,59 @@ def status_html(app, outcome=None):
 
 # ---------------------------------------------------------------- home
 
+def flagship_html(app):
+    """Full-width panel for the flagged product: name, one-liner, latest update, one call to action."""
+    aid = app["id"]
+    links = app["links"]
+    if app["status"] == "live" and links.get("web"):
+        host = links["web"].split("//", 1)[1].rstrip("/")
+        cta = f'<a class="btn btn-primary" href="{e(links["web"])}" rel="noopener">{icon("globe")}Visit {e(host)}</a>'
+    elif app["status"] == "live" and links.get("appStore"):
+        cta = f'<a class="btn btn-primary" href="{e(links["appStore"])}" rel="noopener">{icon("apple-logo")}Get it on the App Store</a>'
+    elif app["status"] == "live" and links.get("googlePlay"):
+        cta = f'<a class="btn btn-primary" href="{e(links["googlePlay"])}" rel="noopener">{icon("google-play-logo")}Get it on Google Play</a>'
+    else:
+        cta = f'<a class="btn btn-primary" href="/apps/{aid}/">See {e(app["name"])}</a>'
+    news = ""
+    c = app.get("cycle")
+    if c and c["updates"]:
+        u = max(c["updates"], key=lambda x: x["date"])
+        news = (f'<p class="fl-news"><a href="/apps/{aid}/#update-{u["date"]}"><span class="meta">What\'s new, '
+                f'<time datetime="{u["date"]}">{fmt_date(u["date"])}</time></span> {e(u["text"])}</a></p>')
+    art = ""
+    if app["screenshots"]:
+        s0 = app["screenshots"][0]
+        art = (f'<div class="fl-art {s0["shape"]}" aria-hidden="true"><img src="/apps/{aid}/{s0["src"]}" alt="" '
+               f'width="{s0["w"]}" height="{s0["h"]}" loading="lazy" decoding="async"></div>')
+    return f"""<section class="flagship glass reveal{' has-art' if art else ''}" aria-labelledby="flagship-title" style="--tint:{app['color']}">
+  <div class="fl-copy">
+    <p class="meta fl-eyebrow">Flagship{" " + draft_mark() if app.get("draft") else ""}</p>
+    <div class="fl-head">{icon_html(app, vt=False)}<div><h2 class="h2" id="flagship-title"><a href="/apps/{aid}/">{e(app['name'])}</a></h2>{status_html(app, app.get("outcome"))}</div></div>
+    <p class="lead">{e(app['oneliner'])}</p>
+    {news}
+    <div class="btns">{cta}</div>
+  </div>
+  {art}
+</section>"""
+
+
+def strip_card(app, i=0):
+    """A compact product card for the experiments strip and /work/."""
+    o = app.get("outcome")
+    tag = f'<span class="chip outcome-tag">{e(o["label"])} {fmt_date(o["date"])}</span>' if o and o["label"] != STATUS_LABEL[app["status"]] else ""
+    return f"""<a class="card glass reveal" style="--i:{i};--tint:{app['color']}" href="/apps/{app['id']}/">
+  <div class="card-top">{icon_html(app, vt=False)}<div><h3 class="name">{e(app['name'])}</h3><div class="card-status">{status_html(app, o)}{tag}{draft_mark() if app.get("draft") else ""}</div></div></div>
+  <p class="one">{e(app['oneliner'])}</p>
+  <div class="foot"><span class="meta tnum">{years(app)}</span>{chips(app)}</div>
+</a>"""
+
+
 def render_home(apps):
+    flag = flagship(apps)
     apps = listed(apps)
     live = {a["id"]: a for a in apps if a["status"] == "live"}
-    shelf_apps = [a for a in apps if a["status"] != "live"]
+    experiments = sorted((a for a in apps if a["status"] == "lab" and a is not flag and (not flag or a["id"] != flag["id"])),
+                         key=latest, reverse=True)[:3]
 
     def shot(app_id, n, cls="", eager=False, width=None):
         s = live[app_id]["screenshots"][n]
@@ -435,18 +527,15 @@ def render_home(apps):
   <div class="foot">{chips(app)}</div>
 </a>"""
 
-    bento = "\n".join([
-        cell(live["flowmoro"], f'<div class="cell-shots">{shot("flowmoro", 0)}{shot("flowmoro", 2)}</div>'),
-        cell(live["skywise"], f'<div class="peek" aria-hidden="true">{shot("skywise", 0)}</div>'),
-        cell(live["astrodefender"], f'<div class="peek" aria-hidden="true">{shot("astrodefender", 2)}</div>', dark=True),
-        cell(live["inboxhiiv"], f'<div class="cell-shots">{shot("inboxhiiv", 0)}</div>'),
-    ])
-
-    shelf = "\n".join(f"""<a class="shelf-row reveal" style="--i:{i}" href="/apps/{a['id']}/">
-  {icon_html(a)}
-  <div><div class="name">{e(a['name'])}</div><p class="one">{e(a['oneliner'])}</p></div>
-  <div class="right">{status_html(a)}<span class="meta tnum">{years(a)}</span></div>
-</a>""" for i, a in enumerate(shelf_apps))
+    cells = [
+        ("flowmoro", lambda: cell(live["flowmoro"], f'<div class="cell-shots">{shot("flowmoro", 0)}{shot("flowmoro", 2)}</div>')),
+        ("skywise", lambda: cell(live["skywise"], f'<div class="peek-clip" aria-hidden="true"><div class="peek">{shot("skywise", 0)}</div></div>')),
+        ("astrodefender", lambda: cell(live["astrodefender"], f'<div class="peek-clip" aria-hidden="true"><div class="peek">{shot("astrodefender", 2)}</div></div>', dark=True)),
+        ("inboxhiiv", lambda: cell(live["inboxhiiv"], f'<div class="cell-shots">{shot("inboxhiiv", 0)}</div>')),
+    ]
+    # The flagship gets the panel above, so it leaves the bento.
+    bento = "\n".join(make() for aid, make in cells if aid in live and not (flag and flag["id"] == aid))
+    strip = "\n".join(strip_card(a, i) for i, a in enumerate(experiments))
 
     live_list = [a for a in apps if a["status"] == "live"]
     names = ", ".join(a["name"] for a in live_list[:-1]) + f", and {live_list[-1]['name']}"
@@ -480,6 +569,7 @@ def render_home(apps):
       <a class="btn btn-primary" href="#products">See the products</a>
       <a class="btn btn-glass glass" href="#about">Meet the founder</a>
     </div>
+    <p class="meta numbers tnum"><a href="/work/">{numbers(apps)}</a></p>
   </div>
   {hero_art}
 </section>
@@ -489,18 +579,23 @@ def render_home(apps):
     <h2 class="h2" id="products-title">Products</h2>
     <p class="lead">Live on the App Store, Google Play, and the web.</p>
   </div>
+  {flagship_html(flag) if flag else ""}
   <div class="bento">
 {bento}
   </div>
 </section>
 
-<section class="wrap section" id="lab" aria-labelledby="lab-title">
+<section class="wrap section" id="experiments" aria-labelledby="exp-title">
   <div class="section-head">
-    <h2 class="h2" id="lab-title">Lab and archive</h2>
-    <p class="lead">Prototypes still in progress, and ideas that were retired. They stay listed so the full record is here.</p>
+    <h2 class="h2" id="exp-title">Experiments</h2>
+    <p class="lead">Small products in progress, newest first. Every product, archived ones included, is on the work page.</p>
   </div>
-  <div class="shelf glass">
-{shelf}
+  <div class="strip">
+{strip}
+  </div>
+  <div class="btns strip-more">
+    <a class="btn btn-glass glass" href="/work/">See all work</a>
+    <a class="btn btn-glass glass" href="/work/#archived">Archive</a>
   </div>
 </section>
 
@@ -510,7 +605,7 @@ def render_home(apps):
       <h2 class="h2" id="about-title">About the studio</h2>
       <div class="prose reveal" style="margin-top:var(--s-5)">
         <p>Modrn Magic is an independent product studio founded by Akhil Jacob, a software engineer in San Diego. The studio makes its own products: mobile apps and games built with Flutter, and web products built on Next.js and Firebase.</p>
-        <p>Each product starts small and ships to real people. Some stay live, some go back to the lab, and some are retired. This site lists all of them.</p>
+        <p>Each product starts small and ships to real people. Some stay live, some stay experiments, and some are retired. This site lists all of them.</p>
       </div>
       <div class="facts-inline"><span class="chip">Founded by Akhil Jacob</span><span class="chip">San Diego, California</span><span class="chip">iPhone, Android, and web</span></div>
     </div>
@@ -587,7 +682,7 @@ def render_product(app, apps):
 
     notice = ""
     if app["status"] == "lab":
-        notice = f'<p class="notice glass">{e(app["name"])} is a prototype in the lab. It has not been released and is not available to download.</p>'
+        notice = f'<p class="notice glass">{e(app["name"])} is an experiment. It has not been released and is not available to download.</p>'
     elif app["status"] == "archived":
         was = f' It was on {", ".join(app["wasOn"])}.' if app.get("wasOn") else ""
         notice = f'<p class="notice glass">{e(app["name"])} is archived and no longer in development.{was}</p>'
@@ -661,7 +756,8 @@ def render_product(app, apps):
     if app.get("draft"):
         banner = (f'<p class="draft-banner glass">{draft_mark()} This page is a draft for Akhil to confirm. '
                   'It is not linked from the rest of the site, the sitemap, or llms.txt.</p>')
-    crumb_mid = ("Products", "/#products") if live else ("Lab and archive", "/#lab")
+    crumb_mid = ("Products", "/#products") if live else (
+        (GROUP_LABEL["lab"], "/work/#experiments") if app["status"] == "lab" else ("Archive", "/work/#archived"))
 
     graph = [
         app_node(app),
@@ -691,7 +787,7 @@ def render_product(app, apps):
         description = description[:description.rfind(".", 0, 230) + 1]
 
     body = f"""<body>
-{nav("products" if live else "lab")}
+{nav("products" if live else "work")}
 <main id="main">
 <div class="wrap">
   {banner}
@@ -814,6 +910,97 @@ def render_product_site(app, apps):
 </html>
 """
     return head(f"{title} | Modrn Magic", description, base, f"/assets/og/{aid}.jpg", graph) + body
+
+
+# ---------------------------------------------------------------- /work/
+
+def render_work(apps):
+    """Every product, newest first, filterable by status and kind.
+
+    Filters are links to #<filter>. Each target is an empty fixed-position
+    span before the list, so :target filters the list with CSS alone (no
+    scroll jump, works with JavaScript off). site.js adds aria-current, a live
+    count for screen readers, and a view transition between filter states.
+    """
+    items = sorted(shown(apps), key=latest, reverse=True)
+    statuses = [k for k in STATUS_LABEL if any(a["status"] == k for a in items)]
+    kinds = [k for k in KIND_LABEL if any(a["kind"] == k for a in items)]
+    filters = [("all", "All", lambda a: True, "products")]
+    filters += [(GROUP_ID[k], GROUP_LABEL[k], (lambda k: lambda a: a["status"] == k)(k), "status") for k in statuses]
+    filters += [(f"kind-{k}", KIND_LABEL[k], (lambda k: lambda a: a["kind"] == k)(k), "kind") for k in kinds]
+
+    def count_text(fid, label, test):
+        n = sum(1 for a in items if test(a))
+        noun = "product" if n == 1 else "products"
+        if fid == "all":
+            return f"Showing all {n} {noun}."
+        return f"Showing {n} {noun}: {label}."
+
+    targets = "".join(f'<span class="ftarget" id="{fid}"></span>' for fid, *_ in filters)
+    chip_link = lambda fid, label: f'<a class="fchip" href="#{fid}" data-filter="{fid}">{label}</a>'
+    status_chips = "".join(chip_link(fid, label) for fid, label, _, group in filters if group in ("products", "status"))
+    kind_chips = "".join(chip_link(fid, label) for fid, label, _, group in filters if group == "kind")
+    counts = "".join(f'<span data-for="{fid}">{count_text(fid, label, test)}</span>' for fid, label, test, _ in filters)
+
+    def row(a, i):
+        o = a.get("outcome")
+        tag = f'<span class="chip outcome-tag">{e(o["label"])} {fmt_date(o["date"])}</span>' if o and o["label"] != STATUS_LABEL[a["status"]] else ""
+        line = f'<p class="w-outcome">{e(o["line"])}{" " + draft_mark() if o["draft"] else ""}</p>' if o else ""
+        return f"""<li class="work-item" data-status="{GROUP_ID[a['status']]}" data-kind="kind-{a['kind']}" style="--i:{i};view-transition-name:work-{a['id']}">
+  <a class="w-card glass" href="/apps/{a['id']}/" style="--tint:{a['color']}">
+    {icon_html(a, vt=False)}
+    <div class="w-main">
+      <div class="w-head"><h2 class="name">{e(a['name'])}</h2>{status_html(a, o)}{tag}{draft_mark() if a.get("draft") else ""}</div>
+      <p class="one">{e(a['oneliner'])}</p>
+      {line}
+    </div>
+    <div class="w-meta"><span class="meta tnum">{years(a)}</span><span class="chip">{KIND_ONE[a['kind']]}</span></div>
+  </a>
+</li>"""
+
+    rows = "\n".join(row(a, i) for i, a in enumerate(items))
+    css = "".join(
+        f'#{fid}:target~.work-list .work-item:not([data-{"status" if group == "status" else "kind"}="{fid}"]){{display:none}}'
+        f'#{fid}:target~.work-count [data-for="{fid}"]{{display:inline}}'
+        f'#{fid}:target~.work-count [data-for="all"]{{display:none}}'
+        f'#{fid}:target~.filters [data-filter="{fid}"]{{background:var(--ink);color:var(--bg)}}'
+        f'#{fid}:target~.filters [data-filter="all"]{{background:transparent;color:var(--ink-2)}}'
+        for fid, label, _, group in filters if fid != "all")
+    drafts = sum(1 for a in items if a.get("draft"))
+    draft_note = f' <span class="meta">Includes {drafts} draft{"s" if drafts != 1 else ""} {draft_mark()}</span>' if drafts else ""
+    graph = [
+        {"@type": "CollectionPage", "@id": f"{SITE}/work/", "url": f"{SITE}/work/", "name": "All work by Modrn Magic",
+         "isPartOf": {"@id": SITE_ID}, "about": {"@id": ORG_ID}, "inLanguage": "en-US",
+         "mainEntity": {"@type": "ItemList", "itemListElement": [
+             {"@type": "ListItem", "position": i + 1, "url": page_url(a), "name": a["name"]}
+             for i, a in enumerate(x for x in items if not x.get("draft"))]}},
+        org_node(), person_node(),
+    ]
+    body = f"""<body>
+{nav("work")}
+<main id="main" class="wrap work">
+  <header class="page-hero">
+    <h1>Work</h1>
+    <p class="lead">Every Modrn Magic product, newest first: what is live, what is still an experiment, and what was archived, with the outcome where there is one.</p>
+    <p class="meta numbers tnum">{numbers(items)}{draft_note}</p>
+  </header>
+  {targets}
+  <nav class="filters" aria-label="Filter products">
+    <div class="fgroup" role="group" aria-label="Status">{status_chips}</div>
+    <div class="fgroup" role="group" aria-label="Kind">{kind_chips}</div>
+  </nav>
+  <p class="work-count meta" id="work-count">{counts}</p>
+  <p class="sr-only" aria-live="polite" id="work-live"></p>
+  <ul class="work-list" aria-label="Products">
+{rows}
+  </ul>
+</main>
+{footer(apps)}</body>
+</html>
+"""
+    extra = f"<style>{css}</style>\n"
+    description = "Every Modrn Magic product: live apps, experiments, and archived work, with outcomes."
+    return head("Work | Modrn Magic", description, "/work/", "/assets/og/home.jpg", graph, extra=extra) + body
 
 
 # ---------------------------------------------------------------- contact, 404, mvp
@@ -1041,7 +1228,7 @@ def git_date(rel):
 
 def render_sitemap(apps):
     apps = listed(apps)
-    urls = [("/", SITE_DATE, "1.0"), ("/contact/", SITE_DATE, "0.5")]
+    urls = [("/", SITE_DATE, "1.0"), ("/work/", SITE_DATE, "0.8"), ("/contact/", SITE_DATE, "0.5")]
     for a in apps:
         urls.append((f"/apps/{a['id']}/", SITE_DATE, "0.9" if a["status"] == "live" else "0.5"))
     for a in apps:
@@ -1095,7 +1282,7 @@ Key facts:
 
 {live}
 
-## Lab and archive
+## Experiments and archive
 
 {other}
 
@@ -1105,6 +1292,7 @@ Key facts:
 
 ## Optional
 
+- [All work]({SITE}/work/): every product with its status and outcome. {numbers(apps)}
 - [Contact]({SITE}/contact/)
 - [Sitemap]({SITE}/sitemap.xml)
 """
@@ -1117,12 +1305,13 @@ def outputs():
     files = {
         "index.html": render_home(apps),
         "contact/index.html": render_contact(apps),
+        "work/index.html": render_work(apps),
         "404.html": render_404(apps),
         "mvp.html": render_mvp(),
         "sitemap.xml": render_sitemap(apps),
         "llms.txt": render_llms(apps),
     }
-    for a in apps:
+    for a in shown(apps):
         files[f"apps/{a['id']}/index.html"] = render_product(a, apps)
         if a["links"].get("home") and os.path.exists(os.path.join(ROOT, "apps", a["id"], "home/descriptions.json")):
             files[f"apps/{a['id']}/home/index.html"] = render_product_site(a, apps)

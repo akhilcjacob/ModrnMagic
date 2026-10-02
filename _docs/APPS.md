@@ -10,7 +10,7 @@ Every product on modrnmagic.app comes from one file: `apps/<id>/app.json`. `apps
 
 ```
 python3 _scripts/images.py   # web-sized WebP copies in apps/<id>/media/ (needs Pillow)
-python3 _scripts/render.py   # pages, sitemap.xml, llms.txt, JSON-LD
+python3 _scripts/render.py   # pages, /work/, sitemap.xml, llms.txt, JSON-LD (local build: drafts marked)
 python3 _scripts/og.py       # 1200x630 share cards in assets/og/ (needs Chrome)
 python3 _scripts/check.py serve  # preview at http://localhost:8000
 ```
@@ -62,11 +62,11 @@ GitHub Pages serves the committed files as they are. Its default Jekyll pass cop
 | `icon`, `color` | Icon file in the folder (or null for a letter tile) and its tile color. |
 | `screenshots` | `{from, src, w, h, alt, shape}`. `shape` is `phone` or `wide`. `src`, `w`, `h` are written by `images.py`. |
 | `legal` | Relative paths to `privacy/`, `tos/`, and optional `deleteAccount`. |
-| `draft` | Optional, default false. A draft product gets its own page (noindex, with a Draft banner) and nothing else: no home, footer, sitemap, or llms.txt entry. Remove it once Akhil confirms the page. |
+| `draft` | Optional, default false. In the local build a draft product gets its own page (noindex, with a Draft banner) and a marked row on /work/, and nothing else: no home, footer, sitemap, or llms.txt entry. The release build (`render.py --release`) leaves drafts out entirely, along with draft outcome lines and lessons. Remove the flag once Akhil confirms. |
 | `outcome` | `null`, or `{label, date, line, draft}` once a keep or archive decision exists. `label` is `Kept`, `Paused`, `Parked`, or `Archived`; `date` is `YYYY-MM`; `line` is one sentence with the reason. Outcome text comes from Akhil or the cycle report; a line an agent drafted keeps `draft: true` until he confirms it. |
 | `lessons` | `[{text, draft}]`, shown as "What we learned". Same draft rule. |
 | `cycle` | `null`, or `{start, end, goal, updates}` during a push cycle. Dates are `YYYY-MM-DD`; `updates` is `[{date, text}]` with unique dates on or after `start`. The page shows them newest first as "What's new", each with its own link. |
-| `flagship` | `true` on at most one product, never an archived or draft one. Home reads it from week 3 on. |
+| `flagship` | `true` on at most one product, never an archived one. Home then shows that product in a full-width panel above the bento and drops it from the bento and the experiments strip. HQ picks it; with nothing flagged, home is complete without the panel. A draft flagship shows only in the local build. |
 
 Text fields (`oneliner`, `summary`, `description`, `features`, `faq`, screenshot `alt`) may write `{name}`; `render.py` fills in `name`. Use it when a product may be renamed, so the name lives in one field. Ramble does this.
 

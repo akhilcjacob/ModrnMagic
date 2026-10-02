@@ -105,6 +105,48 @@
     update();
   });
 
+  // /work/ filters. CSS (:target) does the filtering, so they work with
+  // JavaScript off. This adds aria-current on the active chip, a polite
+  // live count for screen readers, and a view transition between states.
+  var filters = document.querySelector(".filters");
+  if (filters) {
+    var chipsEls = filters.querySelectorAll(".fchip");
+    var live = document.getElementById("work-live");
+    var syncFilters = function (announce) {
+      var id = location.hash.slice(1);
+      if (!document.querySelector('.filters [data-filter="' + id + '"]')) id = "all";
+      chipsEls.forEach(function (c) {
+        if (c.getAttribute("data-filter") === id) c.setAttribute("aria-current", "true");
+        else c.removeAttribute("aria-current");
+      });
+      var msg = document.querySelector('.work-count [data-for="' + id + '"]');
+      if (announce && live && msg) live.textContent = msg.textContent;
+    };
+    filters.addEventListener("click", function (ev) {
+      var chip = ev.target.closest(".fchip");
+      if (!chip) return;
+      // Handle the jump here so focus stays on the chip (a fragment jump drops it).
+      ev.preventDefault();
+      var y = scrollY;
+      function go() {
+        if (location.hash !== chip.hash) location.hash = chip.hash;
+        if (scrollY !== y) scrollTo(scrollX, y);   // a fragment jump inside a view transition can scroll; filters never should
+        syncFilters(true);
+        chip.focus({ preventScroll: true });
+      }
+      if (location.hash !== chip.hash && document.startViewTransition && !still.matches) {
+        root.classList.add("filter-vt");
+        document.startViewTransition(go).finished.then(done, done);
+      } else {
+        go();
+      }
+      function done() { root.classList.remove("filter-vt"); }
+    });
+    addEventListener("hashchange", function () { syncFilters(true); });
+    if (document.startViewTransition) root.classList.add("vt-filters");
+    syncFilters(false);
+  }
+
   // Reveal sections once as they enter the viewport. Anything already on
   // screen, or anything the observer cannot watch, stays visible.
   if (!("IntersectionObserver" in window)) return;

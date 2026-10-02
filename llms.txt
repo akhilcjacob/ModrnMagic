@@ -17,11 +17,11 @@ Key facts:
 - [SkyWise](https://modrnmagic.app/apps/skywise/): SkyWise is a weather app for iPhone and Android with a built-in AI assistant. Alongside the forecast, you can ask plain questions like whether it is a good day for a barbecue or which shoes to wear. Available: [App Store](https://apps.apple.com/us/app/skywise/id6473301938), [Google Play](https://play.google.com/store/apps/details?id=com.modrnmagic.skywise). Price on the US App Store: free. First released Feb 13, 2024.
 - [InboxHiive](https://modrnmagic.app/apps/inboxhiiv/): InboxHiive turns podcast episodes into clean, readable newsletters. Subscribe to the shows you follow and get an AI-written summary, key insights, and a chapter-by-chapter breakdown of each new episode in your inbox. Available: [Website](https://inboxhiive.com).
 
-## Lab and archive
+## Experiments and archive
 
-- [Nookly OS](https://modrnmagic.app/apps/nookly/): Nookly OS is a CRM and back office for trade businesses, such as leads, estimates, jobs, scheduling, invoices, and follow-ups. The owner drives it from their own Claude or Codex session through an MCP server. It is in development. Status: in the lab, 2026.
-- [Triply](https://modrnmagic.app/apps/triply/): Triply is a trip planning prototype. It generates personalized day plans and multi-day itineraries from your preferences, such as how you get around, budget, and the kinds of places you like, and shows them on a map. Status: in the lab, 2025.
-- [QuietDesk](https://modrnmagic.app/apps/quietdesk/): QuietDesk is a minimal Android launcher prototype. It replaces the home screen with a clock and a short list of favorite apps, with search for everything else. Status: in the lab, 2024.
+- [Nookly OS](https://modrnmagic.app/apps/nookly/): Nookly OS is a CRM and back office for trade businesses, such as leads, estimates, jobs, scheduling, invoices, and follow-ups. The owner drives it from their own Claude or Codex session through an MCP server. It is in development. Status: experiment, 2026.
+- [Triply](https://modrnmagic.app/apps/triply/): Triply is a trip planning prototype. It generates personalized day plans and multi-day itineraries from your preferences, such as how you get around, budget, and the kinds of places you like, and shows them on a map. Status: experiment, 2025.
+- [QuietDesk](https://modrnmagic.app/apps/quietdesk/): QuietDesk is a minimal Android launcher prototype. It replaces the home screen with a clock and a short list of favorite apps, with search for everything else. Status: experiment, 2024.
 - [Quorum](https://modrnmagic.app/apps/quorum/): Quorum was a 2023 prototype for podcasts you could join: live conversations where listeners take part instead of only listening. It ran a waitlist and did not ship. Status: archived, 2023 to 2024.
 
 ## Founder
@@ -30,5 +30,6 @@ Key facts:
 
 ## Optional
 
+- [All work](https://modrnmagic.app/work/): every product with its status and outcome. 8 products since 2023: 4 live, 3 experiments, and 1 archived.
 - [Contact](https://modrnmagic.app/contact/)
 - [Sitemap](https://modrnmagic.app/sitemap.xml)

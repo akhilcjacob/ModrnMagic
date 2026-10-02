@@ -22,6 +22,12 @@ control, asserting what each one should do:
 - every legal URL answers bare, with a trailing slash, as /index.html, and
   as its Markdown source
 - every product in apps/index.json has a page; drafts stay off shared pages
+- /work/ filters filter by mouse, keyboard, and with JavaScript off, keep
+  aria-current and the live count right, never scroll, and skip the view
+  transition under reduced motion; numbers lines match the data
+- home shows a flagship panel only when one is flagged (checked with nothing
+  flagged and with each push-cycle product flagged, in temp copies), and the
+  experiments strip holds the three newest experiments
 - in a temporary copy of the repo: renaming Ramble in its one name field
   leaves the old name nowhere; a push cycle renders What's new with working
   update links; bad product data makes render.py fail; check.py --release
@@ -74,12 +80,19 @@ class Quiet(http.server.SimpleHTTPRequestHandler):
         pass
 
 
+class Server(http.server.ThreadingHTTPServer):
+    daemon_threads = True
+
+    def handle_error(self, request, client_address):
+        pass   # the browser closing a connection early is not a test failure
+
+
 def serve(directory=ROOT):
     sock = socket.socket()
     sock.bind(("127.0.0.1", 0))
     port = sock.getsockname()[1]
     sock.close()
-    server = http.server.ThreadingHTTPServer(("127.0.0.1", port), functools.partial(Quiet, directory=directory))
+    server = Server(("127.0.0.1", port), functools.partial(Quiet, directory=directory))
     threading.Thread(target=server.serve_forever, daemon=True).start()
     return server, f"http://127.0.0.1:{port}"
 
@@ -90,13 +103,14 @@ COLLECT = """() => {
   const visible = el => { const r = el.getBoundingClientRect(); const s = getComputedStyle(el);
     return r.width > 0 && r.height > 0 && s.visibility !== 'hidden' && !el.closest('[hidden]'); };
   document.querySelectorAll('a[href]').forEach((a, i) => {
-    if (a.classList.contains('skip')) return;
+    if (a.classList.contains('skip') || a.classList.contains('fchip')) return;
     out.push({kind: 'link', i, href: a.getAttribute('href'), abs: a.href,
               name: (a.getAttribute('aria-label') || a.textContent).trim().replace(/\\s+/g, ' ').slice(0, 60),
               visible: visible(a)});
   });
   document.querySelectorAll('.theme-toggle').forEach((b, i) => out.push({kind: 'toggle', i, name: 'theme', visible: visible(b)}));
   document.querySelectorAll('.faq summary').forEach((s, i) => out.push({kind: 'faq', i, name: s.textContent.trim(), visible: visible(s)}));
+  document.querySelectorAll('.fchip').forEach((a, i) => out.push({kind: 'filter', i, name: a.textContent.trim(), visible: visible(a)}));
   document.querySelectorAll('.rail-wrap').forEach((w, i) => out.push({kind: 'rail', i, name: w.getAttribute('aria-label'), visible: true}));
   return out;
 }"""
@@ -130,6 +144,174 @@ def edit_app(apps_dir, aid, change):
     data = json.load(open(path))
     change(data)
     json.dump(data, open(path, "w"), indent=2)
+
+
+STATUS_GROUP = {"live": "live", "lab": "experiments", "archived": "archived"}
+PUSH_CYCLE = ("ramble", "nookly", "inboxhiiv", "hypebridge")
+
+
+def load_all(root=ROOT):
+    ids = json.load(open(os.path.join(root, "apps/index.json")))
+    return [json.load(open(os.path.join(root, "apps", i, "app.json"))) for i in ids]
+
+
+def expected_numbers(apps):
+    """Recomputed here from app.json, independent of render.py."""
+    n = {k: sum(1 for a in apps if a["status"] == k) for k in ("live", "lab", "archived")}
+    starts = [v for a in apps for v in (a["dates"].get("started"), a["dates"].get("shipped"), a["dates"].get("updated")) if v]
+    exp = f"{n['lab']} experiment" + ("s" if n["lab"] != 1 else "")
+    return f"{len(apps)} products since {min(starts)[:4]}: {n['live']} live, {exp}, and {n['archived']} archived."
+
+
+def filter_tests(browser, base, seen, tested):
+    apps = load_all()
+    def matches(fid, a):
+        if fid == "all":
+            return True
+        if fid.startswith("kind-"):
+            return a["kind"] == fid[5:]
+        return STATUS_GROUP[a["status"]] == fid
+    page = browser.new_page(viewport={"width": 1440, "height": 900})
+    page.goto(base + "/work/")
+    numbers = page.locator(".work .numbers").inner_text()
+    record(numbers.startswith(expected_numbers(apps)), "/work/ numbers line matches app.json", numbers)
+    chips = page.eval_on_selector_all(".fchip", "els => els.map(e => e.dataset.filter)")
+    for fid in chips + ["all"]:
+        page.evaluate("scrollTo(0, 0)")
+        page.locator(f'.fchip[data-filter="{fid}"]').click()
+        page.wait_for_timeout(600)   # the view transition (--d-base) plus margin
+        shown = page.eval_on_selector_all(".work-item", "els => els.filter(e => getComputedStyle(e).display !== 'none').map(e => e.querySelector('.name').textContent)")
+        want = [a["name"] for a in apps if matches(fid, a)]
+        current = page.eval_on_selector_all(".fchip[aria-current]", "els => els.map(e => e.dataset.filter)")
+        count = page.locator(f'.work-count [data-for="{fid}"]').inner_text()
+        live = page.locator("#work-live").inner_text()
+        state = page.evaluate("[location.hash, scrollY]")
+        ok = (sorted(shown) == sorted(want) and current == [fid] and str(len(want)) in count
+              and live == count and state[0] == "#" + fid and state[1] == 0)
+        record(ok, f"/work/ filter '{fid}': {len(want)} shown, aria-current, live count, no scroll",
+               f"shown {len(shown)} want {len(want)} current {current} live {live!r} state {state}")
+        key = ("filter", "/work/", chips.index(fid))
+        if ok and key in seen:
+            tested.add(key)
+    # Keyboard: chips in reading order, Enter activates, focus stays on the chip.
+    page.goto(base + "/work/")
+    page.locator(".fchip").first.focus()
+    order = [page.evaluate("document.activeElement.dataset.filter")]
+    for _ in range(len(chips) - 1):
+        page.keyboard.press("Tab")
+        order.append(page.evaluate("document.activeElement.dataset.filter"))
+    page.keyboard.press("Enter")
+    page.wait_for_timeout(450)
+    after = page.evaluate("[document.activeElement.dataset.filter, location.hash]")
+    record(order == chips and after == [chips[-1], "#" + chips[-1]], "/work/ filters: Tab order follows the chips, Enter filters, focus stays", f"{order} {after}")
+    page.close()
+    # JavaScript off: :target alone filters, and deep links work.
+    ctx = browser.new_context(viewport={"width": 390, "height": 844}, java_script_enabled=False)
+    p2 = ctx.new_page()
+    p2.goto(base + "/work/#archived")
+    vis = p2.eval_on_selector_all(".work-item", "els => els.filter(e => getComputedStyle(e).display !== 'none').length")
+    p2.locator('.fchip[data-filter="live"]').click()
+    vis_live = p2.eval_on_selector_all(".work-item", "els => els.filter(e => getComputedStyle(e).display !== 'none').map(e => e.dataset.status)")
+    want_arch = sum(1 for a in apps if a["status"] == "archived")
+    record(vis == want_arch and vis_live and set(vis_live) == {"live"}, "/work/ filters work with JavaScript off, deep links included", f"{vis} {vis_live}")
+    ctx.close()
+    # Reduced motion: no view transition and no item animation, still filters.
+    ctx = browser.new_context(viewport={"width": 1440, "height": 900}, reduced_motion="reduce")
+    p3 = ctx.new_page()
+    p3.goto(base + "/work/")
+    p3.evaluate("window.__vt = 0; const o = document.startViewTransition && document.startViewTransition.bind(document); if (o) document.startViewTransition = cb => { window.__vt++; return o(cb); }; 0")
+    p3.locator('.fchip[data-filter="experiments"]').click()
+    p3.wait_for_timeout(200)
+    res = p3.evaluate("[window.__vt, [...document.querySelectorAll('.work-item')].filter(e => getComputedStyle(e).display !== 'none').length, document.getAnimations().filter(a => a.playState === 'running').length]")
+    want = sum(1 for a in apps if a["status"] == "lab")
+    record(res == [0, want, 0], "/work/ under reduced motion: no view transition or animation, still filters", str(res))
+    ctx.close()
+    # With motion, a filter change runs one view transition.
+    p4 = browser.new_page(viewport={"width": 1440, "height": 900})
+    p4.goto(base + "/work/")
+    p4.evaluate("window.__vt = 0; const o = document.startViewTransition.bind(document); document.startViewTransition = cb => { window.__vt++; return o(cb); }; 0")
+    p4.locator('.fchip[data-filter="archived"]').click()
+    p4.wait_for_timeout(450)
+    record(p4.evaluate("window.__vt") == 1, "/work/ filter change runs one view transition")
+    p4.close()
+
+
+def flagship_tests(browser):
+    apps = {a["id"]: a for a in load_all()}
+    listed_apps = [a for a in apps.values() if not a.get("draft")]
+    # Nothing flagged (the real data): home is complete without the panel.
+    server, base = serve()
+    page = browser.new_page(viewport={"width": 1440, "height": 900})
+    page.goto(base + "/")
+    got = page.evaluate("[document.querySelectorAll('.flagship').length, document.querySelectorAll('.bento .cell').length, [...document.querySelectorAll('.strip .card .name')].map(e => e.textContent)]")
+    labs = sorted((a for a in listed_apps if a["status"] == "lab"),
+                  key=lambda a: max(v for v in (a["dates"].get("updated"), a["dates"].get("ended"), a["dates"].get("shipped"), a["dates"].get("started")) if v), reverse=True)
+    record(not any(a.get("flagship") for a in apps.values()), "no product is flagged in the real data (HQ picks)")
+    record(got[0] == 0 and got[1] == 4 and got[2] == [a["name"] for a in labs[:3]],
+           "home with nothing flagged: no panel, full bento, three newest experiments", str(got))
+    numbers = page.locator(".hero .numbers").inner_text()
+    record(numbers == expected_numbers(listed_apps), "home numbers line matches app.json", numbers)
+    page.close()
+    server.shutdown()
+    # Each push-cycle product flagged in turn.
+    for aid in PUSH_CYCLE:
+        tmp, dest, r = temp_copy(lambda d, aid=aid: edit_app(d, aid, lambda a: a.update(flagship=True)))
+        if r.returncode:
+            record(False, f"flagship {aid}: renders", r.stderr[-200:])
+            continue
+        server, base = serve(dest)
+        a = apps[aid]
+        page = browser.new_page(viewport={"width": 1440, "height": 900})
+        page.goto(base + "/")
+        panel = page.locator(".flagship")
+        name = panel.locator("#flagship-title").inner_text() if panel.count() else ""
+        cta = panel.locator(".btn").get_attribute("href") if panel.count() else ""
+        want_cta = (a["links"].get("web") or a["links"].get("appStore") or a["links"].get("googlePlay")) if a["status"] == "live" else f"/apps/{aid}/"
+        in_bento = page.locator(f".bento .c-{aid}").count()
+        in_strip = page.locator(".strip .card", has_text=a["name"]).count()
+        labelled = page.evaluate("document.querySelector('.flagship').getAttribute('aria-labelledby')") == "flagship-title"
+        draft_ok = (panel.locator(".draft-mark").count() > 0) == bool(a.get("draft"))
+        record(panel.count() == 1 and name == a["name"] and cta == want_cta and not in_bento and not in_strip and labelled and draft_ok,
+               f"flagship {aid}: one panel, labelled, right call to action, not repeated below", f"{name} {cta} bento {in_bento} strip {in_strip}")
+        # Keyboard: the name link, then the call to action.
+        panel.locator("#flagship-title a").focus()
+        page.keyboard.press("Tab")
+        focus_ok = page.evaluate("document.activeElement.closest('.flagship') && document.activeElement.classList.contains('btn')")
+        record(bool(focus_ok), f"flagship {aid}: Tab goes from the name to the call to action")
+        # Click the call to action.
+        if cta.startswith("/"):
+            with page.expect_navigation():
+                panel.locator(".btn").click()
+            record(urlsplit(page.url).path == cta, f"flagship {aid}: call to action opens {cta}")
+        else:
+            page.evaluate("""() => { window.__clicked = null; document.addEventListener('click', e => { const a = e.target.closest('a');
+                window.__clicked = a && a.href; e.preventDefault(); }, {once: true}); }""")
+            panel.locator(".btn").click()
+            record(page.evaluate("window.__clicked") == page.evaluate("u => new URL(u).href", cta), f"flagship {aid}: call to action receives the click for {cta}")
+        page.close()
+        for w in (320,):
+            ctx = browser.new_context(viewport={"width": w, "height": 800}, reduced_motion="reduce")
+            p2 = ctx.new_page()
+            p2.goto(base + "/")
+            res = p2.evaluate("[document.documentElement.scrollWidth, getComputedStyle(document.querySelector('.flagship')).opacity]")
+            record(res[0] <= w and res[1] == "1", f"flagship {aid}: fits 320px and is visible at once under reduced motion", str(res))
+            ctx.close()
+        server.shutdown()
+        shutil.rmtree(tmp)
+
+    # Release build: no drafts on /work/ or home, even when a draft is flagged.
+    tmp, dest, r = temp_copy(lambda d: edit_app(d, "ramble", lambda a: a.update(flagship=True)))
+    rel = subprocess.run([sys.executable, "_scripts/render.py", "--release"], cwd=dest, capture_output=True, text=True)
+    work = open(os.path.join(dest, "work/index.html")).read()
+    home = open(os.path.join(dest, "index.html")).read()
+    drafts = [a for a in apps.values() if a.get("draft")]
+    leak = [a["id"] for a in drafts if f"/apps/{a['id']}/" in work or f"/apps/{a['id']}/" in home]
+    record(rel.returncode == 0 and not leak and 'class="draft-mark"' not in work and 'class="flagship' not in home,
+           "release build: no drafts on /work/ or home, and a draft flagship falls back", ", ".join(leak) or rel.stderr[-120:])
+    shutil.rmtree(tmp)
+    # /work/ is in the sitemap and llms.txt.
+    sm, llms = open(os.path.join(ROOT, "sitemap.xml")).read(), open(os.path.join(ROOT, "llms.txt")).read()
+    record("https://modrnmagic.app/work/" in sm and "https://modrnmagic.app/work/" in llms, "/work/ is in sitemap.xml and llms.txt")
 
 
 def data_tests(browser):
@@ -176,7 +358,7 @@ def data_tests(browser):
         "update before start": lambda d: edit_app(d, "ramble", lambda a: a.update(cycle=dict(FIXTURE_CYCLE, start="2026-10-20"))),
         "unknown outcome label": lambda d: edit_app(d, "quorum", lambda a: a["outcome"].update(label="Dead")),
         "unknown field": lambda d: edit_app(d, "triply", lambda a: a.update(flagshp=True)),
-        "draft flagship": lambda d: edit_app(d, "ramble", lambda a: a.update(flagship=True)),
+        "archived flagship": lambda d: edit_app(d, "quorum", lambda a: a.update(flagship=True)),
     }
     for name, edit in cases.items():
         tmp, dest, r = temp_copy(edit)
@@ -414,6 +596,8 @@ def main():
         record(urlsplit(page.url).path == "/apps/flowmoro/privacy/" and "privacy" in h1.lower(),
                "footer 'Flowmoro privacy' link navigates from home", f"{page.url} h1={h1!r}")
         data_tests(browser)
+        filter_tests(browser, base, seen, tested)
+        flagship_tests(browser)
         browser.close()
 
     # Legal URLs answer in every form a store listing might use.

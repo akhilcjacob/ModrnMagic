@@ -110,7 +110,7 @@ What moves and why:
 - Cross-page view transitions: the app icon morphs from the home card into the product page hero (`view-transition-name: icon-<id>`), so the user sees where they went. Progressive; browsers without the API just navigate.
 - Hero screenshots settle in once on load.
 
-Only `transform` and `opacity` animate, plus hover `color`, `background`, and `box-shadow` on controls (see the audit). No scroll-driven animation, no loops, no parallax; the rail's one passive scroll listener only updates its position readout. `prefers-reduced-motion: reduce` turns all of it off, including view transitions and the theme cross-fade.
+Only `transform` and `opacity` animate, with one exception from HQ (design decision, 2026-10-02; HQ is amending `LANGUAGE.md` to match): `color`, `background-color`, and `border-color` may transition over `--d-fast` on hover and focus. `box-shadow` never transitions. A lifted shadow is a pseudo-element that carries `--shadow-2` and fades in with `opacity` (`.btn-primary::after`, `.cell::before`, `.card::before`, `.w-card::before`). Underlines use a `currentColor` mix, so they follow the text color without a transition of their own. Cards no longer clip their content, so the lift shadow can sit outside them; bento peeks clip themselves (`.peek-clip`). No scroll-driven animation, no loops, no parallax; the rail's one passive scroll listener only updates its position readout. `prefers-reduced-motion: reduce` turns all of it off, including view transitions and the theme cross-fade.
 
 Written exceptions: the focus ring appears instantly (focus must never lag), and the rail position number changes instantly (it is a readout). The hero settle is deliberately slower than any interaction (`--d-settle`) because it plays once per load.
 
@@ -122,9 +122,11 @@ Every state change on the site, checked 2026-10-02 on `site/studio-index`.
 
 | State change | Motion | Status |
 |---|---|---|
-| Link hover (body, footer, crumbs, legal) | color, underline color, `--d-fast` | Done |
-| Nav link, shelf row, "more" link, founder link hover | background and color, `--d-fast` | Done, see open item 1 |
-| Button and bento cell hover and press | lift and spring press, `--d-base`; shadow `--d-base` | Done, see open item 1 |
+| Link hover (body, footer, crumbs, legal) | color, `--d-fast`; underline follows `currentColor` | Done |
+| Nav link, filter chip, "more" link, founder link hover | background-color and color, `--d-fast` | Done (HQ rule) |
+| Button, bento cell, card, and /work/ row hover and press | lift and spring press, `--d-base`; shadow layer fades in with opacity, `--d-base` | Done (HQ rule) |
+| /work/ filter change | view transition: rows glide to new places over `--d-base`, leaving rows fade over `--d-fast`; without the API, shown rows settle in (opacity and 8px rise) | Done |
+| Flagship panel | one-time reveal like other sections; CTA uses the button motion | Done |
 | Bento arrow and peek | transform, `--d-base` | Done |
 | Theme toggle hover and press | background, `scale(.94)`, `--d-fast` | Done |
 | Theme switch | page cross-fade `--d-slow`, icon pop `--d-base` | Done |
@@ -137,9 +139,10 @@ Every state change on the site, checked 2026-10-02 on `site/studio-index`.
 | Skip link | slide, `--d-base` spring | Done |
 | Focus ring | instant | Written exception |
 
-Open items:
+Open items: none.
 
-1. `LANGUAGE.md` allows only transform and opacity, but hover backgrounds, colors, and button and cell shadows animate here, and its own token table lists "hover color" for `--d-fast`. Needs a studio call: allow color, background, and shadow on hover, or replace them with opacity layers.
+Closed in week 3: item 1 (hover color, background, and shadow), by the HQ decision above.
+
 Closed in week 2: the reveal stagger and hero settle are tokens (`--d-stagger`, `--d-settle`), and a screen recording of every motion exists (see the week 2 report). A second reviewer still has to watch it in the week 4 design review.
 
 ## Components
@@ -147,9 +150,13 @@ Closed in week 2: the reveal stagger and hero settle are tokens (`--d-stagger`, 
 - Nav: floating glass pill, one line, 56px tall, sticky. Mark, name, three links, theme toggle. Under 640px the links shorten; no hamburger needed.
 - Buttons: pill. Primary is `--accent` fill with `--accent-ink`. Secondary is glass with `--ink`. One label per intent per page ("Email the studio" is the only contact label).
 - Store buttons: pill buttons with the store name in text. Only rendered when a live store link exists. Archived apps show "Was on" as plain text.
-- Status: text label with color (`Live`, `In the lab`, `Archived`). No dots.
+- Status: text label with color (`Live`, `Experiment`, `Archived`). No dots. The /work/ filters group them as Live, Experiments, and Archived.
 - Screenshot rail: horizontal scroll-snap row, native scrolling, visible edge fade, keyboard focusable. Below it, previous and next pill buttons (44px) and an "n of N" readout; `site.js` shows them only when the rail overflows, so without JavaScript there are no dead buttons. Framed shots (images that already include the device) drop the card border and use a drop shadow. Built by `rail_html()` in `render.py`.
-- Outcome and lessons: the outcome joins the status in the hero ("Archived Jan 2024", or a chip such as "Parked Feb 2025" next to "In the lab"), and a glass card under About gives the one-line reason and a "What we learned" list. The lab or archive notice is dropped when an outcome exists, since the outcome says it with a reason.
+- Flagship panel (home): shown only when one product sets `flagship: true`. A full-width glass sheet above the bento with the product tint, an eyebrow "Flagship", icon, name (linked), status, one-liner, the latest What's new line (linked to its update), one primary call to action (website, then App Store, then Google Play, else the product page), and the first screenshot. The flagged product leaves the bento. With nothing flagged, home is unchanged.
+- Experiments strip (home): the three most recently active experiments as cards, then "See all work" and "Archive" links to /work/.
+- Numbers line: one meta line of counts ("8 products since 2023: 4 live, 3 experiments, and 1 archived.") computed by `numbers()` in `render.py` from the products on that page. Never typed.
+- /work/: every product, newest first, as rows with icon, name, status, outcome tag and line, years, and kind. Filter chips are links to `#live`, `#experiments`, `#archived`, `#kind-<kind>`, or `#all`, in two pill groups (Status, Kind) generated from the data. Each target is an empty fixed-position span before the list, so `:target` filters with CSS alone, never scrolls, and works with JavaScript off; the URL is shareable. `site.js` adds `aria-current` on the active chip, a polite live count for screen readers, and the view transition. Chips are 44px tall.
+- Outcome and lessons: the outcome joins the status in the hero ("Archived Jan 2024", or a chip such as "Parked Feb 2025" next to "Experiment"), and a glass card under About gives the one-line reason and a "What we learned" list. The lab or archive notice is dropped when an outcome exists, since the outcome says it with a reason.
 - What's new: during a push cycle, a section with the cycle goal and window, then one glass row per update, newest first. Each date links to `#update-<date>`, so every weekly release has a URL; the linked row shows an accent ring.
 - Draft marker: a dashed pill in the lab color reading "Draft". Every unconfirmed outcome line, lesson, and draft page carries one, and draft pages also get a banner. Drafts never appear on shared pages, and `check.py --release` fails while any remain.
 - Legal page: breadcrumb, title, one glass card with the policy text (68ch), and a sticky side card with the support address and related legal links. Rendered from the Markdown next to the page.
