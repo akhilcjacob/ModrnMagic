@@ -471,6 +471,8 @@ def data_tests(browser):
         "unknown outcome label": lambda d: edit_app(d, "quorum", lambda a: a["outcome"].update(label="Dead")),
         "unknown field": lambda d: edit_app(d, "triply", lambda a: a.update(flagshp=True)),
         "archived flagship": lambda d: edit_app(d, "quorum", lambda a: a.update(flagship=True)),
+        "a tint that is not #rrggbb": lambda d: edit_app(d, "ramble", lambda a: a.update(tint="amber")),
+        "an unreadable color": lambda d: edit_app(d, "triply", lambda a: a.update(color="teal")),
     }
     for name, edit in cases.items():
         tmp, dest, r = temp_copy(edit)
@@ -490,6 +492,24 @@ def data_tests(browser):
     tmp, dest, r = temp_copy(confirm_all)
     rel = subprocess.run([sys.executable, "_scripts/check.py", "--release"], cwd=dest, capture_output=True, text=True)
     record(r.returncode == 0 and rel.returncode == 0, "with every draft confirmed, check.py --release passes", rel.stdout.strip()[-160:])
+    # The gate reads the output too: a stray local-build page fails it even when the data is clean.
+    work = os.path.join(dest, "work/index.html")
+    open(work, "a").write('<span class="draft-mark">Draft</span>')
+    rel = subprocess.run([sys.executable, "_scripts/check.py", "--release"], cwd=dest, capture_output=True, text=True)
+    record(rel.returncode == 1 and "DRAFT OUTPUT work/index.html" in rel.stdout,
+           "check.py --release fails on a draft marker in published HTML", rel.stdout.strip()[-160:])
+    shutil.rmtree(tmp)
+
+    # The release build deletes draft products' pages, leaves no draft output, and is then not stale.
+    tmp, dest, r = temp_copy()
+    rel = subprocess.run([sys.executable, "_scripts/render.py", "--release"], cwd=dest, capture_output=True, text=True)
+    gone = [i for i in ids if json.load(open(os.path.join(dest, "apps", i, "app.json"))).get("draft")
+            and os.path.exists(os.path.join(dest, "apps", i, "index.html"))]
+    again = subprocess.run([sys.executable, "_scripts/render.py", "--release", "--check"], cwd=dest, capture_output=True, text=True)
+    gate = subprocess.run([sys.executable, "_scripts/check.py", "--release"], cwd=dest, capture_output=True, text=True)
+    record(rel.returncode == 0 and not gone and again.returncode == 0 and "DRAFT OUTPUT" not in gate.stdout
+           and " 0 published page(s) carry draft output" in gate.stdout,
+           "render.py --release deletes draft pages and leaves no draft output", f"left {gone} {gate.stdout.strip()[-120:]}")
     shutil.rmtree(tmp)
 
     # A push cycle renders What's new, newest first, and each date link lands on its row.

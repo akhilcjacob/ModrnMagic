@@ -24,7 +24,7 @@ Both commands need only Python 3, no installs:
 ```
 python3 _scripts/check.py serve   # serve the repo at http://localhost:8000 (PORT=xxxx to change)
 python3 _scripts/check.py         # exit 1 if any internal link, asset, or sitemap URL is missing
-python3 _scripts/check.py --release  # also exit 1 while any draft page, outcome, or lesson remains
+python3 _scripts/check.py --release  # also exit 1 while any draft remains in data or in published HTML (see Launch checklist)
 ```
 
 Click tests (dev only, need Playwright for Python with Chromium: `pip install playwright && playwright install chromium`):
@@ -34,7 +34,7 @@ python3 _tests/run.py      # click every link, button, toggle, FAQ, and rail con
 python3 _tests/run.py -v   # same, printing every passing check
 ```
 
-It also fails on any request off the local server, any console error, sideways scroll at 320px, and any legal URL that stops answering bare, with a slash, as `/index.html`, or as its `.md` source. It checks that every product has a page and that drafts stay off shared pages. In a temporary copy of the repo (never the repo itself) it renames Ramble and greps for the old name, renders an example push cycle and clicks each update link, feeds `render.py` bad data, and confirms `check.py --release` passes once drafts are cleared. It ends with an interaction coverage line.
+It also fails on any request off the local server, any console error, sideways scroll at 320px, and any legal URL that stops answering bare, with a slash, as `/index.html`, or as its `.md` source. It checks that every product has a page and that drafts stay off shared pages. In a temporary copy of the repo (never the repo itself) it renames Ramble and greps for the old name, renders an example push cycle and clicks each update link, feeds `render.py` bad data, confirms `check.py --release` passes once drafts are cleared and fails on a stray draft mark in HTML, and runs `render.py --release` to confirm draft pages are deleted. It renders home with nothing flagged, with each live product flagged, and with HypeBridge's draft cleared, and checks for one bento cell per live product, no empty grid area at 1440, 800, and 390px, and a matching "N live" count. It measures the contrast of every text box on cards (home, /work/, and each flagged home) against the pixels behind it, in both themes, and fails under 4.5:1. It checks nav links and the theme toggle are at least 44px at seven widths from 320 up. It ends with an interaction coverage line.
 
 The check reads every published HTML, CSS, JS, JSON, XML, TXT, and MD file (anything outside `_` and dot folders). It resolves each internal `href`, `src`, `srcset`, CSS `url()`, `https://modrnmagic.app/` URL, and relative path in `apps/**/*.json`, confirms each `sitemap.xml` URL maps to a file, and fails on any mention of the removed `00_Future App Template` folder. Run it before every push.
 
@@ -59,7 +59,8 @@ GitHub Pages serves the committed files as they are. Its default Jekyll pass cop
 | `links` | `appStore`, `googlePlay`, `web`, `home` (relative product site), `writing`, `source`. |
 | `price` | App Store price from the store listing, for the Offer in JSON-LD. |
 | `wasOn` | For archived apps: stores it used to be on, shown as text, never as links. |
-| `icon`, `color` | Icon file in the folder (or null for a letter tile) and its tile color. |
+| `icon`, `color` | Icon file in the folder (or null for a letter tile) and its tile color, as `#rrggbb` or `rgb(r,g,b)`. A near-black `color` makes the product's home bento cell dark. |
+| `tint` | Optional `#rrggbb`. The hue of the soft gradient in the product's cards, bento cell, and flagship panel. Without it the gradient uses `color`, unless `color` is near neutral or near black (OKLCH chroma under 0.04, or lightness outside 0.3 to 0.9): those turn into grey haze and pull meta text under AA, so the card gets no gradient. Take it from the product's own icon or UI. `_tests/run.py` measures card text contrast in both themes. |
 | `screenshots` | `{from, src, w, h, alt, shape}`. `shape` is `phone` or `wide`. `src`, `w`, `h` are written by `images.py`. |
 | `legal` | Relative paths to `privacy/`, `tos/`, and optional `deleteAccount`. |
 | `draft` | Optional, default false. In the local build a draft product gets its own page (noindex, with a Draft banner) and a marked row on /work/, and nothing else: no home, footer, sitemap, or llms.txt entry. The release build (`render.py --release`) leaves drafts out entirely, along with draft outcome lines and lessons. Remove the flag once Akhil confirms. |
@@ -73,6 +74,17 @@ Text fields (`oneliner`, `summary`, `description`, `features`, `faq`, screenshot
 `render.py` validates all of the above, and rejects unknown keys, on every run, so `render.py --check` fails on bad data.
 
 Rules: no invented metrics, ratings, or testimonials. Archived apps never link to a store.
+
+## Launch checklist
+
+The committed tree on a working branch is the local build: draft pages, draft rows on /work/, and Draft marks. GitHub Pages publishes whatever lands on `main`, and there is no CI, so a merge publishes exactly what is committed. Before any merge to `main`:
+
+1. Akhil confirms or rewrites every draft. `python3 _scripts/check.py --release` lists them (`DRAFT` lines). Clear `draft` flags only on his yes.
+2. Build the public site: `python3 _scripts/render.py --release`. It leaves drafts out and deletes the pages of products it no longer renders (a draft product's `apps/<id>/index.html`).
+3. `python3 _scripts/check.py --release` must print `READY`. It fails on any remaining draft in data and on any published HTML that still carries a draft mark or banner (`DRAFT OUTPUT` lines), so a stray local build cannot slip through.
+4. `python3 _scripts/render.py --release --check` passes (the committed output is the release build).
+5. `python3 _tests/run.py` passes, then commit the release build and open the PR.
+6. After merging, go back to the local build on the next working branch with `python3 _scripts/render.py`.
 
 ## URLs that must keep working
 

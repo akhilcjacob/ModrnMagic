@@ -8,7 +8,8 @@ committed, so GitHub Pages serves plain files with no build step.
 
     python3 _scripts/render.py          # write files
     python3 _scripts/render.py --check  # exit 1 if committed output is stale
-    python3 _scripts/render.py --release  # the public build: no drafts anywhere
+    python3 _scripts/render.py --release  # the public build: no drafts anywhere,
+                                          # and draft products' pages are deleted
 
 The default build is the local one: drafts show on /work/ (marked) and on
 their own pages. The release build leaves them out entirely.
@@ -1413,9 +1414,30 @@ def outputs():
     return files
 
 
+def orphans():
+    """Generated pages of products this build does not render (drafts, in the
+    release build). They must not stay on disk, or a merge would publish them."""
+    apps = load_apps()
+    keep = {a["id"] for a in shown(apps)}
+    out = []
+    for a in apps:
+        if a["id"] in keep:
+            continue
+        for rel in (f"apps/{a['id']}/index.html", f"apps/{a['id']}/home/index.html"):
+            if os.path.exists(os.path.join(ROOT, rel)):
+                out.append(rel)
+    return out
+
+
 def main():
     check = "--check" in sys.argv
     stale = []
+    for rel in orphans():
+        if check:
+            stale.append(rel)
+        else:
+            os.remove(os.path.join(ROOT, rel))
+            print("removed", rel)
     for rel, text in outputs().items():
         path = os.path.join(ROOT, rel)
         if check:

@@ -2,7 +2,7 @@
 
     python3 _scripts/check.py          # run the checks, exit 1 on any failure
     python3 _scripts/check.py serve    # serve at http://localhost:8000 (PORT=xxxx to change)
-    python3 _scripts/check.py --release  # also fail while any draft remains (run before going public)
+    python3 _scripts/check.py --release  # also fail while any draft remains in data or in published HTML
 
 Python 3 standard library only. The checks cover the files GitHub Pages would
 publish (everything outside `_`-prefixed and hidden folders):
@@ -183,13 +183,31 @@ def drafts():
     return out
 
 
+DRAFT_MARKERS = ('class="draft-mark"', 'class="draft-banner')
+
+
+def draft_output():
+    """Published HTML that still carries a draft marker: a local build a merge would publish."""
+    out = []
+    for f in sorted(published_files()):
+        if f.endswith(".html"):
+            text = open(f, encoding="utf-8", errors="replace").read()
+            if any(m in text for m in DRAFT_MARKERS):
+                out.append(os.path.relpath(f, ROOT))
+    return out
+
+
 def release():
     status = check()
     pending = drafts()
     for line in pending:
         print("DRAFT", line)
-    print(f"{'NOT READY' if pending else 'READY'}: {len(pending)} draft(s) need Akhil's confirmation")
-    return 1 if status or pending else 0
+    leaked = draft_output()
+    for rel in leaked:
+        print("DRAFT OUTPUT", f"{rel}: draft marker in published HTML (run render.py --release)")
+    print(f"{'NOT READY' if pending or leaked else 'READY'}: {len(pending)} draft(s) need Akhil's confirmation, "
+          f"{len(leaked)} published page(s) carry draft output")
+    return 1 if status or pending or leaked else 0
 
 
 def serve():
