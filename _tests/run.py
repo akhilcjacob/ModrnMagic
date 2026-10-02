@@ -28,13 +28,23 @@ control, asserting what each one should do:
 - home shows a flagship panel only when one is flagged (checked with nothing
   flagged and with each push-cycle product flagged, in temp copies), and the
   experiments strip holds the three newest experiments
+- the home bento has one cell per live product and no empty grid area at
+  1440, 800, and 390 px, with nothing flagged, each live product flagged,
+  and a live draft cleared; its "N live" count matches the cells
+- text on cards reaches 4.5:1 against the pixels behind it, in both themes
+- nav links and the theme toggle are at least 44 px at seven widths
+- a FAQ click during the close animation reopens it; Space and fast clicks
+  on /work/ filters behave
+- check.py --release fails on draft output in HTML, and render.py --release
+  deletes draft pages
 - in a temporary copy of the repo: renaming Ramble in its one name field
   leaves the old name nowhere; a push cycle renders What's new with working
   update links; bad product data makes render.py fail; check.py --release
   fails while drafts remain
 
-It ends with interaction coverage: tested unique controls over all unique
-controls found.
+It waits on running animations and view transitions (settle()), not fixed
+sleeps. It ends with interaction coverage: tested unique controls over all
+unique controls found.
 """
 import functools
 import http.server
@@ -58,10 +68,25 @@ VERBOSE = "-v" in sys.argv
 results = []   # (ok, name, detail)
 
 
+def frames(page, n=2):
+    """Wait for n animation frames."""
+    page.evaluate("n => new Promise(r => { const f = k => k ? requestAnimationFrame(() => f(k - 1)) : r(); f(n); })", n)
+
+
 def settle(page, timeout=5000):
-    """Wait until no animation or view transition is running (after two frames, so one just started counts)."""
-    page.evaluate("() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))")
+    """Wait until no animation or view transition is running, then one more
+    frame so animationend handlers have run. No fixed sleeps: steady on a slow
+    machine, quick on a fast one."""
+    frames(page)
     page.wait_for_function("document.getAnimations().every(a => a.playState !== 'running')", timeout=timeout, polling="raf")
+    frames(page, 1)
+
+
+def scroll_settle(locator, timeout=5000):
+    """Wait until an element's smooth scroll has stopped (scrollLeft unchanged for 6 frames)."""
+    locator.evaluate("""(el, timeout) => new Promise(r => { let last = -1, same = 0; const t0 = performance.now();
+      (function tick() { same = el.scrollLeft === last ? same + 1 : 0; last = el.scrollLeft;
+        if (same >= 6 || performance.now() - t0 > timeout) r(); else requestAnimationFrame(tick); })(); })""", timeout)
 
 
 def record(ok, name, detail=""):
@@ -185,7 +210,7 @@ def filter_tests(browser, base, seen, tested):
     for fid in chips + ["all"]:
         page.evaluate("scrollTo(0, 0)")
         page.locator(f'.fchip[data-filter="{fid}"]').click()
-        page.wait_for_timeout(600)   # the view transition (--d-base) plus margin
+        settle(page)
         shown = page.eval_on_selector_all(".work-item", "els => els.filter(e => getComputedStyle(e).display !== 'none').map(e => e.querySelector('.name').textContent)")
         want = [a["name"] for a in apps if matches(fid, a)]
         current = page.eval_on_selector_all(".fchip[aria-current]", "els => els.map(e => e.dataset.filter)")
@@ -207,7 +232,7 @@ def filter_tests(browser, base, seen, tested):
         page.keyboard.press("Tab")
         order.append(page.evaluate("document.activeElement.dataset.filter"))
     page.keyboard.press("Enter")
-    page.wait_for_timeout(450)
+    settle(page)
     after = page.evaluate("[document.activeElement.dataset.filter, location.hash]")
     record(order == chips and after == [chips[-1], "#" + chips[-1]], "/work/ filters: Tab order follows the chips, Enter filters, focus stays", f"{order} {after}")
     page.close()
@@ -227,7 +252,7 @@ def filter_tests(browser, base, seen, tested):
     p3.goto(base + "/work/")
     p3.evaluate("window.__vt = 0; const o = document.startViewTransition && document.startViewTransition.bind(document); if (o) document.startViewTransition = cb => { window.__vt++; return o(cb); }; 0")
     p3.locator('.fchip[data-filter="experiments"]').click()
-    p3.wait_for_timeout(200)
+    frames(p3, 3)   # a reduced-motion change must not start any animation
     res = p3.evaluate("[window.__vt, [...document.querySelectorAll('.work-item')].filter(e => getComputedStyle(e).display !== 'none').length, document.getAnimations().filter(a => a.playState === 'running').length]")
     want = sum(1 for a in apps if a["status"] == "lab")
     record(res == [0, want, 0], "/work/ under reduced motion: no view transition or animation, still filters", str(res))
@@ -237,7 +262,7 @@ def filter_tests(browser, base, seen, tested):
     p4.goto(base + "/work/")
     p4.evaluate("window.__vt = 0; const o = document.startViewTransition.bind(document); document.startViewTransition = cb => { window.__vt++; return o(cb); }; 0")
     p4.locator('.fchip[data-filter="archived"]').click()
-    p4.wait_for_timeout(450)
+    settle(p4)
     record(p4.evaluate("window.__vt") == 1, "/work/ filter change runs one view transition")
     # Two fast clicks: the aborted first transition must not drop the faster
     # timing (filter-vt) while the second still runs (review item 11).
@@ -247,14 +272,14 @@ def filter_tests(browser, base, seen, tested):
     p4.evaluate("""() => { window.__frames = []; const t0 = performance.now(); (function tick() {
         const vt = document.getAnimations().some(a => (a.effect.pseudoElement || '').startsWith('::view-transition'));
         window.__frames.push([vt, document.documentElement.classList.contains('filter-vt')]);
-        if (performance.now() - t0 < 1500) requestAnimationFrame(tick); })(); }""")
+        if (performance.now() - t0 < 1500) requestAnimationFrame(tick); else window.__sampled = true; })(); }""")
     p4.evaluate("""() => { document.querySelector('.fchip[data-filter="live"]').click();
         setTimeout(() => document.querySelector('.fchip[data-filter="experiments"]').click(), 60); }""")
     p4.wait_for_function("window.__frames.filter(f => f[0]).length > 0")
     settle(p4)
-    p4.wait_for_timeout(1600)   # let the sampler finish its window
-    frames = p4.evaluate("window.__frames")
-    vt_frames = [f for f in frames if f[0]]
+    p4.wait_for_function("window.__sampled")   # the sampler's window is over
+    samples = p4.evaluate("window.__frames")
+    vt_frames = [f for f in samples if f[0]]
     dropped = sum(1 for f in vt_frames if not f[1])
     end = p4.evaluate("[document.documentElement.classList.contains('filter-vt'), location.hash]")
     record(vt_frames and not dropped and end == [False, "#experiments"],
@@ -439,7 +464,7 @@ def contrast_check(browser, base, path, label, themes=("light", "dark")):
         page.goto(base + path, wait_until="networkidle")
         page.evaluate("document.querySelectorAll('img[loading=lazy]').forEach(i => i.loading = 'eager')")
         page.wait_for_function("[...document.images].every(i => i.complete)")
-        page.wait_for_timeout(100)
+        settle(page)
         boxes = page.evaluate("""([cards, sel]) => [...document.querySelectorAll(cards)].flatMap(card =>
           [...card.querySelectorAll(sel)].filter(el => el.getBoundingClientRect().width > 0).map(el => {
             const r = el.getBoundingClientRect(); const c = getComputedStyle(el).color.match(/[\\d.]+/g).map(Number);
@@ -447,7 +472,7 @@ def contrast_check(browser, base, path, label, themes=("light", "dark")):
                     what: (card.querySelector('.name') || card).textContent.trim().slice(0, 20) + ' ' + el.className + ' ' + el.textContent.trim().slice(0, 16)};
           }))""", [CARD_TEXT, TEXT_SEL])
         page.add_style_tag(content="* { color: transparent !important; text-shadow: none !important; -webkit-text-fill-color: transparent !important; border-color: transparent !important; }")
-        page.wait_for_timeout(50)
+        settle(page)
         shot = Image.open(BytesIO(page.screenshot(full_page=True))).convert("RGB")
         worst = []
         for b in boxes:
@@ -560,7 +585,7 @@ def data_tests(browser):
     ok = True
     for d in want:
         page.locator(f'a[href="#{d}"]').click()
-        page.wait_for_timeout(350)
+        settle(page)
         ring = page.evaluate(f"getComputedStyle(document.getElementById('{d}'), '::after').opacity")
         ok = ok and page.url.endswith("#" + d) and ring == "1"
     record(ok, "each What's new date links to its own row and rings it")
@@ -597,7 +622,7 @@ def main():
         for path in all_pages:
             off_site.clear(); errors.clear()
             resp = page.goto(base + path, wait_until="load")
-            page.wait_for_timeout(150)
+            settle(page)
             record(resp is not None and resp.ok, f"{path} loads", str(resp.status if resp else "no response"))
             record(not off_site, f"{path} third-party requests = 0", ", ".join(off_site))
             record(not errors, f"{path} no console errors", "; ".join(errors))
@@ -644,7 +669,7 @@ def main():
             name = f"link '{c['name']}' ({href}) on {path}"
             if internal and href.startswith("#"):
                 loc.click()
-                page.wait_for_timeout(200)
+                settle(page)
                 ok = page.evaluate("""h => { const el = document.getElementById(h.slice(1));
                     if (!el) return false; const r = el.getBoundingClientRect(); return location.hash === h && r.top < innerHeight && r.bottom > 0; }""", href)
                 record(ok, name + " scrolls to its anchor")
@@ -678,13 +703,13 @@ def main():
             page.reload()
             before = page.evaluate("[getComputedStyle(document.body).backgroundColor, document.querySelector('.theme-toggle').getAttribute('aria-pressed')]")
             page.click(".theme-toggle")
-            page.wait_for_timeout(700)
+            settle(page)
             after = page.evaluate("[getComputedStyle(document.body).backgroundColor, document.querySelector('.theme-toggle').getAttribute('aria-pressed'), document.documentElement.dataset.theme, localStorage.getItem('theme')]")
             ok = after[0] != before[0] and after[1] != before[1] and after[2] == after[3] == "dark"
             page.reload()
             kept = page.evaluate("document.documentElement.dataset.theme") == "dark"
             page.click(".theme-toggle")
-            page.wait_for_timeout(700)
+            settle(page)
             back = page.evaluate("document.documentElement.dataset.theme") == "light"
             record(ok and kept and back, f"theme toggle on {path} switches, persists, and switches back", str(after))
             tested.add(key)
@@ -696,10 +721,10 @@ def main():
             page.goto(base + path)
             item = page.locator(".faq details").nth(c["i"])
             item.locator("summary").click()
-            page.wait_for_timeout(350)
+            settle(page)
             opened = item.evaluate("d => d.open && getComputedStyle(d.querySelector('p')).opacity === '1'")
             item.locator("summary").click()
-            page.wait_for_timeout(450)
+            settle(page)
             closed = item.evaluate("d => !d.open")
             record(opened and closed, f"FAQ '{c['name']}' on {path} opens and closes")
             tested.add(key)
@@ -710,14 +735,14 @@ def main():
             page.goto(base + path)
             item = page.locator(".faq details").first
             item.locator("summary").click()
-            page.wait_for_timeout(350)
+            settle(page)
             item.locator("summary").click()
             mid = item.evaluate("d => d.classList.contains('closing')")
             item.locator("summary").click()   # within the --d-fast close
-            page.wait_for_timeout(500)
+            settle(page)
             state = item.evaluate("d => [d.open, d.classList.contains('closing'), getComputedStyle(d.querySelector('p')).opacity]")
             item.locator("summary").click()
-            page.wait_for_timeout(500)
+            settle(page)
             closed = item.evaluate("d => !d.open")
             record(mid and state == [True, False, "1"] and closed,
                    f"FAQ on {path}: a click during the close animation reopens it, the next click closes it", f"mid {mid} state {state} closed {closed}")
@@ -741,17 +766,17 @@ def main():
             prev, nxt = ctl.locator('[data-step="-1"]'), ctl.locator('[data-step="1"]')
             start = rp.evaluate("() => 0")
             ok = prev.get_attribute("aria-disabled") == "true" and ctl.locator(".rail-now").inner_text() == "1"
-            nxt.click(); rp.wait_for_timeout(700)
+            nxt.click(); scroll_settle(wrap.locator('.rail')); settle(rp)
             moved = wrap.locator(".rail").evaluate("r => r.scrollLeft") > start
             ok = ok and moved and ctl.locator(".rail-now").inner_text() == "2" and prev.get_attribute("aria-disabled") == "false"
-            nxt.focus(); rp.keyboard.press("Enter"); rp.wait_for_timeout(700)
+            nxt.focus(); rp.keyboard.press("Enter"); scroll_settle(wrap.locator('.rail')); settle(rp)
             ok_kb = ctl.locator(".rail-now").inner_text() == str(min(3, n))
             for _ in range(n):
                 if nxt.get_attribute("aria-disabled") == "true":
                     break
-                nxt.click(); rp.wait_for_timeout(600)
+                nxt.click(); scroll_settle(wrap.locator('.rail')); settle(rp)
             at_end = nxt.get_attribute("aria-disabled") == "true" and ctl.locator(".rail-now").inner_text() == str(n)
-            prev.click(); rp.wait_for_timeout(700)
+            prev.click(); scroll_settle(wrap.locator('.rail')); settle(rp)
             back = int(ctl.locator(".rail-now").inner_text()) < n
             record(ok and ok_kb and at_end and back, f"rail '{c['name']}' on {path}: next, keyboard, end, previous",
                    f"start/next {ok} keyboard {ok_kb} end {at_end} back {back}")
@@ -762,10 +787,10 @@ def main():
         for path in ("/", "/apps/flowmoro/", "/apps/flowmoro/privacy/", "/apps/flowmoro/home/"):
             page.goto(base + path)
             page.keyboard.press("Tab")
-            page.wait_for_timeout(300)
+            settle(page)
             shown = page.evaluate("[document.activeElement.className, document.activeElement.getBoundingClientRect().top]")
             page.keyboard.press("Enter")
-            page.wait_for_timeout(100)
+            settle(page)
             record(shown[0] == "skip" and shown[1] >= 0 and page.url.endswith("#main"),
                    f"skip link on {path} shows on Tab and jumps to #main", f"{shown} {page.url}")
 
