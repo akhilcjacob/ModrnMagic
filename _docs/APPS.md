@@ -24,6 +24,7 @@ Both commands need only Python 3, no installs:
 ```
 python3 _scripts/check.py serve   # serve the repo at http://localhost:8000 (PORT=xxxx to change)
 python3 _scripts/check.py         # exit 1 if any internal link, asset, or sitemap URL is missing
+python3 _scripts/check.py --release  # also exit 1 while any draft page, outcome, or lesson remains
 ```
 
 Click tests (dev only, need Playwright for Python with Chromium: `pip install playwright && playwright install chromium`):
@@ -61,6 +62,15 @@ GitHub Pages serves the committed files as they are. Its default Jekyll pass cop
 | `icon`, `color` | Icon file in the folder (or null for a letter tile) and its tile color. |
 | `screenshots` | `{from, src, w, h, alt, shape}`. `shape` is `phone` or `wide`. `src`, `w`, `h` are written by `images.py`. |
 | `legal` | Relative paths to `privacy/`, `tos/`, and optional `deleteAccount`. |
+| `draft` | Optional, default false. A draft product gets its own page (noindex, with a Draft banner) and nothing else: no home, footer, sitemap, or llms.txt entry. Remove it once Akhil confirms the page. |
+| `outcome` | `null`, or `{label, date, line, draft}` once a keep or archive decision exists. `label` is `Kept`, `Paused`, `Parked`, or `Archived`; `date` is `YYYY-MM`; `line` is one sentence with the reason. Outcome text comes from Akhil or the cycle report; a line an agent drafted keeps `draft: true` until he confirms it. |
+| `lessons` | `[{text, draft}]`, shown as "What we learned". Same draft rule. |
+| `cycle` | `null`, or `{start, end, goal, updates}` during a push cycle. Dates are `YYYY-MM-DD`; `updates` is `[{date, text}]` with unique dates on or after `start`. The page shows them newest first as "What's new", each with its own link. |
+| `flagship` | `true` on at most one product, never an archived or draft one. Home reads it from week 3 on. |
+
+Text fields (`oneliner`, `summary`, `description`, `features`, `faq`, screenshot `alt`) may write `{name}`; `render.py` fills in `name`. Use it when a product may be renamed, so the name lives in one field. Ramble does this.
+
+`render.py` validates all of the above, and rejects unknown keys, on every run, so `render.py --check` fails on bad data.
 
 Rules: no invented metrics, ratings, or testimonials. Archived apps never link to a store.
 

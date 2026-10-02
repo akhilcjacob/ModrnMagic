@@ -93,6 +93,8 @@ box-shadow: inset 0 1px 0 var(--highlight), var(--shadow-1);
 | `--d-fast` | `140ms` | Hover color, press |
 | `--d-base` | `240ms` | Lift, chip, toggle |
 | `--d-slow` | `520ms` | Reveal on scroll |
+| `--d-stagger` | `50ms` | Delay between items in one reveal; hero phones use 2x and 4x |
+| `--d-settle` | `900ms` | The hero's one-time settle on load |
 | `--ease-out` | `cubic-bezier(.2, .8, .2, 1)` | Default |
 | `--ease-spring` | `cubic-bezier(.34, 1.4, .64, 1)` | Press release, icon pop |
 
@@ -110,7 +112,9 @@ What moves and why:
 
 Only `transform` and `opacity` animate, plus hover `color`, `background`, and `box-shadow` on controls (see the audit). No scroll-driven animation, no loops, no parallax; the rail's one passive scroll listener only updates its position readout. `prefers-reduced-motion: reduce` turns all of it off, including view transitions and the theme cross-fade.
 
-Written exceptions: the focus ring appears instantly (focus must never lag), the rail position number changes instantly (it is a readout), and the hero settle uses 900ms with 120 and 220ms delays because it plays once per load and is meant to be slower than any interaction.
+Written exceptions: the focus ring appears instantly (focus must never lag), and the rail position number changes instantly (it is a readout). The hero settle is deliberately slower than any interaction (`--d-settle`) because it plays once per load.
+
+`--d-stagger` and `--d-settle` are not in `LANGUAGE.md`'s motion table yet. They are site tokens for values the language already describes (the 50ms reveal stagger) or that only the hero uses; propose them upstream if a second app needs them.
 
 ### Motion audit
 
@@ -127,7 +131,8 @@ Every state change on the site, checked 2026-10-02 on `site/studio-index`.
 | FAQ open and close | answer opacity and transform, `--d-base` in, `--d-fast` out | Done, height snaps by design |
 | Rail previous and next | button lift and press; smooth scroll | Done |
 | Section reveal | opacity and 12px rise, `--d-slow`, 50ms stagger | Done |
-| Hero settle | 900ms once per load | Written exception |
+| Hero settle | opacity and transform, `--d-settle`, phones offset by `--d-stagger` | Done |
+| What's new update, opened from its link | accent ring fades in, `--d-base` (opacity) | Done |
 | Page-to-page view transition | `--d-base` root fade, `--d-slow` icon morph | Done |
 | Skip link | slide, `--d-base` spring | Done |
 | Focus ring | instant | Written exception |
@@ -135,8 +140,7 @@ Every state change on the site, checked 2026-10-02 on `site/studio-index`.
 Open items:
 
 1. `LANGUAGE.md` allows only transform and opacity, but hover backgrounds, colors, and button and cell shadows animate here, and its own token table lists "hover color" for `--d-fast`. Needs a studio call: allow color, background, and shadow on hover, or replace them with opacity layers.
-2. The 50ms reveal stagger and the hero settle timings are raw values, not tokens.
-3. No screen recording of the motion yet; timings were checked in code and by tests, not watched by a reviewer.
+Closed in week 2: the reveal stagger and hero settle are tokens (`--d-stagger`, `--d-settle`), and a screen recording of every motion exists (see the week 2 report). A second reviewer still has to watch it in the week 4 design review.
 
 ## Components
 
@@ -145,6 +149,9 @@ Open items:
 - Store buttons: pill buttons with the store name in text. Only rendered when a live store link exists. Archived apps show "Was on" as plain text.
 - Status: text label with color (`Live`, `In the lab`, `Archived`). No dots.
 - Screenshot rail: horizontal scroll-snap row, native scrolling, visible edge fade, keyboard focusable. Below it, previous and next pill buttons (44px) and an "n of N" readout; `site.js` shows them only when the rail overflows, so without JavaScript there are no dead buttons. Framed shots (images that already include the device) drop the card border and use a drop shadow. Built by `rail_html()` in `render.py`.
+- Outcome and lessons: the outcome joins the status in the hero ("Archived Jan 2024", or a chip such as "Parked Feb 2025" next to "In the lab"), and a glass card under About gives the one-line reason and a "What we learned" list. The lab or archive notice is dropped when an outcome exists, since the outcome says it with a reason.
+- What's new: during a push cycle, a section with the cycle goal and window, then one glass row per update, newest first. Each date links to `#update-<date>`, so every weekly release has a URL; the linked row shows an accent ring.
+- Draft marker: a dashed pill in the lab color reading "Draft". Every unconfirmed outcome line, lesson, and draft page carries one, and draft pages also get a banner. Drafts never appear on shared pages, and `check.py --release` fails while any remain.
 - Legal page: breadcrumb, title, one glass card with the policy text (68ch), and a sticky side card with the support address and related legal links. Rendered from the Markdown next to the page.
 - Product site (`apps/<id>/home/`): the store-facing page for one product, from `home/descriptions.json`: hero with framed phones, a tour rail with captions, the product's features, and a closing band with the legal links.
 - Facts panel: definition list in a card, two columns on desktop.

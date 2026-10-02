@@ -56,6 +56,8 @@
   --d-slow: 520ms;
   --ease-out: cubic-bezier(.2, .8, .2, 1);
   --ease-spring: cubic-bezier(.34, 1.4, .64, 1);
+  --d-stagger: 50ms;   /* delay between items in one reveal */
+  --d-settle: 900ms;   /* the hero's one-time settle on load */
 
   /* z-index scale: content 0, nav 10, skip link 20 */
   --z-nav: 10;
@@ -631,12 +633,12 @@ dl, dd { margin: 0; }
 
   .skip { transition: transform var(--d-base) var(--ease-spring); }
 
-  .js .reveal { opacity: 0; transform: translateY(12px); transition: opacity var(--d-slow) var(--ease-out), transform var(--d-slow) var(--ease-out); transition-delay: calc(var(--i, 0) * 50ms); }
+  .js .reveal { opacity: 0; transform: translateY(12px); transition: opacity var(--d-slow) var(--ease-out), transform var(--d-slow) var(--ease-out); transition-delay: calc(var(--i, 0) * var(--d-stagger)); }
   .js .reveal.in { opacity: 1; transform: none; }
 
-  .hero-art > * { animation: settle 900ms var(--ease-out) both; }
-  .hero-art .p1 { animation-delay: 120ms; }
-  .hero-art .p2 { animation-delay: 220ms; }
+  .hero-art > * { animation: settle var(--d-settle) var(--ease-out) both; }
+  .hero-art .p1 { animation-delay: calc(2 * var(--d-stagger)); }
+  .hero-art .p2 { animation-delay: calc(4 * var(--d-stagger)); }
   @keyframes settle { from { opacity: 0; transform: translateY(18px) scale(.98); } }
 }
 @media (prefers-reduced-motion: reduce) {
