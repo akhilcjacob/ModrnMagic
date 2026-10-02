@@ -11,3 +11,4 @@
 *.local.html
 /test.png
 /production-ready.html
+__pycache__/
