@@ -4,7 +4,7 @@
 Reads each apps/<id>/app.json and writes apps/<id>/media/*.webp from the
 `from` path of every screenshot, plus a small icon. Those originals live in
 _src/apps/<id>/, outside the published tree, so only the WebP copies ship. Also writes favicons and
-the nav mark from favicon.ico. Needs Pillow (with WebP support). Only rerun
+the nav mark from _src/favicon.ico (the 500px original), and a small favicon.ico. Needs Pillow (with WebP support). Only rerun
 when source images change; the output is committed.
 
     python3 _scripts/images.py
@@ -69,7 +69,9 @@ def main():
                 f.write("\n")
             print("ok", app_id, "home")
 
-    mark = Image.open(os.path.join(ROOT, "favicon.ico")).convert("RGBA")
+    # The 500px mark lives in _src/; the published favicon.ico is a small multi-size icon.
+    mark = Image.open(os.path.join(ROOT, "_src/favicon.ico")).convert("RGBA")
+    mark.save(os.path.join(ROOT, "favicon.ico"), sizes=[(16, 16), (32, 32), (48, 48)])
     out = os.path.join(ROOT, "assets/img")
     os.makedirs(out, exist_ok=True)
     mark.resize((96, 96), Image.LANCZOS).save(os.path.join(out, "mark-96.webp"), "WEBP", quality=90, method=6)
