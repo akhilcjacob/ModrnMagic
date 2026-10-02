@@ -64,6 +64,7 @@
   "wasOn": [],
   "icon": "icon.png",
   "color": "#dceff3",
+  "tint": "#23c8f9",
   "screenshots": [
     {
       "from": "marketing/1.jpg",

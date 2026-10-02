@@ -19,6 +19,7 @@ import datetime as dt
 import html
 import json
 import os
+import re
 import subprocess
 import sys
 
@@ -102,7 +103,7 @@ def valid_date(value, day=False):
 def validate(ids, apps):
     """Schema checks for the fields render.py reads. Returns a list of problems."""
     template = json.load(open(os.path.join(ROOT, "_docs/app-template.json")))
-    optional = {"draft", "price", "storeName"}
+    optional = {"draft", "price", "storeName", "tint"}
     known = set(template) | optional
     out = []
     for aid, a in zip(ids, apps):
@@ -116,6 +117,10 @@ def validate(ids, apps):
             bad("`id` must match the folder name")
         if a.get("status") not in STATUS_LABEL:
             bad(f"`status` must be one of {', '.join(STATUS_LABEL)}")
+        if rgb(a.get("color")) is None:
+            bad("`color` must be #rrggbb or rgb(r,g,b)")
+        if "tint" in a and not re.fullmatch(r"#[0-9a-fA-F]{6}", str(a["tint"])):
+            bad("`tint` must be #rrggbb")
         if not isinstance(a.get("draft", False), bool):
             bad("`draft` must be true or false")
         if not isinstance(a.get("flagship"), bool):
@@ -222,6 +227,53 @@ def page_url(app):
     return f"{SITE}/apps/{app['id']}/"
 
 
+def rgb(color):
+    """'#rrggbb' or 'rgb(r,g,b)' as three ints, or None."""
+    m = re.fullmatch(r"#([0-9a-fA-F]{6})", color or "")
+    if m:
+        return tuple(int(m.group(1)[i:i + 2], 16) for i in (0, 2, 4))
+    m = re.fullmatch(r"rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)", color or "")
+    if m and all(int(x) <= 255 for x in m.groups()):
+        return tuple(int(x) for x in m.groups())
+    return None
+
+
+def oklch(color):
+    """OKLCH lightness and chroma of a color (Ottosson's OKLab)."""
+    def lin(c):
+        c /= 255
+        return c / 12.92 if c <= .04045 else ((c + .055) / 1.055) ** 2.4
+    r, g, b = map(lin, rgb(color))
+    l = (.4122214708 * r + .5363325363 * g + .0514459929 * b) ** (1 / 3)
+    m = (.2119034982 * r + .6806995451 * g + .1073969566 * b) ** (1 / 3)
+    s = (.0883024619 * r + .2817188376 * g + .6299787005 * b) ** (1 / 3)
+    lightness = .2104542553 * l + .7936177850 * m - .0040720468 * s
+    a = 1.9779984951 * l - 2.4285922050 * m + .4505937099 * s
+    bb = .0259040371 * l + .7827717662 * m - .8086757660 * s
+    return lightness, (a * a + bb * bb) ** .5
+
+
+def glow(app):
+    """The color for a product's card gradient, or None for no gradient.
+
+    `tint` wins. Otherwise the icon tile `color`, unless it is near neutral or
+    near black: those mix into a grey haze and pull meta text under AA."""
+    if app.get("tint"):
+        return app["tint"]
+    lightness, chroma = oklch(app["color"])
+    return app["color"] if chroma >= .04 and .3 <= lightness <= .9 else None
+
+
+def is_dark(app):
+    return oklch(app["color"])[0] < .3
+
+
+def tint_style(app):
+    """Inline custom properties for a product surface: --tint (icon tile) and --glow (gradient)."""
+    g = glow(app)
+    return f"--tint:{app['color']};" + (f"--glow:{g};" if g else "")
+
+
 def icon_html(app, size_cls="", vt=True):
     style = f"--tint:{app['color']};"
     if vt:
@@ -316,7 +368,6 @@ def app_node(app):
 
 def inline_css():
     """The stylesheet, minified, for inlining. One less render-blocking request."""
-    import re
     css = open(os.path.join(ROOT, "assets/css/site.css")).read()
     css = css.replace('url("../fonts/', 'url("/assets/fonts/')
     css = re.sub(r"/\*.*?\*/", "", css, flags=re.S)
@@ -458,6 +509,15 @@ def status_html(app, outcome=None):
 
 # ---------------------------------------------------------------- home
 
+def framed_shot(app):
+    """The first tour shot of the product site: a framed, uncropped device. None without a product site."""
+    path = os.path.join(ROOT, "apps", app["id"], "home/descriptions.json")
+    if not (app["links"].get("home") and os.path.exists(path)):
+        return None
+    tour = json.load(open(path))["tour"]
+    return tour[0] if tour else None
+
+
 def flagship_html(app):
     """Full-width panel for the flagged product: name, one-liner, latest update, one call to action."""
     aid = app["id"]
@@ -478,11 +538,15 @@ def flagship_html(app):
         news = (f'<p class="fl-news"><a href="/apps/{aid}/#update-{u["date"]}"><span class="meta">What\'s new, '
                 f'<time datetime="{u["date"]}">{fmt_date(u["date"])}</time></span> {e(u["text"])}</a></p>')
     art = ""
-    if app["screenshots"]:
+    framed = framed_shot(app)
+    if framed:   # a whole device, never a marketing image that crops it
+        art = (f'<div class="fl-art phone framed" aria-hidden="true"><img src="/apps/{aid}/home/{framed["src"]}" alt="" '
+               f'width="{framed["w"]}" height="{framed["h"]}" loading="lazy" decoding="async"></div>')
+    elif app["screenshots"]:
         s0 = app["screenshots"][0]
         art = (f'<div class="fl-art {s0["shape"]}" aria-hidden="true"><img src="/apps/{aid}/{s0["src"]}" alt="" '
                f'width="{s0["w"]}" height="{s0["h"]}" loading="lazy" decoding="async"></div>')
-    return f"""<section class="flagship glass reveal{' has-art' if art else ''}" aria-labelledby="flagship-title" style="--tint:{app['color']}">
+    return f"""<section class="flagship glass reveal{' has-art' if art else ''}" aria-labelledby="flagship-title" style="{tint_style(app)}">
   <div class="fl-copy">
     <p class="meta fl-eyebrow">Flagship{" " + draft_mark() if app.get("draft") else ""}</p>
     <div class="fl-head">{icon_html(app, vt=False)}<div><h2 class="h2" id="flagship-title"><a href="/apps/{aid}/">{e(app['name'])}</a></h2>{status_html(app, app.get("outcome"))}</div></div>
@@ -498,43 +562,66 @@ def strip_card(app, i=0):
     """A compact product card for the experiments strip and /work/."""
     o = app.get("outcome")
     tag = f'<span class="chip outcome-tag">{e(o["label"])} {fmt_date(o["date"])}</span>' if o and o["label"] != STATUS_LABEL[app["status"]] else ""
-    return f"""<a class="card glass reveal" style="--i:{i};--tint:{app['color']}" href="/apps/{app['id']}/">
+    return f"""<a class="card glass reveal" style="--i:{i};{tint_style(app)}" href="/apps/{app['id']}/">
   <div class="card-top">{icon_html(app, vt=False)}<div><h3 class="name">{e(app['name'])}</h3><div class="card-status">{status_html(app, o)}{tag}{draft_mark() if app.get("draft") else ""}</div></div></div>
   <p class="one">{e(app['oneliner'])}</p>
   <div class="foot">{f'<span class="meta tnum">{years(app)}</span>' if years(app) else ""}{chips(app)}</div>
 </a>"""
 
 
-def render_home(apps):
-    flag = flagship(apps)
-    apps = listed(apps)
-    live = {a["id"]: a for a in apps if a["status"] == "live"}
-    experiments = sorted((a for a in apps if a["status"] == "lab" and a is not flag and (not flag or a["id"] != flag["id"])),
-                         key=latest, reverse=True)[:3]
+def bento_sizes(n):
+    """Cell sizes by position, so any number of cells tiles the grid with no hole.
 
-    def shot(app_id, n, cls="", eager=False, width=None):
-        s = live[app_id]["screenshots"][n]
-        load = 'decoding="async"' if eager else 'loading="lazy" decoding="async"'
-        return f'<img class="{cls}" src="/apps/{app_id}/{s["src"]}" alt="{e(s["alt"])}" width="{s["w"]}" height="{s["h"]}" {load}>'
+    On the 6-column grid a lead cell is 3 wide and 2 tall, a half is 3 wide,
+    and a wide is 6. Three or more cells: a lead, two halves beside it, then
+    halves in pairs, and a lone last cell goes wide. The 2-column tablet grid
+    maps lead and wide to 2 and half to 1, so the same pairs fill it too."""
+    if n < 3:
+        return ["wide"] if n == 1 else ["half"] * n
+    rest = n - 3
+    return ["lead", "half", "half"] + ["half"] * (rest - rest % 2) + ["wide"] * (rest % 2)
 
-    def cell(app, inner="", dark=False):
-        cls = f"cell glass reveal c-{app['id']}" + (" dark" if dark else "")
-        return f"""<a class="{cls}" href="/apps/{app['id']}/" style="--tint:{app['color']}">
+
+def bento_cell(app, size, shot):
+    """One home bento cell. The art comes from the product's own screenshots."""
+    phones = [s for s in app["screenshots"] if s["shape"] == "phone"]
+    wides = [s for s in app["screenshots"] if s["shape"] == "wide"]
+    art = ""
+    if size == "lead" and len(phones) >= 2:
+        pair = (phones[0], phones[2] if len(phones) > 2 else phones[1])
+        art = f'<div class="cell-shots pair">{"".join(shot(app, s) for s in pair)}</div>'
+    elif size != "half" and wides:
+        art = f'<div class="cell-shots">{shot(app, wides[0])}</div>'
+    elif phones:
+        art = f'<div class="peek-clip" aria-hidden="true"><div class="peek">{shot(app, phones[-1])}</div></div>'
+    elif wides:
+        art = f'<div class="cell-shots">{shot(app, wides[0])}</div>'
+    cls = f"cell cell-{size} glass reveal" + (" dark" if is_dark(app) else "") + (" has-peek" if "peek" in art else "")
+    return f"""<a class="{cls}" href="/apps/{app['id']}/" data-app="{app['id']}" style="{tint_style(app)}">
   {icon("arrow-up-right", "arrow")}
   <div class="top">{icon_html(app)}<div><h3 class="name">{e(app['name'])}</h3>{status_html(app)}</div></div>
   <p class="one">{e(app['oneliner'])}</p>
-  {inner}
+  {art}
   <div class="foot">{chips(app)}</div>
 </a>"""
 
-    cells = [
-        ("flowmoro", lambda: cell(live["flowmoro"], f'<div class="cell-shots">{shot("flowmoro", 0)}{shot("flowmoro", 2)}</div>')),
-        ("skywise", lambda: cell(live["skywise"], f'<div class="peek-clip" aria-hidden="true"><div class="peek">{shot("skywise", 0)}</div></div>')),
-        ("astrodefender", lambda: cell(live["astrodefender"], f'<div class="peek-clip" aria-hidden="true"><div class="peek">{shot("astrodefender", 2)}</div></div>', dark=True)),
-        ("inboxhiiv", lambda: cell(live["inboxhiiv"], f'<div class="cell-shots">{shot("inboxhiiv", 0)}</div>')),
-    ]
-    # The flagship gets the panel above, so it leaves the bento.
-    bento = "\n".join(make() for aid, make in cells if aid in live and not (flag and flag["id"] == aid))
+
+def render_home(apps):
+    flag = flagship(apps)
+    apps = listed(apps)
+    live = [a for a in apps if a["status"] == "live"]
+    experiments = sorted((a for a in apps if a["status"] == "lab" and a is not flag and (not flag or a["id"] != flag["id"])),
+                         key=latest, reverse=True)[:3]
+
+    def shot(app, s, eager=False):
+        load = 'decoding="async"' if eager else 'loading="lazy" decoding="async"'
+        return (f'<img src="/apps/{app["id"]}/{s["src"]}" alt="{e(s["alt"])}" '
+                f'width="{s["w"]}" height="{s["h"]}" {load}>')
+
+    # The flagship gets the panel above, so it leaves the bento. Every other
+    # live product gets a cell, in apps/index.json order.
+    bento_apps = [a for a in live if not (flag and flag["id"] == a["id"])]
+    bento = "\n".join(bento_cell(a, size, shot) for a, size in zip(bento_apps, bento_sizes(len(bento_apps))))
     strip = "\n".join(strip_card(a, i) for i, a in enumerate(experiments))
 
     live_list = [a for a in apps if a["status"] == "live"]
@@ -552,11 +639,15 @@ def render_home(apps):
             {"@type": "ListItem", "position": i + 1, "url": page_url(a), "name": a["name"]} for i, a in enumerate(apps)]},
     ]
 
-    hero_art = f"""<div class="hero-art" aria-hidden="true">
-  <div class="phone p1">{shot("skywise", 1)}</div>
-  <div class="phone p2">{shot("astrodefender", 0)}</div>
-  <div class="phone p0">{shot("flowmoro", 1, eager=True)}</div>
-</div>"""
+    # Hero: one phone shot from each of the first three live products that have one.
+    phones = [(a, [s for s in a["screenshots"] if s["shape"] == "phone"]) for a in live]
+    trio = [(a, ps[1] if len(ps) > 1 else ps[0]) for a, ps in phones if ps][:3]
+    hero_art = ""
+    if trio:
+        places = ("p0", "p1", "p2")
+        hero_art = '<div class="hero-art" aria-hidden="true">\n' + "\n".join(
+            f'  <div class="phone {p}">{shot(a, s, eager=p == "p0")}</div>'
+            for p, (a, s) in reversed(list(zip(places, trio)))) + "\n</div>"
 
     body = f"""<body>
 {nav()}
@@ -694,7 +785,7 @@ def render_product(app, apps):
                           for i, f in enumerate(app["features"]))
         features = f"""<section class="wrap section" style="padding-top:0" aria-labelledby="f-title">
   <h2 class="h2" id="f-title" style="margin-bottom:var(--s-6)">What it does</h2>
-  <div class="features n{n}" style="--tint:{app['color']}">
+  <div class="features n{n}" style="{tint_style(app)}">
 {items}
   </div>
 </section>"""
@@ -861,7 +952,7 @@ def render_product_site(app, apps):
                           for i, f in enumerate(app["features"]))
         features = f"""<section class="wrap section" style="padding-top:0" aria-labelledby="f-title">
   <h2 class="h2" id="f-title" style="margin-bottom:var(--s-6)">Why it works</h2>
-  <div class="features n{len(app['features'])}" style="--tint:{app['color']}">
+  <div class="features n{len(app['features'])}" style="{tint_style(app)}">
 {items}
   </div>
 </section>"""
@@ -881,7 +972,7 @@ def render_product_site(app, apps):
     ]
     body = f"""<body>
 {nav("products")}
-<main id="main" style="--tint:{app['color']}">
+<main id="main" style="{tint_style(app)}">
 <div class="wrap">
   <nav class="crumbs" aria-label="Breadcrumb"><a href="/">Modrn Magic</a> / <a href="/apps/{aid}/">{e(app['name'])}</a> / <span aria-current="page">Product site</span></nav>
   <section class="hero ps-hero">
@@ -947,7 +1038,7 @@ def render_work(apps):
         tag = f'<span class="chip outcome-tag">{e(o["label"])} {fmt_date(o["date"])}</span>' if o and o["label"] != STATUS_LABEL[a["status"]] else ""
         line = f'<p class="w-outcome">{e(o["line"])}{" " + draft_mark() if o["draft"] else ""}</p>' if o else ""
         return f"""<li class="work-item" data-status="{GROUP_ID[a['status']]}" data-kind="kind-{a['kind']}" style="--i:{i};view-transition-name:work-{a['id']}">
-  <a class="w-card glass" href="/apps/{a['id']}/" style="--tint:{a['color']}">
+  <a class="w-card glass" href="/apps/{a['id']}/" style="{tint_style(a)}">
     {icon_html(a, vt=False)}
     <div class="w-main">
       <div class="w-head"><h2 class="name">{e(a['name'])}</h2>{status_html(a, o)}{tag}{draft_mark() if a.get("draft") else ""}</div>
@@ -1086,7 +1177,6 @@ SUPPORT = "support@modrnmagic.app"   # the address the legal text itself names
 
 
 def md_inline(text):
-    import re
     out = e(text, quote=False)
     out = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", out)
     out = re.sub(r"\[([^\]]+)\]\((https?://[^)\s]+)\)", r'<a href="\2" rel="noopener">\1</a>', out)
@@ -1098,7 +1188,6 @@ def md_to_html(md, title_words):
     """The small Markdown subset the legal files use: headings, bold-only
     lines used as headings, bullet lists, links, bold, and hard breaks.
     The first line is dropped when it is the document title."""
-    import re
     md = re.sub(r"(?m)^(#{1,6} .*)$", r"\n\1\n", md)   # a heading is its own block
     blocks = [b.strip("\n") for b in re.split(r"\n\s*\n", md.strip()) if b.strip()]
     if blocks:

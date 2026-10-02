@@ -247,7 +247,8 @@ def flagship_tests(browser):
     labs = sorted((a for a in listed_apps if a["status"] == "lab"),
                   key=lambda a: max(v for v in (a["dates"].get("updated"), a["dates"].get("ended"), a["dates"].get("shipped"), a["dates"].get("started")) if v), reverse=True)
     record(not any(a.get("flagship") for a in apps.values()), "no product is flagged in the real data (HQ picks)")
-    record(got[0] == 0 and got[1] == 4 and got[2] == [a["name"] for a in labs[:3]],
+    n_live = sum(1 for a in listed_apps if a["status"] == "live")
+    record(got[0] == 0 and got[1] == n_live and got[2] == [a["name"] for a in labs[:3]],
            "home with nothing flagged: no panel, full bento, three newest experiments", str(got))
     numbers = page.locator(".hero .numbers").inner_text()
     record(numbers == expected_numbers(listed_apps), "home numbers line matches app.json", numbers)
@@ -267,7 +268,7 @@ def flagship_tests(browser):
         name = panel.locator("#flagship-title").inner_text() if panel.count() else ""
         cta = panel.locator(".btn").get_attribute("href") if panel.count() else ""
         want_cta = (a["links"].get("web") or a["links"].get("appStore") or a["links"].get("googlePlay")) if a["status"] == "live" else f"/apps/{aid}/"
-        in_bento = page.locator(f".bento .c-{aid}").count()
+        in_bento = page.locator(f'.bento [data-app="{aid}"]').count()
         in_strip = page.locator(".strip .card", has_text=a["name"]).count()
         labelled = page.evaluate("document.querySelector('.flagship').getAttribute('aria-labelledby')") == "flagship-title"
         draft_ok = (panel.locator(".draft-mark").count() > 0) == bool(a.get("draft"))
@@ -312,6 +313,117 @@ def flagship_tests(browser):
     # /work/ is in the sitemap and llms.txt.
     sm, llms = open(os.path.join(ROOT, "sitemap.xml")).read(), open(os.path.join(ROOT, "llms.txt")).read()
     record("https://modrnmagic.app/work/" in sm and "https://modrnmagic.app/work/" in llms, "/work/ is in sitemap.xml and llms.txt")
+
+
+# Every grid track of the bento, sampled at its center, must fall inside a cell.
+BENTO_HOLES = """() => {
+  const g = document.querySelector('.bento'); if (!g) return [];
+  const cs = getComputedStyle(g), r = g.getBoundingClientRect();
+  const cols = cs.gridTemplateColumns.split(' ').map(parseFloat), rows = cs.gridTemplateRows.split(' ').map(parseFloat);
+  const cells = [...g.children].map(c => c.getBoundingClientRect());
+  const holes = []; let y = r.top;
+  rows.forEach((h, j) => { let x = r.left;
+    cols.forEach((w, i) => { const cx = x + w / 2, cy = y + h / 2;
+      if (!cells.some(c => cx >= c.left && cx <= c.right && cy >= c.top && cy <= c.bottom)) holes.push([i, j]);
+      x += w + parseFloat(cs.columnGap); });
+    y += h + parseFloat(cs.rowGap); });
+  return holes;
+}"""
+
+
+def bento_check(browser, base, label, apps):
+    """Home bento: one cell per live, listed, non-flagship product, no grid holes at any width, and the live count matches."""
+    listed_apps = [a for a in apps if not a.get("draft")]
+    flag = next((a for a in listed_apps if a.get("flagship")), None)
+    want = [a["id"] for a in listed_apps if a["status"] == "live" and a is not flag]
+    for w in (1440, 800, 390):
+        ctx = browser.new_context(viewport={"width": w, "height": 900}, reduced_motion="reduce")
+        page = ctx.new_page()
+        page.goto(base + "/")
+        cells = page.eval_on_selector_all(".bento .cell", "els => els.map(e => e.dataset.app)")
+        holes = page.evaluate(BENTO_HOLES)
+        live_n = int(re.search(r"(\d+) live", page.locator(".hero .numbers").inner_text()).group(1))
+        shown_live = len(cells) + (1 if flag and flag["status"] == "live" else 0)
+        record(cells == want and not holes and live_n == shown_live,
+               f"bento {label} at {w}px: a cell per live product, no holes, '{live_n} live' matches",
+               f"cells {cells} want {want} holes {holes}")
+        ctx.close()
+
+
+def bento_tests(browser):
+    apps = load_all()
+    server, base = serve()
+    bento_check(browser, base, "nothing flagged", apps)
+    server.shutdown()
+    cases = [(f"{a['id']} flagged", lambda d, aid=a["id"]: edit_app(d, aid, lambda x: x.update(flagship=True)))
+             for a in apps if a["status"] == "live" and not a.get("draft")]
+    drafts = [a["id"] for a in apps if a.get("draft") and a["status"] == "live"]
+    for aid in drafts:
+        cases.append((f"{aid} draft cleared", lambda d, aid=aid: edit_app(d, aid, lambda x: x.pop("draft"))))
+        cases.append((f"{aid} draft cleared and flagged", lambda d, aid=aid: edit_app(d, aid, lambda x: (x.pop("draft"), x.update(flagship=True)))))
+    for label, edit in cases:
+        tmp, dest, r = temp_copy(edit)
+        if r.returncode:
+            record(False, f"bento {label}: renders", r.stderr[-200:])
+            continue
+        server, base = serve(dest)
+        bento_check(browser, base, label, load_all(dest))
+        contrast_check(browser, base, "/", f"home with {label}")
+        server.shutdown()
+        shutil.rmtree(tmp)
+
+
+# Text on product surfaces must reach WCAG AA (4.5:1) against what is actually
+# painted behind it: glass, tint gradient, and wash. The text is hidden, the
+# page is captured, and each text box is measured against its own pixels.
+CARD_TEXT = ".cell, .card, .w-card, .flagship"
+TEXT_SEL = ".meta, .status, .chip, .one, .w-outcome, .draft-mark, .name, .fl-news"
+
+
+def luminance(rgb):
+    def ch(c):
+        c /= 255
+        return c / 12.92 if c <= .04045 else ((c + .055) / 1.055) ** 2.4
+    r, g, b = (ch(x) for x in rgb[:3])
+    return .2126 * r + .7152 * g + .0722 * b
+
+
+def contrast(a, b):
+    la, lb = sorted((luminance(a), luminance(b)), reverse=True)
+    return (la + .05) / (lb + .05)
+
+
+def contrast_check(browser, base, path, label, themes=("light", "dark")):
+    from io import BytesIO
+    from PIL import Image
+    for theme in themes:
+        ctx = browser.new_context(viewport={"width": 1440, "height": 900}, color_scheme=theme, reduced_motion="reduce")
+        page = ctx.new_page()
+        page.goto(base + path, wait_until="networkidle")
+        page.evaluate("document.querySelectorAll('img[loading=lazy]').forEach(i => i.loading = 'eager')")
+        page.wait_for_function("[...document.images].every(i => i.complete)")
+        page.wait_for_timeout(100)
+        boxes = page.evaluate("""([cards, sel]) => [...document.querySelectorAll(cards)].flatMap(card =>
+          [...card.querySelectorAll(sel)].filter(el => el.getBoundingClientRect().width > 0).map(el => {
+            const r = el.getBoundingClientRect(); const c = getComputedStyle(el).color.match(/[\\d.]+/g).map(Number);
+            return {x: r.left + scrollX, y: r.top + scrollY, w: r.width, h: r.height, color: c,
+                    what: (card.querySelector('.name') || card).textContent.trim().slice(0, 20) + ' ' + el.className + ' ' + el.textContent.trim().slice(0, 16)};
+          }))""", [CARD_TEXT, TEXT_SEL])
+        page.add_style_tag(content="* { color: transparent !important; text-shadow: none !important; -webkit-text-fill-color: transparent !important; border-color: transparent !important; }")
+        page.wait_for_timeout(50)
+        shot = Image.open(BytesIO(page.screenshot(full_page=True))).convert("RGB")
+        worst = []
+        for b in boxes:
+            crop = shot.crop((int(b["x"]), int(b["y"]), int(b["x"] + b["w"]), int(b["y"] + b["h"])))
+            px = list(crop.get_flattened_data() if hasattr(crop, "get_flattened_data") else crop.getdata())
+            if not px:
+                continue
+            ratios = sorted(contrast(b["color"], p) for p in px)
+            low = ratios[len(ratios) // 50]   # 2nd percentile: one stray edge pixel does not decide
+            if low < 4.5:
+                worst.append(f"{b['what']} {low:.2f}")
+        record(not worst and bool(boxes), f"card text contrast >= 4.5 on {label} ({theme}), {len(boxes)} text boxes", "; ".join(worst[:6]))
+        ctx.close()
 
 
 def data_tests(browser):
@@ -598,6 +710,9 @@ def main():
         data_tests(browser)
         filter_tests(browser, base, seen, tested)
         flagship_tests(browser)
+        for path in ("/", "/work/"):
+            contrast_check(browser, base, path, path)
+        bento_tests(browser)
         browser.close()
 
     # Legal URLs answer in every form a store listing might use.

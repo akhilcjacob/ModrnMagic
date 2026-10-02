@@ -71,6 +71,7 @@
   "wasOn": [],
   "icon": "icon.png",
   "color": "rgb(1,5,28)",
+  "tint": "#2a85c7",
   "screenshots": [
     {
       "from": "marketing/1.png",

@@ -28,6 +28,13 @@
   --status-live: #1f7a45;
   --status-lab: #875700;
   --status-archived: var(--ink-3);
+  /* Text on a near-black product cell, the same in both themes */
+  --on-dark: #eceef3;
+  --on-dark-2: #c3c8d2;
+  --on-dark-3: #aab0bb;
+  --on-dark-live: #62d394;
+  --on-dark-sunk: rgb(255 255 255 / .1);
+  --shot-shadow: rgb(20 24 34 / .16);   /* drop shadow under framed device shots */
   --shadow-1: 0 1px 2px rgb(20 24 34 / .04), 0 8px 24px rgb(20 24 34 / .06);
   --shadow-2: 0 2px 6px rgb(20 24 34 / .06), 0 24px 56px rgb(20 24 34 / .12);
 
@@ -85,6 +92,7 @@
     --status-lab: #f0b44c;
     --shadow-1: 0 1px 2px rgb(0 0 0 / .3), 0 8px 24px rgb(0 0 0 / .28);
     --shadow-2: 0 2px 6px rgb(0 0 0 / .35), 0 24px 56px rgb(0 0 0 / .45);
+    --shot-shadow: rgb(0 0 0 / .5);
   }
 }
 :root[data-theme="dark"] {
@@ -107,6 +115,7 @@
   --status-lab: #f0b44c;
   --shadow-1: 0 1px 2px rgb(0 0 0 / .3), 0 8px 24px rgb(0 0 0 / .28);
   --shadow-2: 0 2px 6px rgb(0 0 0 / .35), 0 24px 56px rgb(0 0 0 / .45);
+  --shot-shadow: rgb(0 0 0 / .5);
 }
 
 @media (max-width: 767px) {
@@ -306,14 +315,13 @@ dl, dd { margin: 0; }
 .bento {
   display: grid; gap: var(--s-4);
   grid-template-columns: repeat(6, minmax(0, 1fr));
-  grid-auto-rows: minmax(200px, auto);
+  grid-auto-rows: minmax(200px, auto); grid-auto-flow: dense;
 }
 .cell {
-  --tint: #ccc;
   display: flex; flex-direction: column; gap: var(--s-3);
   padding: var(--s-5); border-radius: var(--r-card);
   text-decoration: none; color: var(--ink);
-  background-image: radial-gradient(120% 90% at 100% 0%, color-mix(in srgb, var(--tint) 34%, transparent), transparent 62%);
+  background-image: radial-gradient(120% 90% at 100% 0%, color-mix(in srgb, var(--glow, transparent) 34%, transparent), transparent 62%);
   transition: transform var(--d-base) var(--ease-out);
 }
 .cell:hover { transform: translateY(-2px); color: var(--ink); }
@@ -328,58 +336,58 @@ dl, dd { margin: 0; }
 }
 .cell:hover .arrow { transform: translate(2px, -2px); color: var(--ink); }
 .cell-shots { display: flex; gap: var(--s-3); margin-top: var(--s-2); }
-.cell-shots img { border-radius: 16px; border: 1px solid var(--line); box-shadow: var(--shadow-1); }
+.cell-shots img { border-radius: var(--r-shot); border: 1px solid var(--line); box-shadow: var(--shadow-1); }
 
-.c-flowmoro { grid-column: span 3; grid-row: span 2; }
-.c-flowmoro .cell-shots { margin-top: auto; justify-content: center; }
-.c-flowmoro .cell-shots img { width: 40%; }
-.c-flowmoro .cell-shots img:nth-child(2) { translate: 0 18px; }
-.c-skywise { grid-column: span 3; }
-.c-astrodefender { grid-column: span 3; }
-.c-inboxhiiv { grid-column: span 6; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); grid-template-rows: auto auto 1fr; column-gap: var(--s-6); }
-.c-inboxhiiv > :not(.cell-shots):not(.arrow) { grid-column: 1; }
-.c-inboxhiiv .cell-shots { grid-column: 2; grid-row: 1 / span 3; margin: 0; align-self: center; }
-.c-inboxhiiv .cell-shots img { width: 100%; }
-.c-inboxhiiv .arrow { display: none; }
+/* Cell sizes come from render.py by position (bento_sizes), never by product. */
+.cell-lead { grid-column: span 3; grid-row: span 2; }
+.cell-half { grid-column: span 3; }
+.cell-wide {
+  grid-column: span 6; display: grid; column-gap: var(--s-6); align-content: center;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); grid-template-rows: 1fr auto auto auto 1fr;
+}
+.cell-shots img { width: 100%; }
+.cell-lead .cell-shots { margin-top: auto; justify-content: center; }
+.cell-lead .cell-shots.pair img { width: 40%; }
+.cell-lead .cell-shots.pair img:nth-child(2) { translate: 0 18px; }
+.cell-wide > :not(.cell-shots):not(.arrow):not(.peek-clip) { grid-column: 1; }
+.cell-wide > .top { grid-row: 2; }
+.cell-wide > .one { grid-row: 3; }
+.cell-wide > .foot { grid-row: 4; margin-top: var(--s-2); }
+.cell-wide .cell-shots { grid-column: 2; grid-row: 1 / -1; margin: 0; align-self: center; }
+.cell-wide:has(.cell-shots) .arrow { display: none; }
 /* The cell no longer clips (its lift shadow sits outside it), so the peek clips itself. */
 .peek-clip { position: absolute; inset: 0; z-index: -1; overflow: hidden; border-radius: inherit; pointer-events: none; }
 .cell .peek {
   position: absolute; right: var(--s-6); top: 34%; width: 30%; max-width: 180px; z-index: -1;
   rotate: 6deg; transition: translate var(--d-base) var(--ease-out);
 }
-.cell .peek img { border-radius: 18px; border: 1px solid var(--line); box-shadow: var(--shadow-2); }
+.cell .peek img { border-radius: var(--r-shot); border: 1px solid var(--line); box-shadow: var(--shadow-2); }
 .cell:hover .peek { translate: 0 -8px; }
-.c-skywise .one, .c-astrodefender .one { max-width: 26ch; }
-.cell.dark { color: #eceef3; }
-.cell.dark .one { color: #c3c8d2; }
-.c-astrodefender { background-color: rgb(1 5 28 / .92); }
-.c-astrodefender::after {
-  content: ""; position: absolute; inset: 0; z-index: -1; opacity: .5; pointer-events: none;
+.cell.has-peek .one { max-width: 26ch; }
+/* A near-black product color becomes the cell itself, with a faint night sky. */
+.cell.dark { --ink: var(--on-dark); --ink-2: var(--on-dark-2); --ink-3: var(--on-dark-3); --status-live: var(--on-dark-live); --surface-sunk: var(--on-dark-sunk); color: var(--ink); background-color: color-mix(in srgb, var(--tint) 92%, transparent); }
+.cell.dark::after {
+  content: ""; position: absolute; inset: 0; z-index: -1; opacity: .5; pointer-events: none; border-radius: inherit;
   background-image:
-    radial-gradient(1px 1px at 20% 30%, #fff, transparent),
-    radial-gradient(1px 1px at 70% 20%, #fff, transparent),
-    radial-gradient(1.5px 1.5px at 85% 70%, #fff, transparent),
-    radial-gradient(1px 1px at 40% 80%, #fff, transparent),
-    radial-gradient(1px 1px at 60% 55%, #fff, transparent),
-    radial-gradient(1.5px 1.5px at 10% 75%, #fff, transparent);
+    radial-gradient(1px 1px at 20% 30%, var(--on-dark), transparent),
+    radial-gradient(1px 1px at 70% 20%, var(--on-dark), transparent),
+    radial-gradient(1.5px 1.5px at 85% 70%, var(--on-dark), transparent),
+    radial-gradient(1px 1px at 40% 80%, var(--on-dark), transparent),
+    radial-gradient(1px 1px at 60% 55%, var(--on-dark), transparent),
+    radial-gradient(1.5px 1.5px at 10% 75%, var(--on-dark), transparent);
 }
-.c-astrodefender .chip { background: rgb(255 255 255 / .1); color: #dfe3ea; }
-.c-astrodefender .arrow { color: #aab0bb; }
-.c-astrodefender:hover .arrow { color: #fff; }
-.c-astrodefender:hover { color: #eceef3; }
+.cell.dark:hover, .cell.dark:hover .arrow { color: var(--ink); }
 @media (max-width: 900px) {
   .bento { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .c-flowmoro, .c-inboxhiiv { grid-column: span 2; grid-row: auto; }
-  .c-skywise, .c-astrodefender { grid-column: span 1; }
-  .c-inboxhiiv { display: flex; }
-  .c-inboxhiiv .cell-shots { margin-top: var(--s-2); }
+  .cell-lead, .cell-wide { grid-column: span 2; grid-row: auto; }
+  .cell-half { grid-column: span 1; }
+  .cell-wide { display: flex; }
+  .cell-wide .cell-shots { margin-top: var(--s-2); }
   .peek-clip { display: none; }
-.c-nookly .cell-shots { margin-top: auto; justify-content: center; }
-.c-nookly .cell-shots img { width: 62%; max-width: 200px; }
 }
 @media (max-width: 600px) {
   .bento { grid-template-columns: minmax(0, 1fr); }
-  .bento > * { grid-column: auto !important; }
+  .bento > * { grid-column: auto; }
 }
 
 /* ---------- Icons, chips, status ---------- */
@@ -404,7 +412,6 @@ dl, dd { margin: 0; }
 .status-live { color: var(--status-live); }
 .status-lab { color: var(--status-lab); }
 .status-archived { color: var(--status-archived); }
-.cell.dark .status-live { color: #62d394; }
 
 /* ---------- Lab shelf (home) ---------- */
 .shelf { border-radius: var(--r-sheet); padding: var(--s-3); }
@@ -537,7 +544,7 @@ dl, dd { margin: 0; }
 .features { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-4); }
 .feature { padding: var(--s-5); border-radius: var(--r-card); display: grid; gap: var(--s-2); align-content: start; }
 .feature p { color: var(--ink-2); font-size: var(--t-small); }
-.features.n3 .feature:first-child { grid-row: span 2; background: color-mix(in srgb, var(--tint) 12%, var(--surface)); }
+.features.n3 .feature:first-child { grid-row: span 2; background: color-mix(in srgb, var(--glow, transparent) 12%, var(--surface)); }
 @media (max-width: 640px) { .features { grid-template-columns: minmax(0, 1fr); } .features.n3 .feature:first-child { grid-row: auto; } }
 
 .faq { max-width: 62ch; }
@@ -573,7 +580,7 @@ dl, dd { margin: 0; }
 .flagship.has-art { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); }
 .flagship::before {
   content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
-  background: radial-gradient(90% 120% at 100% 0%, color-mix(in srgb, var(--tint) 30%, transparent), transparent 64%);
+  background: radial-gradient(90% 120% at 100% 0%, color-mix(in srgb, var(--glow, transparent) 30%, transparent), transparent 64%);
 }
 .fl-copy { display: grid; gap: var(--s-4); justify-items: start; }
 .fl-eyebrow { display: flex; align-items: center; gap: var(--s-2); }
@@ -586,6 +593,7 @@ dl, dd { margin: 0; }
 .fl-art img { border-radius: var(--r-shot); border: 1px solid var(--line); box-shadow: var(--shadow-2); }
 .fl-art.phone img { max-height: 420px; width: auto; border-radius: 28px; }
 .fl-art.wide img { width: 100%; }
+.fl-art.framed img { border: 0; border-radius: 0; box-shadow: none; filter: drop-shadow(0 18px 28px var(--shot-shadow)); }
 @media (max-width: 767px) { .flagship.has-art { grid-template-columns: minmax(0, 1fr); } .fl-art.phone img { max-height: 340px; } }
 
 /* ---------- Cards: experiments strip and /work/ ---------- */
@@ -596,7 +604,7 @@ dl, dd { margin: 0; }
   text-decoration: none; color: var(--ink);
   transition: transform var(--d-base) var(--ease-out);
 }
-.card, .w-card { background-image: radial-gradient(120% 90% at 100% 0%, color-mix(in srgb, var(--tint) 22%, transparent), transparent 60%); }
+.card, .w-card { background-image: radial-gradient(120% 90% at 100% 0%, color-mix(in srgb, var(--glow, transparent) 22%, transparent), transparent 60%); }
 .card:hover, .w-card:hover { transform: translateY(-2px); color: var(--ink); }
 .card:active, .w-card:active { transform: scale(.98); }
 .card-top { display: flex; align-items: center; gap: var(--s-3); }
