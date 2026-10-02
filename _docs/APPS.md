@@ -12,10 +12,21 @@ Every product on modrnmagic.app comes from one file: `apps/<id>/app.json`. `apps
 python3 _scripts/images.py   # web-sized WebP copies in apps/<id>/media/ (needs Pillow)
 python3 _scripts/render.py   # pages, sitemap.xml, llms.txt, JSON-LD
 python3 _scripts/og.py       # 1200x630 share cards in assets/og/ (needs Chrome)
-python3 -m http.server      # preview at http://localhost:8000
+python3 _scripts/check.py serve  # preview at http://localhost:8000
 ```
 
 4. Commit the JSON and the generated files together. `python3 _scripts/render.py --check` fails if the committed HTML is stale.
+
+## Serve and check
+
+Both commands need only Python 3, no installs:
+
+```
+python3 _scripts/check.py serve   # serve the repo at http://localhost:8000 (PORT=xxxx to change)
+python3 _scripts/check.py         # exit 1 if any internal link, asset, or sitemap URL is missing
+```
+
+The check reads every published HTML, CSS, JS, JSON, XML, TXT, and MD file (anything outside `_` and dot folders). It resolves each internal `href`, `src`, `srcset`, CSS `url()`, `https://modrnmagic.app/` URL, and relative path in `apps/**/*.json`, confirms each `sitemap.xml` URL maps to a file, and fails on any mention of the removed `00_Future App Template` folder. Run it before every push.
 
 GitHub Pages serves the committed files as they are. Its default Jekyll pass copies plain HTML untouched and skips `_`-prefixed folders, so `_docs/` and `_scripts/` are not published. Do not add a `.nojekyll` file unless those folders move out of the repo root.
 

@@ -1,26 +1,13 @@
-# Created by https://www.toptal.com/developers/gitignore/api/visualstudiocode
-# Edit at https://www.toptal.com/developers/gitignore?templates=visualstudiocode
+# OS
+.DS_Store
 
-### VisualStudioCode ###
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-!.vscode/*.code-snippets
-
-# Local History for Visual Studio Code
+# Editors
+.vscode/
 .history/
-
-# Built Visual Studio Code Extensions
+.ionide
 *.vsix
 
-### VisualStudioCode Patch ###
-# Ignore all local history of files
-.history
-.ionide
-
-# End of https://www.toptal.com/developers/gitignore/api/visualstudiocode
-.DS_Store
-apps/.DS_Store
-apps/00_Future App Template/.DS_Store
+# Local scratch files (keep out of the published site)
+*.local.html
+/test.png
+/production-ready.html
