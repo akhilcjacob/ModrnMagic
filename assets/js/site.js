@@ -86,7 +86,7 @@
     }
     function update() {
       frame = 0;
-      ctl.hidden = max() <= 2;
+      ctl.hidden = max() <= 2 || figs.length < 2;   // one shot: native scroll only, no dead "1 of 1"
       now.textContent = String(index() + 1);
       prev.setAttribute("aria-disabled", String(rail.scrollLeft <= 2));
       next.setAttribute("aria-disabled", String(rail.scrollLeft >= max() - 2));

@@ -759,7 +759,7 @@ def main():
             if not ctl.is_visible():
                 count = wrap.locator("figure").count()
                 fits = wrap.locator(".rail").evaluate("r => r.scrollWidth <= r.clientWidth + 2")
-                record(fits, f"rail on {path} hides controls only when it fits", f"{count} shots")
+                record(fits or count == 1, f"rail on {path} hides controls only when it fits or holds one shot", f"{count} shots")
                 tested.add(key)
                 continue
             n = wrap.locator("figure").count()

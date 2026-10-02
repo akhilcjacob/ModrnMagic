@@ -63,12 +63,12 @@
   "color": "#237a50",
   "screenshots": [
     {
-      "from": "screenshots/os-connect-ai.png",
-      "alt": "Nookly OS Connect your AI screen with an MCP endpoint, access tokens, and setup commands for Claude Code and Codex",
-      "w": 1280,
-      "h": 800,
+      "from": "screenshots/os-connect-ai-token.png",
+      "alt": "Nookly OS Connect your AI screen: create a named access token, then paste it into the Claude Code setup command",
+      "w": 904,
+      "h": 358,
       "shape": "wide",
-      "src": "media/screenshots-os-connect-ai.webp"
+      "src": "media/screenshots-os-connect-ai-token.webp"
     }
   ],
   "lessons": [
