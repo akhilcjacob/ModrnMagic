@@ -49,9 +49,112 @@ def icon(name, cls=""):
     return svg.replace("<svg ", f"<svg{attrs} ", 1)
 
 
+OUTCOME_LABELS = ("Kept", "Paused", "Parked", "Archived")
+NAME = "{name}"   # text fields say {name}, so a product's name lives only in its `name` field
+
+
 def load_apps():
+    """Every product in apps/index.json order, validated, with {name} filled in."""
     ids = json.load(open(os.path.join(ROOT, "apps/index.json")))
-    return [json.load(open(os.path.join(ROOT, "apps", i, "app.json"))) for i in ids]
+    apps = [json.load(open(os.path.join(ROOT, "apps", i, "app.json"))) for i in ids]
+    problems = validate(ids, apps)
+    if problems:
+        raise SystemExit("app.json problems:\n  " + "\n  ".join(problems))
+    return [fill(a, a["name"]) for a in apps]
+
+
+def fill(value, name):
+    if isinstance(value, str):
+        return value.replace(NAME, name)
+    if isinstance(value, list):
+        return [fill(v, name) for v in value]
+    if isinstance(value, dict):
+        return {k: fill(v, name) for k, v in value.items()}
+    return value
+
+
+def valid_date(value, day=False):
+    for fmt in (("%Y-%m-%d",) if day else ("%Y-%m-%d", "%Y-%m")):
+        try:
+            dt.datetime.strptime(value, fmt)
+            if len(value) == len(dt.datetime.now().strftime(fmt)):
+                return True
+        except (TypeError, ValueError):
+            pass
+    return False
+
+
+def validate(ids, apps):
+    """Schema checks for the fields render.py reads. Returns a list of problems."""
+    template = json.load(open(os.path.join(ROOT, "_docs/app-template.json")))
+    optional = {"draft", "price", "storeName"}
+    known = set(template) | optional
+    out = []
+    for aid, a in zip(ids, apps):
+        def bad(msg):
+            out.append(f"apps/{aid}/app.json: {msg}")
+        for key in known - set(a) - optional:
+            bad(f"missing field `{key}`")
+        for key in set(a) - known:
+            bad(f"unknown field `{key}`")
+        if a.get("id") != aid:
+            bad("`id` must match the folder name")
+        if a.get("status") not in STATUS_LABEL:
+            bad(f"`status` must be one of {', '.join(STATUS_LABEL)}")
+        if not isinstance(a.get("draft", False), bool):
+            bad("`draft` must be true or false")
+        if not isinstance(a.get("flagship"), bool):
+            bad("`flagship` must be true or false")
+        elif a["flagship"] and (a.get("status") == "archived" or a.get("draft")):
+            bad("an archived or draft product cannot be the flagship")
+        o = a.get("outcome")
+        if o is not None:
+            if not isinstance(o, dict) or set(o) != {"label", "date", "line", "draft"}:
+                bad("`outcome` must be null or {label, date, line, draft}")
+            else:
+                if o["label"] not in OUTCOME_LABELS:
+                    bad(f"`outcome.label` must be one of {', '.join(OUTCOME_LABELS)}")
+                if not valid_date(o["date"]):
+                    bad("`outcome.date` must be YYYY-MM or YYYY-MM-DD")
+                if not isinstance(o["line"], str) or not o["line"].strip():
+                    bad("`outcome.line` must be one sentence")
+                if not isinstance(o["draft"], bool):
+                    bad("`outcome.draft` must be true or false")
+        lessons = a.get("lessons")
+        if not isinstance(lessons, list) or any(
+                not isinstance(x, dict) or set(x) != {"text", "draft"} or not str(x["text"]).strip()
+                or not isinstance(x["draft"], bool) for x in lessons):
+            bad("`lessons` must be a list of {text, draft}")
+        c = a.get("cycle")
+        if c is not None:
+            if not isinstance(c, dict) or set(c) != {"start", "end", "goal", "updates"}:
+                bad("`cycle` must be null or {start, end, goal, updates}")
+            else:
+                if not (valid_date(c["start"], day=True) and valid_date(c["end"], day=True)) or c["start"] > c["end"]:
+                    bad("`cycle.start` and `cycle.end` must be YYYY-MM-DD with start on or before end")
+                if not isinstance(c["goal"], str) or not c["goal"].strip():
+                    bad("`cycle.goal` must be one sentence")
+                ups = c["updates"]
+                if not isinstance(ups, list) or any(not isinstance(u, dict) or set(u) != {"date", "text"} for u in ups):
+                    bad("`cycle.updates` must be a list of {date, text}")
+                else:
+                    dates = [u["date"] for u in ups]
+                    if any(not valid_date(d, day=True) or d < c["start"] for d in dates):
+                        bad("each `cycle.updates[].date` must be YYYY-MM-DD, on or after `cycle.start`")
+                    if len(set(dates)) != len(dates):
+                        bad("`cycle.updates` dates must be unique (each one is a link)")
+    if sum(1 for a in apps if a.get("flagship") is True) > 1:
+        out.append("apps/index.json: at most one product can set `flagship: true`")
+    return out
+
+
+def listed(apps):
+    """Products shown on shared pages. Drafts get their own page only."""
+    return [a for a in apps if not a.get("draft")]
+
+
+def draft_mark():
+    return '<span class="draft-mark" title="Draft for Akhil to confirm">Draft</span>'
 
 
 def fmt_date(value):
@@ -241,7 +344,7 @@ def nav(current=""):
 
 
 def footer(apps):
-    live = [a for a in apps if a["status"] == "live"]
+    live = [a for a in listed(apps) if a["status"] == "live"]
     items = "\n".join(f'<li><a href="/apps/{a["id"]}/">{e(a["name"])}</a></li>' for a in live)
     legal = "\n".join(f'<li><a href="/apps/{a["id"]}/privacy/">{e(a["name"])} privacy</a></li>'
                       for a in live if a["legal"].get("privacy"))
@@ -303,13 +406,17 @@ def chips(app):
     return "".join(f'<span class="chip">{PLATFORM_LABEL[p]}</span>' for p in app["platforms"])
 
 
-def status_html(app):
-    return f'<span class="status status-{app["status"]}">{STATUS_LABEL[app["status"]]}</span>'
+def status_html(app, outcome=None):
+    label = STATUS_LABEL[app["status"]]
+    if outcome and outcome["label"] == label:
+        label += f' {fmt_date(outcome["date"])}'
+    return f'<span class="status status-{app["status"]}">{label}</span>'
 
 
 # ---------------------------------------------------------------- home
 
 def render_home(apps):
+    apps = listed(apps)
     live = {a["id"]: a for a in apps if a["status"] == "live"}
     shelf_apps = [a for a in apps if a["status"] != "live"]
 
@@ -507,10 +614,53 @@ def render_product(app, apps):
   </div>
 </section>"""
 
-    others = [a for a in apps if a["id"] != aid and (a["status"] == "live" or not live)][:5]
+    others = [a for a in listed(apps) if a["id"] != aid and (a["status"] == "live" or not live)][:5]
     more = "\n".join(f'<a href="/apps/{a["id"]}/">{icon_html(a, vt=False)}<div><div style="font-weight:600">{e(a["name"])}</div><div class="one">{e(a["oneliner"])}</div></div></a>' for a in others)
 
     prose = "\n".join(f"<p>{e(p)}</p>" for p in app["description"])
+
+    o = app.get("outcome")
+    outcome_tag = ""
+    if o:
+        outcome_tag = (f'<span class="chip outcome-tag">{e(o["label"])} {fmt_date(o["date"])}</span>'
+                       + (draft_mark() if o["draft"] else ""))
+        if o["label"] == STATUS_LABEL[app["status"]]:   # "Archived" twice reads as a stutter: date the status instead
+            outcome_tag = ""
+        notice = ""   # the outcome line says the same thing, with a reason
+    record = ""
+    if o or app["lessons"]:
+        parts = []
+        if o:
+            parts.append(f'<p class="outcome-line"><strong>{e(o["label"])}, {fmt_date(o["date"])}.</strong> {e(o["line"])}'
+                         f'{" " + draft_mark() if o["draft"] else ""}</p>')
+        if app["lessons"]:
+            items = "".join(f'<li>{e(x["text"])}{" " + draft_mark() if x["draft"] else ""}</li>' for x in app["lessons"])
+            parts.append(f'<h3 class="h3">What we learned</h3><ul class="lessons">{items}</ul>')
+        record = f'<div class="record glass" aria-label="Outcome">{"".join(parts)}</div>'
+
+    whats_new = ""
+    c = app.get("cycle")
+    if c and c["updates"]:
+        ups = sorted(c["updates"], key=lambda u: u["date"], reverse=True)
+        items = "\n".join(
+            f'<li class="update glass reveal" id="update-{u["date"]}" style="--i:{i}">'
+            f'<a class="update-date meta tnum" href="#update-{u["date"]}"><time datetime="{u["date"]}">{fmt_date(u["date"])}</time></a>'
+            f'<p>{e(u["text"])}</p></li>' for i, u in enumerate(ups))
+        whats_new = f"""<section class="wrap section" style="padding-top:0" aria-labelledby="new-title">
+  <div class="section-head">
+    <h2 class="h2" id="new-title">What's new</h2>
+    <p class="lead">{e(c["goal"])}</p>
+    <p class="meta tnum">Push cycle, <time datetime="{c["start"]}">{fmt_date(c["start"])}</time> to <time datetime="{c["end"]}">{fmt_date(c["end"])}</time></p>
+  </div>
+  <ol class="updates">
+{items}
+  </ol>
+</section>"""
+
+    banner = ""
+    if app.get("draft"):
+        banner = (f'<p class="draft-banner glass">{draft_mark()} This page is a draft for Akhil to confirm. '
+                  'It is not linked from the rest of the site, the sitemap, or llms.txt.</p>')
     crumb_mid = ("Products", "/#products") if live else ("Lab and archive", "/#lab")
 
     graph = [
@@ -544,13 +694,14 @@ def render_product(app, apps):
 {nav("products" if live else "lab")}
 <main id="main">
 <div class="wrap">
+  {banner}
   <nav class="crumbs" aria-label="Breadcrumb"><a href="/">Modrn Magic</a> / <a href="{crumb_mid[1]}">{crumb_mid[0]}</a> / <span aria-current="page">{e(app['name'])}</span></nav>
   <section class="p-hero">
     {icon_html(app)}
     <div>
       <h1>{e(app['name'])}</h1>
       <p class="lead">{e(app['oneliner'])}</p>
-      <div class="row">{status_html(app)}{chips(app)}</div>
+      <div class="row">{status_html(app, o)}{outcome_tag}{chips(app)}</div>
       {store_buttons(app)}
     </div>
   </section>
@@ -564,12 +715,14 @@ def render_product(app, apps):
 {prose}
       </div>
       {f'<div style="margin-top:var(--s-5)">{notice}</div>' if notice else ''}
+      {record}
     </div>
     <aside class="facts glass" aria-label="Facts"><dl>
 {facts_html}
     </dl></aside>
   </div>
 </section>
+{whats_new}
 {features}
 {faq}
 <section class="wrap section" style="padding-top:0" aria-labelledby="more-title">
@@ -582,7 +735,7 @@ def render_product(app, apps):
 {footer(apps)}</body>
 </html>
 """
-    return head(title, description, f"/apps/{aid}/", f"/assets/og/{aid}.jpg", graph) + body
+    return head(title, description, f"/apps/{aid}/", f"/assets/og/{aid}.jpg", graph, noindex=bool(app.get("draft"))) + body
 
 
 # ---------------------------------------------------------------- product site (apps/<id>/home/)
@@ -666,7 +819,7 @@ def render_product_site(app, apps):
 # ---------------------------------------------------------------- contact, 404, mvp
 
 def render_contact(apps):
-    live = [a for a in apps if a["status"] == "live"]
+    live = [a for a in listed(apps) if a["status"] == "live"]
     support = "\n".join(f'<a href="mailto:{EMAIL}?subject={e(a["name"])}">{icon_html(a, vt=False)}<div><div style="font-weight:600">{e(a["name"])}</div><div class="one">Email about {e(a["name"])}</div></div></a>' for a in live)
     description = f"Contact Modrn Magic at {EMAIL} for app support, feedback, or press."
     graph = [
@@ -887,6 +1040,7 @@ def git_date(rel):
 
 
 def render_sitemap(apps):
+    apps = listed(apps)
     urls = [("/", SITE_DATE, "1.0"), ("/contact/", SITE_DATE, "0.5")]
     for a in apps:
         urls.append((f"/apps/{a['id']}/", SITE_DATE, "0.9" if a["status"] == "live" else "0.5"))
@@ -903,6 +1057,8 @@ def render_sitemap(apps):
 
 
 def render_llms(apps):
+    apps = listed(apps)
+
     def line(a):
         bits = [f"- [{a['name']}]({page_url(a)}): {a['summary']}"]
         where = []

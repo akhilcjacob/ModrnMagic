@@ -2,6 +2,7 @@
 
     python3 _scripts/check.py          # run the checks, exit 1 on any failure
     python3 _scripts/check.py serve    # serve at http://localhost:8000 (PORT=xxxx to change)
+    python3 _scripts/check.py --release  # also fail while any draft remains (run before going public)
 
 Python 3 standard library only. The checks cover the files GitHub Pages would
 publish (everything outside `_`-prefixed and hidden folders):
@@ -169,6 +170,28 @@ def check():
     return 1 if errors else 0
 
 
+def drafts():
+    """Every draft in product data: draft pages, outcome lines, and lessons."""
+    out = []
+    for name in json.load(open(os.path.join(ROOT, "apps/index.json"))):
+        app = json.load(open(os.path.join(ROOT, "apps", name, "app.json")))
+        if app.get("draft"):
+            out.append(f"apps/{name}: the page is a draft")
+        if (app.get("outcome") or {}).get("draft"):
+            out.append(f"apps/{name}: outcome line is a draft")
+        out += [f"apps/{name}: lesson is a draft: {x['text'][:50]}" for x in app.get("lessons", []) if x.get("draft")]
+    return out
+
+
+def release():
+    status = check()
+    pending = drafts()
+    for line in pending:
+        print("DRAFT", line)
+    print(f"{'NOT READY' if pending else 'READY'}: {len(pending)} draft(s) need Akhil's confirmation")
+    return 1 if status or pending else 0
+
+
 def serve():
     port = int(os.environ.get("PORT", "8000"))
     handler = functools.partial(http.server.SimpleHTTPRequestHandler, directory=ROOT)
@@ -179,6 +202,8 @@ def serve():
 if __name__ == "__main__":
     if sys.argv[1:] == ["serve"]:
         serve()
+    elif sys.argv[1:] == ["--release"]:
+        sys.exit(release())
     elif not sys.argv[1:]:
         sys.exit(check())
     else:

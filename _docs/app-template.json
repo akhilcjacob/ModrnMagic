@@ -2,6 +2,7 @@
   "id": "",
   "name": "",
   "status": "lab",
+  "draft": false,
   "kind": "app",
   "oneliner": "",
   "summary": "",
@@ -24,6 +25,7 @@
     "appStore": null,
     "googlePlay": null,
     "web": null,
+    "home": null,
     "writing": null,
     "source": null
   },
@@ -33,5 +35,8 @@
   "color": "#dddddd",
   "screenshots": [],
   "lessons": [],
+  "outcome": null,
+  "cycle": null,
+  "flagship": false,
   "legal": {}
 }

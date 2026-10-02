@@ -556,6 +556,31 @@ dl, dd { margin: 0; }
 .more .icon { --size: 44px; }
 .more .one { font-size: var(--t-meta); color: var(--ink-3); }
 
+/* Outcome, lessons, and drafts */
+.outcome-tag { color: var(--ink); font-weight: 600; }
+.record { border-radius: var(--r-card); padding: var(--s-5); margin-top: var(--s-5); max-width: 62ch; display: grid; gap: var(--s-3); }
+.record .outcome-line { color: var(--ink-2); }
+.record .outcome-line strong { color: var(--ink); font-weight: 620; }
+.lessons { display: grid; gap: var(--s-2); color: var(--ink-2); list-style: disc; padding-left: 1.25em; }
+.draft-mark {
+  display: inline-flex; align-items: center; min-height: 22px; padding: 0 8px; margin-left: 2px; vertical-align: 1px;
+  border-radius: var(--r-pill); border: 1px dashed var(--status-lab); color: var(--status-lab);
+  font-size: var(--t-meta); font-weight: 650; letter-spacing: .01em; white-space: nowrap;
+}
+.draft-banner { border-radius: var(--r-card); padding: var(--s-3) var(--s-4); margin-top: var(--s-5); color: var(--ink-2); font-size: var(--t-small); display: flex; gap: var(--s-3); align-items: baseline; }
+.draft-banner .draft-mark { margin: 0; flex: none; }
+
+/* What's new (push cycle updates) */
+.updates { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s-3); max-width: 62ch; }
+.update { border-radius: var(--r-card); padding: var(--s-4) var(--s-5); display: grid; grid-template-columns: 9ch minmax(0, 1fr); gap: var(--s-4); align-items: baseline; scroll-margin-top: 88px; }
+.update p { color: var(--ink-2); }
+.update-date { text-decoration: none; }
+.update { position: relative; }
+/* The linked update gets an accent ring that fades in, so a shared link shows which entry it means. */
+.update::after { content: ""; position: absolute; inset: -1px; border-radius: inherit; box-shadow: 0 0 0 2px var(--accent); opacity: 0; pointer-events: none; transition: opacity var(--d-base) var(--ease-out); }
+.update:target::after { opacity: 1; }
+@media (max-width: 600px) { .update { grid-template-columns: minmax(0, 1fr); gap: var(--s-1); } }
+
 .notice { border-radius: var(--r-card); padding: var(--s-4) var(--s-5); color: var(--ink-2); font-size: var(--t-small); max-width: 62ch; }
 
 /* ---------- Simple pages ---------- */

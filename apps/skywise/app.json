@@ -99,6 +99,9 @@
     }
   ],
   "lessons": [],
+  "outcome": null,
+  "cycle": null,
+  "flagship": false,
   "legal": {
     "privacy": "privacy/",
     "terms": "tos/",
