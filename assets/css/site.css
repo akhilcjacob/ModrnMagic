@@ -615,7 +615,7 @@ dl, dd { margin: 0; }
 .filters { display: flex; flex-wrap: wrap; gap: var(--s-3) var(--s-5); align-items: center; }
 .fgroup { display: flex; flex-wrap: wrap; gap: var(--s-1); padding: var(--s-1); border-radius: var(--r-pill); background: var(--surface-sunk); }
 .fchip {
-  display: inline-flex; align-items: center; min-height: 44px; padding: 0 var(--s-4);
+  display: inline-flex; align-items: center; justify-content: center; min-height: 44px; min-width: 44px; padding: 0 var(--s-4);
   border-radius: var(--r-pill); text-decoration: none; font-size: var(--t-small); font-weight: 560; color: var(--ink-2);
   transition: background-color var(--d-fast) var(--ease-out), color var(--d-fast) var(--ease-out), transform var(--d-base) var(--ease-spring);
 }
@@ -642,6 +642,7 @@ dl, dd { margin: 0; }
   .w-card .icon { --size: 44px; }
   .fgroup { width: 100%; }
 }
+@media (max-width: 400px) { .fchip { padding: 0 var(--s-2); } .fgroup { gap: 0; } }   /* four status chips fit one row at 320px */
 
 /* Outcome, lessons, and drafts */
 .outcome-tag { color: var(--ink); font-weight: 600; }

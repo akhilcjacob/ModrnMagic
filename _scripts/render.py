@@ -501,7 +501,7 @@ def strip_card(app, i=0):
     return f"""<a class="card glass reveal" style="--i:{i};--tint:{app['color']}" href="/apps/{app['id']}/">
   <div class="card-top">{icon_html(app, vt=False)}<div><h3 class="name">{e(app['name'])}</h3><div class="card-status">{status_html(app, o)}{tag}{draft_mark() if app.get("draft") else ""}</div></div></div>
   <p class="one">{e(app['oneliner'])}</p>
-  <div class="foot"><span class="meta tnum">{years(app)}</span>{chips(app)}</div>
+  <div class="foot">{f'<span class="meta tnum">{years(app)}</span>' if years(app) else ""}{chips(app)}</div>
 </a>"""
 
 
@@ -954,7 +954,7 @@ def render_work(apps):
       <p class="one">{e(a['oneliner'])}</p>
       {line}
     </div>
-    <div class="w-meta"><span class="meta tnum">{years(a)}</span><span class="chip">{KIND_ONE[a['kind']]}</span></div>
+    <div class="w-meta">{f'<span class="meta tnum">{years(a)}</span>' if years(a) else ""}<span class="chip">{KIND_ONE[a['kind']]}</span></div>
   </a>
 </li>"""
 
