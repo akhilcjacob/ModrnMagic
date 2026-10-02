@@ -265,7 +265,7 @@ def footer(apps):
 """
 
 
-def store_buttons(app, primary_first=True):
+def store_buttons(app, home=True):
     links = app["links"]
     out = []
     if app["status"] != "live":
@@ -279,9 +279,24 @@ def store_buttons(app, primary_first=True):
         host = links["web"].split("//", 1)[1].rstrip("/")
         cls = "btn-primary" if not out else "btn-glass glass"
         out.append(f'<a class="btn {cls}" href="{e(links["web"])}" rel="noopener">{icon("globe")}Visit {e(host)}</a>')
-    if links.get("home"):
+    if home and links.get("home"):
         out.append(f'<a class="btn btn-glass glass" href="/apps/{app["id"]}/{links["home"]}">Product site</a>')
     return f'<div class="btns">{"".join(out)}</div>'
+
+
+def rail_html(figs, label, count, cls=""):
+    """A scroll-snap rail. site.js reveals the previous, next, and position
+    controls when the rail overflows; without JS it is a plain scroll row."""
+    return f"""<section class="rail-wrap" aria-label="{e(label)}">
+<div class="rail{(' ' + cls) if cls else ''}" tabindex="0" aria-label="{e(label)}, scroll sideways">
+{figs}
+</div>
+<div class="wrap rail-ctl" hidden>
+  <button class="rail-btn" type="button" data-step="-1" aria-label="Previous screenshot">{icon("caret-left")}</button>
+  <span class="rail-pos meta tnum" aria-live="polite"><span class="rail-now">1</span> of {count}</span>
+  <button class="rail-btn" type="button" data-step="1" aria-label="Next screenshot">{icon("caret-right")}</button>
+</div>
+</section>"""
 
 
 def chips(app):
@@ -431,7 +446,7 @@ def render_product(app, apps):
             f'<figure class="{s["shape"]}"><img src="/apps/{aid}/{s["src"]}" alt="{e(s["alt"])}" width="{s["w"]}" height="{s["h"]}" '
             + ('fetchpriority="high"' if i == 0 else 'loading="lazy" decoding="async"') + "></figure>"
             for i, s in enumerate(app["screenshots"]))
-        rail = f'<section aria-label="Screenshots"><div class="rail" tabindex="0">\n{figs}\n</div></section>'
+        rail = rail_html(figs, f"{app['name']} screenshots", len(app["screenshots"]))
 
     facts = [("Status", status_html(app)), ("Made by", '<a href="/">Modrn Magic</a>'),
              ("Platforms", e(", ".join(PLATFORM_LABEL[p] for p in app["platforms"])))]
@@ -568,6 +583,84 @@ def render_product(app, apps):
 </html>
 """
     return head(title, description, f"/apps/{aid}/", f"/assets/og/{aid}.jpg", graph) + body
+
+
+# ---------------------------------------------------------------- product site (apps/<id>/home/)
+
+def render_product_site(app, apps):
+    """The marketing page a store listing can point to, from home/descriptions.json."""
+    aid = app["id"]
+    data = json.load(open(os.path.join(ROOT, "apps", aid, "home/descriptions.json")))
+    base = f"/apps/{aid}/home/"
+    tour = data["tour"]
+
+    def img(s, eager=False):
+        load = 'fetchpriority="high"' if eager else 'loading="lazy" decoding="async"'
+        return f'<img src="{base}{s["src"]}" alt="{e(s["alt"])}" width="{s["w"]}" height="{s["h"]}" {load}>'
+
+    left, right, center = (tour[i] for i in data["hero"])
+    hero_art = f"""<div class="hero-art framed" aria-hidden="true">
+  <div class="phone p1">{img(left)}</div>
+  <div class="phone p2">{img(right)}</div>
+  <div class="phone p0">{img(center, eager=True)}</div>
+</div>"""
+    figs = "\n".join(f'<figure class="phone">{img(s)}<figcaption><span class="h3">{e(s["title"])}</span>'
+                     f'<span>{e(s["text"])}</span></figcaption></figure>' for s in tour)
+    features = ""
+    if app.get("features"):
+        items = "\n".join(f'<div class="feature glass reveal" style="--i:{i}"><h3 class="h3">{e(f["title"])}</h3><p>{e(f["body"])}</p></div>'
+                          for i, f in enumerate(app["features"]))
+        features = f"""<section class="wrap section" style="padding-top:0" aria-labelledby="f-title">
+  <h2 class="h2" id="f-title" style="margin-bottom:var(--s-6)">Why it works</h2>
+  <div class="features n{len(app['features'])}" style="--tint:{app['color']}">
+{items}
+  </div>
+</section>"""
+    legal = [f'<a class="btn btn-glass glass" href="/apps/{aid}/{app["legal"][k]}">{label}</a>'
+             for k, label in (("privacy", "Privacy policy"), ("terms", "Terms of service")) if app["legal"].get(k)]
+    price = ""
+    if app.get("price") and app["links"].get("appStore"):
+        p = app["price"]["appStore"]
+        price = f'<p class="meta ps-price">{"Free on the App Store" if p == "0" else f"${p} on the App Store (US)"}</p>'
+
+    title = f"{data['title']}: {app['oneliner'].rstrip('.')}"
+    description = app["summary"]
+    graph = [
+        {"@type": "WebPage", "@id": SITE + base, "url": SITE + base, "name": title, "isPartOf": {"@id": SITE_ID},
+         "about": {"@id": page_url(app) + "#app"}, "inLanguage": "en-US"},
+        app_node(app), org_node(), person_node(),
+    ]
+    body = f"""<body>
+{nav("products")}
+<main id="main" style="--tint:{app['color']}">
+<div class="wrap">
+  <nav class="crumbs" aria-label="Breadcrumb"><a href="/">Modrn Magic</a> / <a href="/apps/{aid}/">{e(app['name'])}</a> / <span aria-current="page">Product site</span></nav>
+  <section class="hero ps-hero">
+    <div>
+      <div class="ps-brand">{icon_html(app)}<span class="h3">{e(data['title'])}</span></div>
+      <h1>{e(data['headline'])}</h1>
+      <p class="lead">{e(data['lead'])}</p>
+      {store_buttons(app, home=False)}
+      {price}
+    </div>
+    {hero_art}
+  </section>
+</div>
+<div class="wrap section-head" style="margin-bottom:var(--s-5)"><h2 class="h2" id="tour-title">A quick tour</h2></div>
+{rail_html(figs, f"{data['title']} tour", len(tour), "framed")}
+{features}
+<section class="wrap section" style="padding-top:0">
+  <div class="contact-band glass reveal">
+    <h2 class="h2">{e(data['closing']['title'])}</h2>
+    <p class="lead">{e(data['closing']['text'])}</p>
+    <div class="btns" style="justify-content:center">{''.join(legal)}<a class="btn btn-glass glass" href="/apps/{aid}/">More about {e(app['name'])}</a></div>
+  </div>
+</section>
+</main>
+{footer(apps)}</body>
+</html>
+"""
+    return head(f"{title} | Modrn Magic", description, base, f"/assets/og/{aid}.jpg", graph) + body
 
 
 # ---------------------------------------------------------------- contact, 404, mvp
@@ -875,6 +968,8 @@ def outputs():
     }
     for a in apps:
         files[f"apps/{a['id']}/index.html"] = render_product(a, apps)
+        if a["links"].get("home") and os.path.exists(os.path.join(ROOT, "apps", a["id"], "home/descriptions.json")):
+            files[f"apps/{a['id']}/home/index.html"] = render_product_site(a, apps)
     for name, text in files.items():
         if "\u2014" in text or "\u2013" in text:
             raise SystemExit(f"{name}: contains an em or en dash")

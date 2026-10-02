@@ -18,6 +18,9 @@ PHONE_W = 640   # phone shots display at ~300px wide; 2x plus a little
 WIDE_W = 1600   # wide shots display at up to ~760px wide
 
 
+TOUR_W = 480    # framed phone shots on product sites display at ~240px wide
+
+
 def save_webp(im, path, width, quality=80):
     if im.width > width:
         im = im.resize((width, round(im.height * width / im.width)), Image.LANCZOS)
@@ -45,6 +48,21 @@ def main():
             json.dump(app, f, indent=2, ensure_ascii=False)
             f.write("\n")
         print("ok", app_id)
+
+        # Product site tour (apps/<id>/home/descriptions.json): framed shots keep their transparency.
+        home = os.path.join(folder, "home")
+        data_path = os.path.join(home, "descriptions.json")
+        if os.path.exists(data_path):
+            data = json.load(open(data_path))
+            for shot in data.get("tour", []):
+                name = os.path.splitext(os.path.basename(shot["from"]))[0]
+                shot["src"] = f"media/tour-{name}.webp"
+                im = Image.open(os.path.join(home, shot["from"])).convert("RGBA")
+                shot["w"], shot["h"] = save_webp(im, os.path.join(home, shot["src"]), TOUR_W, quality=82)
+            with open(data_path, "w") as f:
+                json.dump(data, f, indent=2, ensure_ascii=False)
+                f.write("\n")
+            print("ok", app_id, "home")
 
     mark = Image.open(os.path.join(ROOT, "favicon.ico")).convert("RGBA")
     out = os.path.join(ROOT, "assets/img")
