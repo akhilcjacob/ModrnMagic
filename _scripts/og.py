@@ -4,15 +4,20 @@
 Needs Google Chrome and Pillow. Rerun when a product's name, one-liner, icon,
 or color changes; the output is committed.
 
-    python3 _scripts/og.py
+    python3 _scripts/og.py                    # every card
+    python3 _scripts/og.py ramble hypebridge  # only these products (no home card)
 """
 import html
 import json
 import os
 import subprocess
+import sys
 import tempfile
 
 from PIL import Image
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from render import listed, load_apps  # noqa: E402  validated data with {name} filled in
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CHROME = os.environ.get("CHROME", "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome")
@@ -63,11 +68,11 @@ def icon_markup(app, size):
 def main():
     out_dir = os.path.join(ROOT, "assets/og")
     os.makedirs(out_dir, exist_ok=True)
-    ids = json.load(open(os.path.join(ROOT, "apps/index.json")))
-    apps = [json.load(open(os.path.join(ROOT, "apps", i, "app.json"))) for i in ids]
+    apps = load_apps()
+    only = sys.argv[1:]
     mark = f"file://{ROOT}/assets/img/mark-96.webp"
 
-    live_icons = "".join(icon_markup(a, 92) for a in apps if a["status"] == "live")
+    live_icons = "".join(icon_markup(a, 92) for a in listed(apps) if a["status"] == "live")
     home = f"""<!doctype html><html><head><style>{BASE_CSS}
 h1 {{ font-size: 76px; line-height: 1.02; letter-spacing: -.035em; font-weight: 650; margin-top: 44px; max-width: 15ch; }}
 h1 span {{ color: #5f6674; }}
@@ -77,12 +82,15 @@ h1 span {{ color: #5f6674; }}
 <h1>Independent apps for <span>everyday things.</span></h1>
 <div class="foot"><div class="row">{live_icons}</div><span>modrnmagic.app</span></div>
 </div></body></html>"""
-    shoot(home, os.path.join(out_dir, "home.jpg"))
-    print("ok home")
+    if not only:
+        shoot(home, os.path.join(out_dir, "home.jpg"))
+        print("ok home")
 
     status = {"live": "", "lab": "In the lab", "archived": "Archived"}
     for app in apps:
-        badge = f'<span style="margin-left:16px;font-size:24px;color:#875700;font-weight:650">{status[app["status"]]}</span>' if status[app["status"]] else ""
+        if only and app["id"] not in only:
+            continue
+        badge = f'<span style="margin-left:16px;font-size:24px;letter-spacing:0;color:#875700;font-weight:650">{status[app["status"]]}</span>' if status[app["status"]] else ""
         markup = f"""<!doctype html><html><head><style>{BASE_CSS}
 .wash::after {{ content: ""; position: absolute; inset: 0; background: radial-gradient(640px 520px at 100% 0%, {app["color"]}, transparent 70%); opacity: .7; }}
 .main {{ display: flex; gap: 48px; align-items: center; margin-top: 52px; }}
