@@ -1,0 +1,93 @@
+{
+  "id": "hypebridge",
+  "name": "HypeBridge",
+  "status": "live",
+  "draft": true,
+  "kind": "web",
+  "oneliner": "Find and check creators for your brand by describing who you want.",
+  "summary": "{name} is a web app that helps brands find and evaluate social media creators. Describe the creator you want in plain language, then get an AI-assisted read on a creator's engagement, audience, content, and fit with your brand.",
+  "description": [
+    "{name} helps brands decide which creators to work with. Instead of filtering a database by follower counts, you describe the creator you want in plain language, such as the niche, the audience, and the size, and {name} returns matches with the reasons each one fits.",
+    "For any creator handle, {name} builds an evaluation: a score, engagement and audience numbers, a content snapshot, strengths, and areas to watch. A brand-fit check compares each creator against your own checklist.",
+    "{name} is live on the web at thehypebridge.com."
+  ],
+  "features": [
+    {
+      "title": "Discover",
+      "body": "Describe your ideal creator in plain language and get ranked matches with the reasons they fit."
+    },
+    {
+      "title": "Evaluate",
+      "body": "Look up a creator to see engagement quality, audience, content patterns, and growth."
+    },
+    {
+      "title": "Brand fit",
+      "body": "Check each creator against your own checklist before you reach out."
+    }
+  ],
+  "faq": [
+    {
+      "q": "What is {name}?",
+      "a": "{name} is a creator discovery and evaluation tool for brands, made by Modrn Magic. It runs on the web at thehypebridge.com."
+    }
+  ],
+  "category": "BusinessApplication",
+  "genre": "Marketing",
+  "stack": [
+    "Next.js",
+    "TypeScript",
+    "Firebase"
+  ],
+  "dates": {
+    "started": "2024-10",
+    "shipped": null,
+    "updated": "2026-09",
+    "ended": null
+  },
+  "platforms": [
+    "web"
+  ],
+  "links": {
+    "appStore": null,
+    "googlePlay": null,
+    "web": "https://thehypebridge.com/",
+    "home": null,
+    "writing": null,
+    "source": null
+  },
+  "price": null,
+  "wasOn": [],
+  "icon": "icon.webp",
+  "color": "#f4f2ec",
+  "screenshots": [
+    {
+      "from": "screenshots/discover-input.webp",
+      "alt": "Influencer Discovery: a search box that asks you to describe the creator you are looking for in plain language",
+      "shape": "wide",
+      "src": "media/screenshots-discover-input.webp",
+      "w": 1600,
+      "h": 1600
+    },
+    {
+      "from": "screenshots/discover-query.webp",
+      "alt": "A discovery search for a fashion creator on Instagram with over 100k followers who focuses on sustainable clothing",
+      "shape": "wide",
+      "src": "media/screenshots-discover-query.webp",
+      "w": 1600,
+      "h": 1600
+    },
+    {
+      "from": "screenshots/evaluate-results.webp",
+      "alt": "A creator evaluation with a score of 77, audience, content, and engagement bars, strengths, and areas for improvement",
+      "shape": "wide",
+      "src": "media/screenshots-evaluate-results.webp",
+      "w": 1600,
+      "h": 1600
+    }
+  ],
+  "lessons": [],
+  "outcome": null,
+  "cycle": null,
+  "flagship": false,
+  "legal": {}
+}

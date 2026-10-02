@@ -1,0 +1,105 @@
+{
+  "id": "ramble",
+  "name": "Ramble",
+  "status": "lab",
+  "draft": true,
+  "kind": "app",
+  "oneliner": "Talk while you move between apps, and never lose a word.",
+  "summary": "{name} is a dictation overlay for Android. Swipe up with two fingers, talk while you move between apps, and the transcript lands in the field you end up in. Speech recognition runs on the phone. It is in alpha and not released.",
+  "description": [
+    "{name} is a dictation overlay for Android. Swipe up with two fingers and it starts recording at once. Keep talking while you switch apps, tuck the pill to an edge while you read, and tap the check mark when you are done. The transcript lands in the text field you are looking at.",
+    "It never loses a word. The audio is saved to the phone while you talk. When you finish, the transcript is saved to history and copied to the clipboard before {name} tries to insert it anywhere. If a model fails, the audio is still there to transcribe again.",
+    "Recognition runs on the phone with open speech models. Cloud transcription and cleanup are optional and use your own API key. {name} has no server and no analytics. It is an alpha that has been tested on the Android emulator and is not available to download."
+  ],
+  "features": [
+    {
+      "title": "Stays with you across apps",
+      "body": "The recording keeps going while you switch apps, so you can read, scroll, and talk at the same time."
+    },
+    {
+      "title": "Never loses a word",
+      "body": "Audio is written to the phone while you talk, and every transcript is saved and copied before it is inserted."
+    },
+    {
+      "title": "On the phone by default",
+      "body": "Speech models run on the device. Cloud features stay off until you add your own key."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Can I download {name}?",
+      "a": "Not yet. {name} is an alpha for Android 12 and later, tested on the emulator. There is no store listing."
+    },
+    {
+      "q": "Does {name} send my voice to a server?",
+      "a": "No. {name} has no server and no analytics. Recognition runs on the phone unless you turn on a cloud feature with your own API key."
+    }
+  ],
+  "category": "UtilitiesApplication",
+  "genre": "Productivity",
+  "stack": [
+    "Kotlin",
+    "Jetpack Compose",
+    "sherpa-onnx"
+  ],
+  "dates": {
+    "started": "2026-09",
+    "shipped": null,
+    "updated": "2026-10",
+    "ended": null
+  },
+  "platforms": [
+    "android"
+  ],
+  "links": {
+    "appStore": null,
+    "googlePlay": null,
+    "web": null,
+    "home": null,
+    "writing": null,
+    "source": null
+  },
+  "price": null,
+  "wasOn": [],
+  "icon": "icon.webp",
+  "color": "#1d1d1f",
+  "screenshots": [
+    {
+      "from": "screenshots/summon.webp",
+      "alt": "The recording pill floating over the Android home screen with a live waveform",
+      "shape": "phone",
+      "src": "media/screenshots-summon.webp",
+      "w": 640,
+      "h": 1387
+    },
+    {
+      "from": "screenshots/sheet.webp",
+      "alt": "The finished sheet with a 19-word transcript, Raw and Clean tabs, and a Copy button",
+      "shape": "phone",
+      "src": "media/screenshots-sheet.webp",
+      "w": 640,
+      "h": 1387
+    },
+    {
+      "from": "screenshots/history.webp",
+      "alt": "History of recent sessions with word counts and one marked Partial",
+      "shape": "phone",
+      "src": "media/screenshots-history.webp",
+      "w": 640,
+      "h": 1387
+    },
+    {
+      "from": "screenshots/models.webp",
+      "alt": "The Models screen listing Parakeet, Nemotron, and Moonshine with sizes and download buttons",
+      "shape": "phone",
+      "src": "media/screenshots-models.webp",
+      "w": 640,
+      "h": 1387
+    }
+  ],
+  "lessons": [],
+  "outcome": null,
+  "cycle": null,
+  "flagship": false,
+  "legal": {}
+}

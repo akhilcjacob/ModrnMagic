@@ -38,6 +38,9 @@ def main():
         path = os.path.join(folder, "app.json")
         app = json.load(open(path))
         for shot in app.get("screenshots", []):
+            if not shot.get("src"):   # media/<folder>-<name>.webp, the same scheme as existing shots
+                stem = os.path.splitext(shot["from"])[0].replace("/", "-")
+                shot["src"] = f"media/{stem}.webp"
             im = Image.open(os.path.join(src, shot["from"])).convert("RGB")
             width = WIDE_W if shot.get("shape") == "wide" else PHONE_W
             shot["w"], shot["h"] = save_webp(im, os.path.join(folder, shot["src"]), width)
