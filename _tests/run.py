@@ -635,6 +635,24 @@ def main():
             record(opened and closed, f"FAQ '{c['name']}' on {path} opens and closes")
             tested.add(key)
 
+        # A click while an answer is still closing reopens it (review item 3).
+        faq_pages = sorted({path for key, (path, c) in seen.items() if key[0] == "faq"})
+        for path in faq_pages[:2]:
+            page.goto(base + path)
+            item = page.locator(".faq details").first
+            item.locator("summary").click()
+            page.wait_for_timeout(350)
+            item.locator("summary").click()
+            mid = item.evaluate("d => d.classList.contains('closing')")
+            item.locator("summary").click()   # within the --d-fast close
+            page.wait_for_timeout(500)
+            state = item.evaluate("d => [d.open, d.classList.contains('closing'), getComputedStyle(d.querySelector('p')).opacity]")
+            item.locator("summary").click()
+            page.wait_for_timeout(500)
+            closed = item.evaluate("d => !d.open")
+            record(mid and state == [True, False, "1"] and closed,
+                   f"FAQ on {path}: a click during the close animation reopens it, the next click closes it", f"mid {mid} state {state} closed {closed}")
+
         # Rails, at phone width where they overflow.
         phone = browser.new_context(viewport={"width": 390, "height": 844}, has_touch=False)
         rp = phone.new_page()

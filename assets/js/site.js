@@ -37,24 +37,27 @@
   }
 
   // FAQ: the answer fades in on open (CSS). Closing plays the reverse before
-  // the <details> closes, so both directions read the same way.
+  // the <details> closes, so both directions read the same way. A click during
+  // that close cancels it, so the item stays open instead of eating the click.
   document.querySelectorAll(".faq details").forEach(function (d) {
     var summary = d.querySelector("summary");
     var answer = d.querySelector("p");
     if (!summary || !answer) return;
+    var pending = null;
+    function settle() {
+      answer.removeEventListener("animationend", pending);
+      clearTimeout(pending && pending.timer);
+      pending = null;
+      d.classList.remove("closing");
+    }
     summary.addEventListener("click", function (ev) {
-      if (!d.open || still.matches || d.classList.contains("closing")) return;
+      if (!d.open || still.matches) return;
       ev.preventDefault();
+      if (pending) { settle(); return; }   // reopen: cancel the close in flight
       d.classList.add("closing");
-      var finished = false;
-      function close() {
-        if (finished) return;
-        finished = true;
-        d.open = false;
-        d.classList.remove("closing");
-      }
-      answer.addEventListener("animationend", close, { once: true });
-      setTimeout(close, 400);
+      pending = function () { settle(); d.open = false; };
+      pending.timer = setTimeout(pending, 400);
+      answer.addEventListener("animationend", pending, { once: true });
     });
   });
 
