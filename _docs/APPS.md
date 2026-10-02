@@ -34,7 +34,7 @@ python3 _tests/run.py      # click every link, button, toggle, FAQ, and rail con
 python3 _tests/run.py -v   # same, printing every passing check
 ```
 
-It also fails on any request off the local server, any console error, sideways scroll at 320px, and any legal URL that stops answering bare, with a slash, as `/index.html`, or as its `.md` source. It ends with an interaction coverage line.
+It also fails on any request off the local server, any console error, sideways scroll at 320px, and any legal URL that stops answering bare, with a slash, as `/index.html`, or as its `.md` source. It checks that every product has a page and that drafts stay off shared pages. In a temporary copy of the repo (never the repo itself) it renames Ramble and greps for the old name, renders an example push cycle and clicks each update link, feeds `render.py` bad data, and confirms `check.py --release` passes once drafts are cleared. It ends with an interaction coverage line.
 
 The check reads every published HTML, CSS, JS, JSON, XML, TXT, and MD file (anything outside `_` and dot folders). It resolves each internal `href`, `src`, `srcset`, CSS `url()`, `https://modrnmagic.app/` URL, and relative path in `apps/**/*.json`, confirms each `sitemap.xml` URL maps to a file, and fails on any mention of the removed `00_Future App Template` folder. Run it before every push.
 

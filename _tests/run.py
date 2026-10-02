@@ -21,15 +21,25 @@ control, asserting what each one should do:
   sideways at 320 px
 - every legal URL answers bare, with a trailing slash, as /index.html, and
   as its Markdown source
+- every product in apps/index.json has a page; drafts stay off shared pages
+- in a temporary copy of the repo: renaming Ramble in its one name field
+  leaves the old name nowhere; a push cycle renders What's new with working
+  update links; bad product data makes render.py fail; check.py --release
+  fails while drafts remain
 
 It ends with interaction coverage: tested unique controls over all unique
 controls found.
 """
 import functools
 import http.server
+import json
 import os
+import re
+import shutil
 import socket
+import subprocess
 import sys
+import tempfile
 import threading
 import urllib.request
 from urllib.parse import urljoin, urlsplit
@@ -64,12 +74,12 @@ class Quiet(http.server.SimpleHTTPRequestHandler):
         pass
 
 
-def serve():
+def serve(directory=ROOT):
     sock = socket.socket()
     sock.bind(("127.0.0.1", 0))
     port = sock.getsockname()[1]
     sock.close()
-    server = http.server.ThreadingHTTPServer(("127.0.0.1", port), functools.partial(Quiet, directory=ROOT))
+    server = http.server.ThreadingHTTPServer(("127.0.0.1", port), functools.partial(Quiet, directory=directory))
     threading.Thread(target=server.serve_forever, daemon=True).start()
     return server, f"http://127.0.0.1:{port}"
 
@@ -90,6 +100,122 @@ COLLECT = """() => {
   document.querySelectorAll('.rail-wrap').forEach((w, i) => out.push({kind: 'rail', i, name: w.getAttribute('aria-label'), visible: true}));
   return out;
 }"""
+
+
+# A fixture push cycle. Only ever written to a temporary copy, never to the repo.
+FIXTURE_CYCLE = {
+    "start": "2026-10-05", "end": "2026-11-01",
+    "goal": "Example goal: five private testers use it on five of seven days.",
+    "updates": [
+        {"date": "2026-10-09", "text": "Example update: the first private test build went to five testers."},
+        {"date": "2026-10-16", "text": "Example update: recordings now survive a phone restart mid-session."},
+        {"date": "2026-10-23", "text": "Example update: a calmer first-run setup with one step per screen."},
+    ],
+}
+
+
+def temp_copy(edit=None):
+    """Copy the repo (without .git) to a temp folder, apply edit(apps_dir), render it there."""
+    tmp = tempfile.mkdtemp(prefix="modrn-site-test-")
+    dest = os.path.join(tmp, "site")
+    shutil.copytree(ROOT, dest, ignore=shutil.ignore_patterns(".git", "__pycache__", "_attic"))
+    if edit:
+        edit(os.path.join(dest, "apps"))
+    r = subprocess.run([sys.executable, "_scripts/render.py"], cwd=dest, capture_output=True, text=True)
+    return tmp, dest, r
+
+
+def edit_app(apps_dir, aid, change):
+    path = os.path.join(apps_dir, aid, "app.json")
+    data = json.load(open(path))
+    change(data)
+    json.dump(data, open(path, "w"), indent=2)
+
+
+def data_tests(browser):
+    # 10 of 10: every product has a page, and drafts stay off shared pages.
+    ids = json.load(open(os.path.join(ROOT, "apps/index.json")))
+    have = [i for i in ids if os.path.isfile(os.path.join(ROOT, "apps", i, "index.html"))]
+    record(len(have) == len(ids), f"product pages: {len(have)} of {len(ids)}", ", ".join(sorted(set(ids) - set(have))))
+    shared = {f: open(os.path.join(ROOT, f)).read() for f in ("index.html", "sitemap.xml", "llms.txt", "contact/index.html", "apps/flowmoro/index.html")}
+    for i in ids:
+        app = json.load(open(os.path.join(ROOT, "apps", i, "app.json")))
+        if not app.get("draft"):
+            continue
+        page = open(os.path.join(ROOT, "apps", i, "index.html")).read()
+        leaks = [f for f, text in shared.items() if f"/apps/{i}/" in text]
+        record(not leaks and 'content="noindex"' in page and "draft-banner" in page,
+               f"draft {i}: own noindex page with a banner, not on shared pages", ", ".join(leaks))
+
+    # Drafts block a release.
+    r = subprocess.run([sys.executable, "_scripts/check.py", "--release"], cwd=ROOT, capture_output=True, text=True)
+    pending = any((json.load(open(os.path.join(ROOT, "apps", i, "app.json"))).get("draft")) for i in ids)
+    record((r.returncode == 1) == pending, "check.py --release fails while drafts remain", r.stdout.strip().splitlines()[-1])
+
+    # Rename: the name lives in one field.
+    old, new = "Ramble", "Zephyrnote"
+    tmp, dest, r = temp_copy(lambda d: edit_app(d, "ramble", lambda a: a.update(name=new)))
+    hits = []
+    for dirpath, dirnames, filenames in os.walk(dest):
+        dirnames[:] = [x for x in dirnames if x not in ("_tests", "_attic", "_docs")]
+        for f in filenames:
+            if os.path.splitext(f)[1] in (".html", ".xml", ".txt", ".json", ".py", ".js", ".css", ".md"):
+                text = open(os.path.join(dirpath, f), encoding="utf-8", errors="replace").read()
+                if re.search(rf"\b{old}\b", text):
+                    hits.append(os.path.relpath(os.path.join(dirpath, f), dest))
+    page = open(os.path.join(dest, "apps/ramble/index.html")).read()
+    record(r.returncode == 0 and not hits and page.count(new) >= 5,
+           f"renaming {old} in app.json leaves the old name nowhere", ", ".join(hits) or r.stderr[-200:])
+    shutil.rmtree(tmp)
+
+    # Bad data fails the build.
+    cases = {
+        "two flagships": lambda d: (edit_app(d, "flowmoro", lambda a: a.update(flagship=True)),
+                                    edit_app(d, "skywise", lambda a: a.update(flagship=True))),
+        "bad cycle date": lambda d: edit_app(d, "ramble", lambda a: a.update(cycle=dict(FIXTURE_CYCLE, start="Oct 5"))),
+        "update before start": lambda d: edit_app(d, "ramble", lambda a: a.update(cycle=dict(FIXTURE_CYCLE, start="2026-10-20"))),
+        "unknown outcome label": lambda d: edit_app(d, "quorum", lambda a: a["outcome"].update(label="Dead")),
+        "unknown field": lambda d: edit_app(d, "triply", lambda a: a.update(flagshp=True)),
+        "draft flagship": lambda d: edit_app(d, "ramble", lambda a: a.update(flagship=True)),
+    }
+    for name, edit in cases.items():
+        tmp, dest, r = temp_copy(edit)
+        record(r.returncode != 0 and "app.json problems" in (r.stderr + r.stdout), f"render.py rejects {name}", r.stderr.strip()[-120:])
+        shutil.rmtree(tmp)
+
+    # No drafts, release passes.
+    def confirm_all(d):
+        for i in ids:
+            def clear(a):
+                a.pop("draft", None)
+                if a.get("outcome"):
+                    a["outcome"]["draft"] = False
+                for x in a["lessons"]:
+                    x["draft"] = False
+            edit_app(d, i, clear)
+    tmp, dest, r = temp_copy(confirm_all)
+    rel = subprocess.run([sys.executable, "_scripts/check.py", "--release"], cwd=dest, capture_output=True, text=True)
+    record(r.returncode == 0 and rel.returncode == 0, "with every draft confirmed, check.py --release passes", rel.stdout.strip()[-160:])
+    shutil.rmtree(tmp)
+
+    # A push cycle renders What's new, newest first, and each date link lands on its row.
+    tmp, dest, r = temp_copy(lambda d: edit_app(d, "ramble", lambda a: a.update(cycle=FIXTURE_CYCLE)))
+    server, base = serve(dest)
+    page = browser.new_page(viewport={"width": 1440, "height": 900})
+    page.goto(base + "/apps/ramble/")
+    dates = page.eval_on_selector_all(".updates .update", "els => els.map(e => e.id)")
+    want = ["update-" + u["date"] for u in sorted(FIXTURE_CYCLE["updates"], key=lambda u: u["date"], reverse=True)]
+    record(dates == want, "What's new lists updates newest first", str(dates))
+    ok = True
+    for d in want:
+        page.locator(f'a[href="#{d}"]').click()
+        page.wait_for_timeout(350)
+        ring = page.evaluate(f"getComputedStyle(document.getElementById('{d}'), '::after').opacity")
+        ok = ok and page.url.endswith("#" + d) and ring == "1"
+    record(ok, "each What's new date links to its own row and rings it")
+    page.close()
+    server.shutdown()
+    shutil.rmtree(tmp)
 
 
 def link_key(page, c):
@@ -287,6 +413,7 @@ def main():
         h1 = page.locator("h1").inner_text()
         record(urlsplit(page.url).path == "/apps/flowmoro/privacy/" and "privacy" in h1.lower(),
                "footer 'Flowmoro privacy' link navigates from home", f"{page.url} h1={h1!r}")
+        data_tests(browser)
         browser.close()
 
     # Legal URLs answer in every form a store listing might use.
