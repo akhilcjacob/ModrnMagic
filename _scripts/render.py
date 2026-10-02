@@ -447,7 +447,7 @@ def footer(apps):
   <div class="footer-grid">
     <div>
       <a class="brand" href="/"><img src="/assets/img/mark-96.webp" alt="" width="30" height="30" loading="lazy"><span>Modrn Magic</span></a>
-      <p style="margin-top:12px;max-width:34ch">An independent product studio founded by <a href="https://akhilcjacob.com/">Akhil Jacob</a>.</p>
+      <p style="margin-top:var(--s-3);max-width:34ch">An independent product studio founded by <a href="https://akhilcjacob.com/">Akhil Jacob</a>.</p>
     </div>
     <div><h2>Products</h2><ul>{items}</ul></div>
     <div><h2>Studio</h2><ul>
