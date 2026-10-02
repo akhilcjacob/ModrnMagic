@@ -560,6 +560,18 @@ def main():
             record(sw <= 320, f"{path} no sideways scroll at 320px", f"scrollWidth {sw}")
         narrow.close()
 
+        # Nav links and the theme toggle meet the 44px touch floor at every width.
+        for w in (320, 360, 390, 560, 768, 1024, 1440):
+            ctx = browser.new_context(viewport={"width": w, "height": 800})
+            tp = ctx.new_page()
+            for path in ("/", "/work/", "/apps/flowmoro/", "/apps/flowmoro/privacy/"):
+                tp.goto(base + path)
+                small = tp.evaluate("""[...document.querySelectorAll('.nav-links a, .theme-toggle')].map(e => {
+                    const r = e.getBoundingClientRect(); return [e.textContent.trim() || 'theme', r.width, r.height, r.right]; })
+                    .filter(([n, w, h, right]) => w < 44 || h < 44 || right > innerWidth)""")
+                record(not small, f"{path} nav targets are at least 44px and on screen at {w}px", str(small))
+            ctx.close()
+
         # Links.
         for key, (path, c) in seen.items():
             if key[0] != "link":
