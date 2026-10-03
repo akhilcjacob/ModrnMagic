@@ -17,7 +17,7 @@ import tempfile
 from PIL import Image
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from render import listed, load_apps  # noqa: E402  validated data with {name} filled in
+from render import glow, listed, load_apps  # noqa: E402  validated data with {name} filled in, and the site's tint rule
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CHROME = os.environ.get("CHROME", "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome")
@@ -91,8 +91,13 @@ h1 span {{ color: #5f6674; }}
         if only and app["id"] not in only:
             continue
         badge = f'<span style="margin-left:16px;font-size:24px;letter-spacing:0;color:#875700;font-weight:650">{status[app["status"]]}</span>' if status[app["status"]] else ""
+        # The same tint rule as the site (render.glow): `tint` wins, and a near-neutral or near-black
+        # color gets no wash, since it would only smudge the corner grey.
+        g = glow(app)
+        wash = (f'.wash::after {{ content: ""; position: absolute; inset: 0; background: radial-gradient(640px 520px at 100% 0%, {g}, transparent 70%); opacity: .7; }}'
+                if g else "")
         markup = f"""<!doctype html><html><head><style>{BASE_CSS}
-.wash::after {{ content: ""; position: absolute; inset: 0; background: radial-gradient(640px 520px at 100% 0%, {app["color"]}, transparent 70%); opacity: .7; }}
+{wash}
 .main {{ display: flex; gap: 48px; align-items: center; margin-top: 52px; }}
 h1 {{ font-size: 84px; line-height: 1; letter-spacing: -.035em; font-weight: 650; display: flex; align-items: baseline; }}
 p {{ font-size: 36px; line-height: 1.25; color: #474d59; margin-top: 18px; max-width: 22ch; letter-spacing: -.01em; }}
