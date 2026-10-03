@@ -65,9 +65,9 @@ def merge(root):
     """Merge _drafts/ into apps/ of a copy of the site and remove _drafts/. Never call on the repo."""
     if os.path.abspath(root) == ROOT:
         raise SystemExit("merge() rewrites apps/; run it on a copy, not the repo")
-    data, products = held(root)
-    if not products and not data["lines"]:
+    if not os.path.isdir(os.path.join(root, "_drafts")):
         return
+    data, products = held(root)
     order = merged_order(root, data, products)
     for aid in products:
         shutil.move(os.path.join(root, "_drafts/apps", aid), os.path.join(root, "apps", aid))

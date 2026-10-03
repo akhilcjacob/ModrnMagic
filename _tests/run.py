@@ -852,16 +852,19 @@ def data_tests(browser):
     record(r.returncode == 0 and set(products) <= set(draft_ids) and marked == draft_ids and not os.path.exists(os.path.join(dest, "_drafts")),
            "the preview merges every held draft product, each with its Draft banner", f"{marked} {r.stderr[-120:]}")
     shutil.rmtree(tmp)
-    tmp, dest, _ = temp_copy(merge=False)
-    steps = [subprocess.run([sys.executable, "_scripts/drafts.py", "promote", i], cwd=dest, capture_output=True, text=True)
+    # Only where apps/ is the release build (in release.py's preview copy the drafts are already in apps/).
+    clean = not any(a.get("draft") or (a.get("outcome") or {}).get("draft") or any(x["draft"] for x in a["lessons"]) for a in load_all())
+    tmp, dest, _ = temp_copy(merge=False) if clean else (None, None, None)
+    steps = [] if not clean else [subprocess.run([sys.executable, "_scripts/drafts.py", "promote", i], cwd=dest, capture_output=True, text=True)
              for i in products + list(data["lines"])]
-    steps.append(subprocess.run([sys.executable, "_scripts/render.py"], cwd=dest, capture_output=True, text=True))
-    gate = subprocess.run([sys.executable, "_scripts/check.py", "--release"], cwd=dest, capture_output=True, text=True)
-    pages_ok = all(os.path.isfile(os.path.join(dest, "apps", p, "index.html")) for p in products)
-    record(all(x.returncode == 0 for x in steps) and gate.returncode == 0 and "0 draft(s) held" in gate.stdout and pages_ok,
-           "drafts.py promote on every held draft, then render.py, passes check.py --release",
-           " ".join(x.stderr.strip()[-80:] for x in steps) + gate.stdout.strip()[-160:])
-    shutil.rmtree(tmp)
+    if clean:
+        steps.append(subprocess.run([sys.executable, "_scripts/render.py"], cwd=dest, capture_output=True, text=True))
+        gate = subprocess.run([sys.executable, "_scripts/check.py", "--release"], cwd=dest, capture_output=True, text=True)
+        pages_ok = all(os.path.isfile(os.path.join(dest, "apps", p, "index.html")) for p in products)
+        record(all(x.returncode == 0 for x in steps) and gate.returncode == 0 and "0 draft(s) held" in gate.stdout and pages_ok,
+               "drafts.py promote on every held draft, then render.py, passes check.py --release",
+               " ".join(x.stderr.strip()[-80:] for x in steps) + gate.stdout.strip()[-160:])
+        shutil.rmtree(tmp)
 
     # Rename: the name lives in one field.
     old, new = "Ramble", "Zephyrnote"
