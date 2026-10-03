@@ -104,7 +104,7 @@ def valid_date(value, day=False):
 def validate(ids, apps):
     """Schema checks for the fields render.py reads. Returns a list of problems."""
     template = json.load(open(os.path.join(ROOT, "_docs/app-template.json")))
-    optional = {"draft", "price", "storeName", "tint"}
+    optional = {"draft", "price", "storeName", "tint", "stars"}
     known = set(template) | optional
     out = []
     for aid, a in zip(ids, apps):
@@ -124,6 +124,10 @@ def validate(ids, apps):
             bad("`tint` must be #rrggbb")
         if not isinstance(a.get("draft", False), bool):
             bad("`draft` must be true or false")
+        if not isinstance(a.get("stars", False), bool):
+            bad("`stars` must be true or false")
+        elif a.get("stars") and rgb(a.get("color")) and not is_dark(a):
+            bad("`stars` needs a near-black `color` (the night sky only shows on a dark cell)")
         if not isinstance(a.get("flagship"), bool):
             bad("`flagship` must be true or false")
         elif a["flagship"] and a.get("status") == "archived":
@@ -194,7 +198,7 @@ def numbers(apps):
     count = {k: sum(1 for a in apps if a["status"] == k) for k in STATUS_LABEL}
     since = min((latest_start(a) for a in apps), default="")[:4]
     parts = [f"{count['live']} live", f"{count['lab']} experiment{'s' if count['lab'] != 1 else ''}", f"{count['archived']} archived"]
-    return f"{len(apps)} products since {since}: " + ", ".join(parts[:-1]) + f", and {parts[-1]}."
+    return f"{len(apps)} product{'s' if len(apps) != 1 else ''} since {since}: " + ", ".join(parts[:-1]) + f", and {parts[-1]}."
 
 
 def latest_start(app):
@@ -570,15 +574,17 @@ def strip_card(app, i=0):
 </a>"""
 
 
-def bento_sizes(n):
+def bento_sizes(n, lead_art=True):
     """Cell sizes by position, so any number of cells tiles the grid with no hole.
 
     On the 6-column grid a lead cell is 3 wide and 2 tall, a half is 3 wide,
     and a wide is 6. Three or more cells: a lead, two halves beside it, then
     halves in pairs, and a lone last cell goes wide. The 2-column tablet grid
-    maps lead and wide to 2 and half to 1, so the same pairs fill it too."""
-    if n < 3:
-        return ["wide"] if n == 1 else ["half"] * n
+    maps lead and wide to 2 and half to 1, so the same pairs fill it too.
+    A lead is two rows tall, so it needs art: when the first product has no
+    screenshots, every cell is a half in pairs instead, with a lone last wide."""
+    if n < 3 or not lead_art:
+        return ["half"] * (n - n % 2) + ["wide"] * (n % 2)
     rest = n - 3
     return ["lead", "half", "half"] + ["half"] * (rest - rest % 2) + ["wide"] * (rest % 2)
 
@@ -595,9 +601,9 @@ def bento_cell(app, size, shot):
         art = f'<div class="cell-shots">{shot(app, wides[0])}</div>'
     elif phones:
         art = f'<div class="peek-clip" aria-hidden="true"><div class="peek">{shot(app, phones[-1])}</div></div>'
-    elif wides:
-        art = f'<div class="cell-shots">{shot(app, wides[0])}</div>'
-    cls = f"cell cell-{size} glass reveal" + (" dark" if is_dark(app) else "") + (" has-peek" if "peek" in art else "")
+    elif wides:   # a half: the top of the wide shot peeks in, clipped, so it never sets the row height
+        art = f'<div class="peek-clip" aria-hidden="true"><div class="peek wide">{shot(app, wides[0])}</div></div>'
+    cls = f"cell cell-{size} glass reveal" + (" dark" if is_dark(app) else "") + (" stars" if app.get("stars") else "") + (" has-peek" if "peek" in art else "")
     return f"""<a class="{cls}" href="/apps/{app['id']}/" data-app="{app['id']}" style="{tint_style(app)}">
   {icon("arrow-up-right", "arrow")}
   <div class="top">{icon_html(app)}<div><h3 class="name">{e(app['name'])}</h3>{status_html(app)}</div></div>
@@ -622,12 +628,14 @@ def render_home(apps):
     # The flagship gets the panel above, so it leaves the bento. Every other
     # live product gets a cell, in apps/index.json order.
     bento_apps = [a for a in live if not (flag and flag["id"] == a["id"])]
-    bento = "\n".join(bento_cell(a, size, shot) for a, size in zip(bento_apps, bento_sizes(len(bento_apps))))
+    sizes = bento_sizes(len(bento_apps), bool(bento_apps and bento_apps[0]["screenshots"]))
+    bento = "\n".join(bento_cell(a, size, shot) for a, size in zip(bento_apps, sizes))
     strip = "\n".join(strip_card(a, i) for i, a in enumerate(experiments))
 
-    live_list = [a for a in apps if a["status"] == "live"]
-    names = ", ".join(a["name"] for a in live_list[:-1]) + f", and {live_list[-1]['name']}"
-    description = f"Modrn Magic is an independent product studio founded by Akhil Jacob. It makes {names} for iPhone, Android, and the web."
+    names = [a["name"] for a in live]
+    makes = (names[0] if len(names) == 1 else " and ".join(names) if len(names) == 2
+             else ", ".join(names[:-1]) + f", and {names[-1]}" if names else "apps")
+    description = f"Modrn Magic is an independent product studio founded by Akhil Jacob. It makes {makes} for iPhone, Android, and the web."
 
     graph = [
         org_node(),
@@ -672,9 +680,7 @@ def render_home(apps):
     <p class="lead">Live on the App Store, Google Play, and the web.</p>
   </div>
   {flagship_html(flag) if flag else ""}
-  <div class="bento">
-{bento}
-  </div>
+  {f'<div class="bento">{chr(10)}{bento}{chr(10)}  </div>' if bento else ""}
 </section>
 
 <section class="wrap section" id="experiments" aria-labelledby="exp-title">

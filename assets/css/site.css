@@ -356,7 +356,8 @@ dl, dd { margin: 0; }
 .cell-shots img { width: 100%; }
 .cell-lead .cell-shots { margin-top: auto; justify-content: center; }
 .cell-lead .cell-shots.pair img { width: 40%; }
-.cell-lead .cell-shots.pair img:nth-child(2) { translate: 0 18px; }
+.cell-lead .cell-shots.pair { padding-bottom: var(--s-4); }   /* room for the dropped second shot, so it never meets the chips */
+.cell-lead .cell-shots.pair img:nth-child(2) { translate: 0 var(--s-4); }
 .cell-wide > :not(.cell-shots):not(.arrow):not(.peek-clip) { grid-column: 1; }
 .cell-wide > .top { grid-row: 2; }
 .cell-wide > .one { grid-row: 3; }
@@ -371,10 +372,11 @@ dl, dd { margin: 0; }
 }
 .cell .peek img { border-radius: var(--r-shot); border: 1px solid var(--line); box-shadow: var(--shadow-2); }
 .cell:hover .peek { translate: 0 -8px; }
+.cell .peek.wide { width: 40%; max-width: 240px; rotate: 3deg; }   /* a half with only wide shots: their top corner peeks in */
 .cell.has-peek .one { max-width: 26ch; }
-/* A near-black product color becomes the cell itself, with a faint night sky. */
+/* A near-black product color becomes the cell itself. A product opts into a faint night sky with `stars` in app.json. */
 .cell.dark { --ink: var(--on-dark); --ink-2: var(--on-dark-2); --ink-3: var(--on-dark-3); --status-live: var(--on-dark-live); --surface-sunk: var(--on-dark-sunk); color: var(--ink); background-color: color-mix(in srgb, var(--tint) 92%, transparent); }
-.cell.dark::after {
+.cell.dark.stars::after {
   content: ""; position: absolute; inset: 0; z-index: -1; opacity: .5; pointer-events: none; border-radius: inherit;
   background-image:
     radial-gradient(1px 1px at 20% 30%, var(--on-dark), transparent),
