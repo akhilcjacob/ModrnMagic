@@ -64,9 +64,9 @@
   "screenshots": [
     {
       "from": "screenshots/os-connect-ai-token.png",
-      "alt": "Nookly OS Connect your AI screen: create a named access token, then paste it into the Claude Code setup command",
+      "alt": "Nookly OS Connect your AI screen: name an access token for your own AI tool and create it, shown once so you can copy it",
       "w": 904,
-      "h": 358,
+      "h": 232,
       "shape": "wide",
       "src": "media/screenshots-os-connect-ai-token.webp"
     }
