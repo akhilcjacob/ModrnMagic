@@ -845,8 +845,11 @@ def data_tests(browser):
                "check.py --release fails when held draft text lands in a published page", r.stdout.strip()[-160:])
         shutil.rmtree(tmp)
     tmp, dest, r = temp_copy()
-    marked = [a["id"] for a in load_all(dest) if a.get("draft") and "draft-banner" in open(os.path.join(dest, "apps", a["id"], "index.html")).read()]
-    record(r.returncode == 0 and sorted(marked) == products and not os.path.exists(os.path.join(dest, "_drafts")),
+    # Every draft product in the merged copy: the ones held here, plus any already in apps/
+    # (in the preview copy release.py tests, they were merged before this suite ran).
+    draft_ids = sorted(a["id"] for a in load_all(dest) if a.get("draft"))
+    marked = [i for i in draft_ids if "draft-banner" in open(os.path.join(dest, "apps", i, "index.html")).read()]
+    record(r.returncode == 0 and set(products) <= set(draft_ids) and marked == draft_ids and not os.path.exists(os.path.join(dest, "_drafts")),
            "the preview merges every held draft product, each with its Draft banner", f"{marked} {r.stderr[-120:]}")
     shutil.rmtree(tmp)
     tmp, dest, _ = temp_copy(merge=False)
