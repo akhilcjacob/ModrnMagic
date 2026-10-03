@@ -13,10 +13,12 @@ committed, so GitHub Pages serves plain files with no build step.
 
 Any product or line marked `draft` shows on /work/ (marked) and on its own
 page; the release build leaves them out entirely. Unconfirmed content is held
-in _drafts/ (unpublished), so apps/ has no drafts and the two builds match.
-`drafts.py preview` runs this build on a copy with the drafts merged.
+in .drafts/ (gitignored, never committed), so apps/ has no drafts and the two
+builds match. `drafts.py preview` runs this build on a copy with the drafts merged.
 
-Bump SITE_DATE when page content changes; it feeds sitemap lastmod.
+Set SITE_DATE to the release date whenever page content changes; it is the
+sitemap lastmod of home, work, contact, and the product pages, and
+`check.py --release` fails while it is older than a commit to those pages.
 """
 import datetime as dt
 import html
@@ -25,10 +27,11 @@ import os
 import re
 import subprocess
 import sys
+from urllib.parse import urlsplit
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SITE = "https://modrnmagic.app"
-SITE_DATE = "2026-09-30"
+SITE_DATE = "2026-10-03"
 EMAIL = "hello@modrnmagic.app"
 ORG_ID = f"{SITE}/#org"
 SITE_ID = f"{SITE}/#website"
@@ -53,6 +56,11 @@ PLATFORM_LABEL = {"ios": "iPhone", "android": "Android", "web": "Web"}
 OS_LABEL = {"ios": "iOS", "android": "Android", "web": "Web browser"}
 
 e = html.escape
+SLUG = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*")
+PATH_PART = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
+URL_KEYS = ("appStore", "googlePlay", "web", "writing", "source")   # links.* that leave the site
+LEGAL_KEYS = ("privacy", "terms", "deleteAccount")
+LEGAL_FOLDER = {"privacy": "privacy", "terms": "tos"}   # where a legal key's page lives under apps/<id>/
 
 
 def icon(name, cls=""):
@@ -69,6 +77,9 @@ NAME = "{name}"   # text fields say {name}, so a product's name lives only in it
 def load_apps():
     """Every product in apps/index.json order, validated, with {name} filled in."""
     ids = json.load(open(os.path.join(ROOT, "apps/index.json")))
+    unsafe = [i for i in ids if not (isinstance(i, str) and SLUG.fullmatch(i))]
+    if unsafe:   # checked before any id becomes a path
+        raise SystemExit("apps/index.json problems:\n  " + "\n  ".join(f"{i!r} is not a slug (lowercase letters, digits, single hyphens)" for i in unsafe))
     apps = [json.load(open(os.path.join(ROOT, "apps", i, "app.json"))) for i in ids]
     problems = validate(ids, apps)
     if problems:
@@ -103,6 +114,29 @@ def valid_date(value, day=False):
     return False
 
 
+def child_path(value, folder=False):
+    """A relative path inside the product folder: plain segments, no `..`, no
+    leading slash, scheme, query, or characters that need escaping. `folder`
+    paths end in a slash (a page served as index.html)."""
+    if not isinstance(value, str) or not value:
+        return False
+    if folder != value.endswith("/"):
+        return False
+    parts = value.rstrip("/").split("/")
+    return all(PATH_PART.fullmatch(p) and p not in (".", "..") for p in parts)
+
+
+def https_url(value):
+    """An absolute https URL with a host and nothing that would need escaping in an attribute."""
+    if not isinstance(value, str) or re.search(r"[\s\"'<>\\`]", value):
+        return False
+    try:
+        u = urlsplit(value)
+    except ValueError:
+        return False
+    return u.scheme == "https" and bool(u.hostname) and "@" not in u.netloc
+
+
 def validate(ids, apps):
     """Schema checks for the fields render.py reads. Returns a list of problems."""
     template = json.load(open(os.path.join(ROOT, "_docs/app-template.json")))
@@ -116,8 +150,51 @@ def validate(ids, apps):
             bad(f"missing field `{key}`")
         for key in set(a) - known:
             bad(f"unknown field `{key}`")
+        if not (isinstance(aid, str) and SLUG.fullmatch(aid)):
+            bad("the id in apps/index.json must be a slug: lowercase letters, digits, and single hyphens")
         if a.get("id") != aid:
             bad("`id` must match the folder name")
+        if a.get("kind") not in KIND_ONE:
+            bad(f"`kind` must be one of {', '.join(KIND_ONE)}")
+        if not isinstance(a.get("platforms"), list) or any(p not in PLATFORM_LABEL for p in a["platforms"]):
+            bad(f"`platforms` must be a list of {', '.join(PLATFORM_LABEL)}")
+        links = a.get("links")
+        if not isinstance(links, dict):
+            bad("`links` must be an object")
+            links = {}
+        for key in URL_KEYS:
+            if links.get(key) is not None and not https_url(links[key]):
+                bad(f"`links.{key}` must be null or an https:// URL")
+        if links.get("home") is not None and not child_path(links["home"], folder=True):
+            bad("`links.home` must be null or a folder inside the product folder, like `home/`")
+        legal = a.get("legal")
+        if not isinstance(legal, dict) or set(legal) - set(LEGAL_KEYS):
+            bad(f"`legal` must be an object with only {', '.join(LEGAL_KEYS)}")
+            legal = {}
+        for key, value in legal.items():
+            if key in LEGAL_FOLDER and https_url(value):
+                continue   # the policy lives on the product's own domain; render.py writes a pointer page
+            if not child_path(value, folder=True):
+                bad(f"`legal.{key}` must be a folder inside the product folder, like `privacy/`"
+                    + (", or an https:// URL" if key in LEGAL_FOLDER else ""))
+        if a.get("icon") is not None and not child_path(a["icon"]):
+            bad("`icon` must be null or a file path inside _src/apps/<id>/")
+        shots = a.get("screenshots")
+        if not isinstance(shots, list):
+            bad("`screenshots` must be a list")
+            shots = []
+        for i, s in enumerate(shots):
+            if not isinstance(s, dict):
+                bad(f"`screenshots[{i}]` must be an object")
+                continue
+            if not child_path(s.get("from")):
+                bad(f"`screenshots[{i}].from` must be a file path inside _src/apps/<id>/")
+            if "src" in s and not child_path(s["src"]):
+                bad(f"`screenshots[{i}].src` must be a file path inside the product folder")
+            if s.get("shape") not in ("phone", "wide"):
+                bad(f"`screenshots[{i}].shape` must be phone or wide")
+            if any(k in s and not (isinstance(s[k], int) and s[k] > 0) for k in ("w", "h")):
+                bad(f"`screenshots[{i}].w` and `.h` must be positive whole numbers")
         if a.get("status") not in STATUS_LABEL:
             bad(f"`status` must be one of {', '.join(STATUS_LABEL)}")
         if rgb(a.get("color")) is None:
@@ -170,6 +247,14 @@ def validate(ids, apps):
                         bad("each `cycle.updates[].date` must be YYYY-MM-DD, on or after `cycle.start`")
                     if len(set(dates)) != len(dates):
                         bad("`cycle.updates` dates must be unique (each one is a link)")
+        if links.get("home") and isinstance(aid, str) and SLUG.fullmatch(aid):
+            path = os.path.join(ROOT, "apps", aid, links["home"], "descriptions.json")
+            if os.path.exists(path):
+                tour = json.load(open(path)).get("tour", [])
+                for i, s in enumerate(tour):
+                    if not (child_path(s.get("src")) and child_path(s.get("from"))) or any(
+                            not (isinstance(s.get(k), int) and s[k] > 0) for k in ("w", "h")):
+                        bad(f"{links['home']}descriptions.json: `tour[{i}]` needs a child-path `src` and `from` and positive `w` and `h`")
     if sum(1 for a in apps if a.get("flagship") is True) > 1:
         out.append("apps/index.json: at most one product can set `flagship: true`")
     return out
@@ -230,6 +315,13 @@ def years(app):
     return start or end or ""
 
 
+def legal_href(app, key):
+    """Where a legal link goes: the product's own domain when `legal.<key>` is an
+    https URL, otherwise the page under apps/<id>/."""
+    value = app["legal"][key]
+    return value if value.startswith("https://") else f"/apps/{app['id']}/{value}"
+
+
 def page_url(app):
     return f"{SITE}/apps/{app['id']}/"
 
@@ -278,16 +370,17 @@ def is_dark(app):
 def tint_style(app):
     """Inline custom properties for a product surface: --tint (icon tile) and --glow (gradient)."""
     g = glow(app)
-    return f"--tint:{app['color']};" + (f"--glow:{g};" if g else "")
+    return e(f"--tint:{app['color']};" + (f"--glow:{g};" if g else ""))
 
 
 def icon_html(app, size_cls="", vt=True):
     style = f"--tint:{app['color']};"
     if vt:
         style += f"view-transition-name:icon-{app['id']};"
+    style = e(style)
     if app.get("icon"):
         return (f'<span class="icon {size_cls}" style="{style}">'
-                f'<img src="/apps/{app["id"]}/media/icon-256.webp" alt="" width="256" height="256" loading="lazy" decoding="async"></span>')
+                f'<img src="/apps/{e(app["id"])}/media/icon-256.webp" alt="" width="256" height="256" loading="lazy" decoding="async"></span>')
     return f'<span class="icon mono {size_cls}" style="{style}" aria-hidden="true">{e(app["name"][0])}</span>'
 
 
@@ -383,10 +476,14 @@ def inline_css():
     return css.replace(";}", "}").strip()
 
 
-def head(title, description, path, og_image, graph, noindex=False, extra=""):
+def head(title, description, path, og_image, graph, noindex=False, extra="", canonical_url=None):
+    """noindex pages get `noindex, follow` and no self-canonical; `canonical_url`
+    points a page at the copy that should be indexed instead, such as a policy on
+    a product's own domain."""
     canonical = SITE + path
-    canonical_tag = "" if noindex else f'<link rel="canonical" href="{canonical}">\n'
-    robots = '<meta name="robots" content="noindex">' if noindex else '<meta name="robots" content="index, follow, max-image-preview:large">'
+    target = canonical_url or (None if noindex else canonical)
+    canonical_tag = f'<link rel="canonical" href="{e(target)}">\n' if target else ""
+    robots = '<meta name="robots" content="noindex, follow">' if noindex else '<meta name="robots" content="index, follow, max-image-preview:large">'
     og = SITE + og_image
     return f"""<!doctype html>
 <html lang="en">
@@ -404,15 +501,15 @@ def head(title, description, path, og_image, graph, noindex=False, extra=""):
 <meta property="og:locale" content="en_US">
 <meta property="og:title" content="{e(title)}">
 <meta property="og:description" content="{e(description)}">
-<meta property="og:url" content="{canonical}">
-<meta property="og:image" content="{og}">
+<meta property="og:url" content="{e(canonical)}">
+<meta property="og:image" content="{e(og)}">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="{e(title)}">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="{e(title)}">
 <meta name="twitter:description" content="{e(description)}">
-<meta name="twitter:image" content="{og}">
+<meta name="twitter:image" content="{e(og)}">
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="icon" href="/assets/img/favicon-32.png" type="image/png" sizes="32x32">
 <link rel="apple-touch-icon" href="/assets/img/apple-touch-icon.png">
@@ -456,8 +553,8 @@ def nav(current=""):
 
 def footer(apps):
     live = [a for a in listed(apps) if a["status"] == "live"]
-    items = "\n".join(f'<li><a href="/apps/{a["id"]}/">{e(a["name"])}</a></li>' for a in live)
-    legal = "\n".join(f'<li><a href="/apps/{a["id"]}/privacy/">{e(a["name"])} privacy</a></li>'
+    items = "\n".join(f'<li><a href="/apps/{e(a["id"])}/">{e(a["name"])}</a></li>' for a in live)
+    legal = "\n".join(f'<li><a href="{e(legal_href(a, "privacy"))}">{e(a["name"])} privacy</a></li>'
                       for a in live if a["legal"].get("privacy"))
     return f"""<footer class="footer wrap">
   <div class="footer-grid">
@@ -494,7 +591,7 @@ def store_buttons(app, home=True):
         cls = "btn-primary" if not out else "btn-glass glass"
         out.append(f'<a class="btn {cls}" href="{e(links["web"])}" rel="noopener">{icon("globe")}Visit {e(host)}</a>')
     if home and links.get("home"):
-        out.append(f'<a class="btn btn-glass glass" href="/apps/{app["id"]}/{links["home"]}">Product site</a>')
+        out.append(f'<a class="btn btn-glass glass" href="/apps/{e(app["id"])}/{e(links["home"])}">Product site</a>')
     return f'<div class="btns">{"".join(out)}</div>'
 
 
@@ -521,7 +618,7 @@ def status_html(app, outcome=None):
     label = STATUS_LABEL[app["status"]]
     if outcome and outcome["label"] == label:
         label += f' {fmt_date(outcome["date"])}'
-    return f'<span class="status status-{app["status"]}">{label}</span>'
+    return f'<span class="status status-{e(app["status"])}">{label}</span>'
 
 
 # ---------------------------------------------------------------- home
@@ -547,26 +644,26 @@ def flagship_html(app):
     elif app["status"] == "live" and links.get("googlePlay"):
         cta = f'<a class="btn btn-primary" href="{e(links["googlePlay"])}" rel="noopener">{icon("google-play-logo")}Get it on Google Play</a>'
     else:
-        cta = f'<a class="btn btn-primary" href="/apps/{aid}/">See {e(app["name"])}</a>'
+        cta = f'<a class="btn btn-primary" href="/apps/{e(aid)}/">See {e(app["name"])}</a>'
     news = ""
     c = app.get("cycle")
     if c and c["updates"]:
         u = max(c["updates"], key=lambda x: x["date"])
-        news = (f'<p class="fl-news"><a href="/apps/{aid}/#update-{u["date"]}"><span class="meta">What\'s new, '
-                f'<time datetime="{u["date"]}">{fmt_date(u["date"])}</time></span> {e(u["text"])}</a></p>')
+        news = (f'<p class="fl-news"><a href="/apps/{e(aid)}/#update-{e(u["date"])}"><span class="meta">What\'s new, '
+                f'<time datetime="{e(u["date"])}">{fmt_date(u["date"])}</time></span> {e(u["text"])}</a></p>')
     art = ""
     framed = framed_shot(app)
     if framed:   # a whole device, never a marketing image that crops it
-        art = (f'<div class="fl-art phone framed" aria-hidden="true"><img src="/apps/{aid}/home/{framed["src"]}" alt="" '
-               f'width="{framed["w"]}" height="{framed["h"]}" loading="lazy" decoding="async"></div>')
+        art = (f'<div class="fl-art phone framed" aria-hidden="true"><img src="/apps/{e(aid)}/home/{e(framed["src"])}" alt="" '
+               f'width="{e(str(framed["w"]))}" height="{e(str(framed["h"]))}" loading="lazy" decoding="async"></div>')
     elif app["screenshots"]:
         s0 = app["screenshots"][0]
-        art = (f'<div class="fl-art {s0["shape"]}" aria-hidden="true"><img src="/apps/{aid}/{s0["src"]}" alt="" '
-               f'width="{s0["w"]}" height="{s0["h"]}" loading="lazy" decoding="async"></div>')
+        art = (f'<div class="fl-art {e(s0["shape"])}" aria-hidden="true"><img src="/apps/{e(aid)}/{e(s0["src"])}" alt="" '
+               f'width="{e(str(s0["w"]))}" height="{e(str(s0["h"]))}" loading="lazy" decoding="async"></div>')
     return f"""<section class="flagship glass reveal{' has-art' if art else ''}" aria-labelledby="flagship-title" style="{tint_style(app)}">
   <div class="fl-copy">
     <p class="meta fl-eyebrow">Flagship{" " + draft_mark() if app.get("draft") else ""}</p>
-    <div class="fl-head">{icon_html(app, vt=False)}<div><h2 class="h2" id="flagship-title"><a href="/apps/{aid}/">{e(app['name'])}</a></h2>{status_html(app, app.get("outcome"))}</div></div>
+    <div class="fl-head">{icon_html(app, vt=False)}<div><h2 class="h2" id="flagship-title"><a href="/apps/{e(aid)}/">{e(app['name'])}</a></h2>{status_html(app, app.get("outcome"))}</div></div>
     <p class="lead">{e(app['oneliner'])}</p>
     {news}
     <div class="btns">{cta}</div>
@@ -579,7 +676,7 @@ def strip_card(app, i=0):
     """A compact product card for the experiments strip and /work/."""
     o = app.get("outcome")
     tag = f'<span class="chip outcome-tag">{e(o["label"])} {fmt_date(o["date"])}</span>' if o and o["label"] != STATUS_LABEL[app["status"]] else ""
-    return f"""<a class="card glass reveal" style="--i:{i};{tint_style(app)}" href="/apps/{app['id']}/">
+    return f"""<a class="card glass reveal" style="--i:{i};{tint_style(app)}" href="/apps/{e(app['id'])}/">
   <div class="card-top">{icon_html(app, vt=False)}<div><h3 class="name">{e(app['name'])}</h3><div class="card-status">{status_html(app, o)}{tag}{draft_mark() if app.get("draft") else ""}</div></div></div>
   <p class="one">{e(app['oneliner'])}</p>
   <div class="foot">{f'<span class="meta tnum">{years(app)}</span>' if years(app) else ""}{chips(app)}</div>
@@ -616,7 +713,7 @@ def bento_cell(app, size, shot):
     elif wides:   # a half: the top of the wide shot peeks in, clipped, so it never sets the row height
         art = f'<div class="peek-clip" aria-hidden="true"><div class="peek wide">{shot(app, wides[0])}</div></div>'
     cls = f"cell cell-{size} glass reveal" + (" dark" if is_dark(app) else "") + (" stars" if app.get("stars") else "") + (" has-peek" if "peek" in art else "")
-    return f"""<a class="{cls}" href="/apps/{app['id']}/" data-app="{app['id']}" style="{tint_style(app)}">
+    return f"""<a class="{cls}" href="/apps/{e(app['id'])}/" data-app="{e(app['id'])}" style="{tint_style(app)}">
   {icon("arrow-up-right", "arrow")}
   <div class="top">{icon_html(app)}<div><h3 class="name">{e(app['name'])}</h3>{status_html(app)}</div></div>
   <p class="one">{e(app['oneliner'])}</p>
@@ -634,8 +731,8 @@ def render_home(apps):
 
     def shot(app, s, eager=False):
         load = 'decoding="async"' if eager else 'loading="lazy" decoding="async"'
-        return (f'<img src="/apps/{app["id"]}/{s["src"]}" alt="{e(s["alt"])}" '
-                f'width="{s["w"]}" height="{s["h"]}" {load}>')
+        return (f'<img src="/apps/{e(app["id"])}/{e(s["src"])}" alt="{e(s["alt"])}" '
+                f'width="{e(str(s["w"]))}" height="{e(str(s["h"]))}" {load}>')
 
     # The flagship gets the panel above, so it leaves the bento. Every other
     # live product gets a cell, in apps/index.json order.
@@ -758,8 +855,8 @@ def render_product(app, apps):
     if app["screenshots"]:
         figs = "\n".join(
             # A wide shot carries its aspect ratio, so CSS can cap its height to fit the content column before it loads.
-            f'<figure class="{s["shape"]}"' + (f' style="--ar:{s["w"] / s["h"]:.3f}"' if s["shape"] == "wide" else "")
-            + f'><img src="/apps/{aid}/{s["src"]}" alt="{e(s["alt"])}" width="{s["w"]}" height="{s["h"]}" '
+            f'<figure class="{e(s["shape"])}"' + (f' style="--ar:{s["w"] / s["h"]:.3f}"' if s["shape"] == "wide" else "")
+            + f'><img src="/apps/{e(aid)}/{e(s["src"])}" alt="{e(s["alt"])}" width="{e(str(s["w"]))}" height="{e(str(s["h"]))}" '
             + ('fetchpriority="high"' if i == 0 else 'loading="lazy" decoding="async"') + "></figure>"
             for i, s in enumerate(app["screenshots"]))
         rail = rail_html(figs, f"{app['name']} screenshots", len(app["screenshots"]))
@@ -773,9 +870,9 @@ def render_product(app, apps):
         facts.append(("Price", "Free" if p == "0" else f"${p} on the App Store (US)"))
     d = app["dates"]
     if d.get("shipped"):
-        facts.append(("Released", f'<time datetime="{d["shipped"]}">{fmt_date(d["shipped"])}</time>'))
+        facts.append(("Released", f'<time datetime="{e(d["shipped"])}">{fmt_date(d["shipped"])}</time>'))
     if live and d.get("updated") and d.get("updated") != d.get("shipped"):
-        facts.append(("Last update", f'<time datetime="{d["updated"]}">{fmt_date(d["updated"])}</time>'))
+        facts.append(("Last update", f'<time datetime="{e(d["updated"])}">{fmt_date(d["updated"])}</time>'))
     if not live and years(app):
         facts.append(("Active", e(years(app))))
     if app.get("stack"):
@@ -783,12 +880,9 @@ def render_product(app, apps):
     if links.get("writing"):
         facts.append(("Write-up", f'<a href="{e(links["writing"])}">Building {e(app["name"])}</a>'))
     legal = []
-    if app["legal"].get("privacy"):
-        legal.append(f'<a href="/apps/{aid}/{app["legal"]["privacy"]}">Privacy policy</a>')
-    if app["legal"].get("terms"):
-        legal.append(f'<a href="/apps/{aid}/{app["legal"]["terms"]}">Terms of service</a>')
-    if app["legal"].get("deleteAccount"):
-        legal.append(f'<a href="/apps/{aid}/{app["legal"]["deleteAccount"]}">Delete account</a>')
+    for key, label in (("privacy", "Privacy policy"), ("terms", "Terms of service"), ("deleteAccount", "Delete account")):
+        if app["legal"].get(key):
+            legal.append(f'<a href="{e(legal_href(app, key))}">{label}</a>')
     if legal:
         facts.append(("Legal", ", ".join(legal)))
     facts.append(("Support", f'<a href="mailto:{EMAIL}?subject={e(app["name"])}">{EMAIL}</a>'))
@@ -824,7 +918,7 @@ def render_product(app, apps):
 </section>"""
 
     others = [a for a in listed(apps) if a["id"] != aid and (a["status"] == "live" or not live)][:5]
-    more = "\n".join(f'<a href="/apps/{a["id"]}/">{icon_html(a, vt=False)}<div><div style="font-weight:600">{e(a["name"])}</div><div class="one">{e(a["oneliner"])}</div></div></a>' for a in others)
+    more = "\n".join(f'<a href="/apps/{e(a["id"])}/">{icon_html(a, vt=False)}<div><div style="font-weight:600">{e(a["name"])}</div><div class="one">{e(a["oneliner"])}</div></div></a>' for a in others)
 
     prose = "\n".join(f"<p>{e(p)}</p>" for p in app["description"])
 
@@ -852,14 +946,14 @@ def render_product(app, apps):
     if c and c["updates"]:
         ups = sorted(c["updates"], key=lambda u: u["date"], reverse=True)
         items = "\n".join(
-            f'<li class="update glass reveal" id="update-{u["date"]}" style="--i:{i}">'
-            f'<a class="update-date meta tnum" href="#update-{u["date"]}"><time datetime="{u["date"]}">{fmt_date(u["date"])}</time></a>'
+            f'<li class="update glass reveal" id="update-{e(u["date"])}" style="--i:{i}">'
+            f'<a class="update-date meta tnum" href="#update-{e(u["date"])}"><time datetime="{e(u["date"])}">{fmt_date(u["date"])}</time></a>'
             f'<p>{e(u["text"])}</p></li>' for i, u in enumerate(ups))
         whats_new = f"""<section class="wrap section" style="padding-top:0" aria-labelledby="new-title">
   <div class="section-head">
     <h2 class="h2" id="new-title">What's new</h2>
     <p class="lead">{e(c["goal"])}</p>
-    <p class="meta tnum">Push cycle, <time datetime="{c["start"]}">{fmt_date(c["start"])}</time> to <time datetime="{c["end"]}">{fmt_date(c["end"])}</time></p>
+    <p class="meta tnum">Push cycle, <time datetime="{e(c["start"])}">{fmt_date(c["start"])}</time> to <time datetime="{e(c["end"])}">{fmt_date(c["end"])}</time></p>
   </div>
   <ol class="updates">
 {items}
@@ -959,7 +1053,7 @@ def render_product_site(app, apps):
 
     def img(s, eager=False):
         load = 'fetchpriority="high"' if eager else 'loading="lazy" decoding="async"'
-        return f'<img src="{base}{s["src"]}" alt="{e(s["alt"])}" width="{s["w"]}" height="{s["h"]}" {load}>'
+        return f'<img src="{e(base + s["src"])}" alt="{e(s["alt"])}" width="{e(str(s["w"]))}" height="{e(str(s["h"]))}" {load}>'
 
     left, right, center = (tour[i] for i in data["hero"])
     hero_art = f"""<div class="hero-art framed" aria-hidden="true">
@@ -979,7 +1073,7 @@ def render_product_site(app, apps):
 {items}
   </div>
 </section>"""
-    legal = [f'<a class="btn btn-glass glass" href="/apps/{aid}/{app["legal"][k]}">{label}</a>'
+    legal = [f'<a class="btn btn-glass glass" href="{e(legal_href(app, k))}">{label}</a>'
              for k, label in (("privacy", "Privacy policy"), ("terms", "Terms of service")) if app["legal"].get(k)]
     price = ""
     if app.get("price") and app["links"].get("appStore"):
@@ -997,7 +1091,7 @@ def render_product_site(app, apps):
 {nav("products")}
 <main id="main" style="{tint_style(app)}">
 <div class="wrap">
-  <nav class="crumbs" aria-label="Breadcrumb"><a href="/">Modrn Magic</a> / <a href="/apps/{aid}/">{e(app['name'])}</a> / <span aria-current="page">Product site</span></nav>
+  <nav class="crumbs" aria-label="Breadcrumb"><a href="/">Modrn Magic</a> / <a href="/apps/{e(aid)}/">{e(app['name'])}</a> / <span aria-current="page">Product site</span></nav>
   <section class="hero ps-hero">
     <div>
       <div class="ps-brand">{icon_html(app)}<span class="h3">{e(data['title'])}</span></div>
@@ -1016,7 +1110,7 @@ def render_product_site(app, apps):
   <div class="contact-band glass reveal">
     <h2 class="h2">{e(data['closing']['title'])}</h2>
     <p class="lead">{e(data['closing']['text'])}</p>
-    <div class="btns" style="justify-content:center">{''.join(legal)}<a class="btn btn-glass glass" href="/apps/{aid}/">More about {e(app['name'])}</a></div>
+    <div class="btns" style="justify-content:center">{''.join(legal)}<a class="btn btn-glass glass" href="/apps/{e(aid)}/">More about {e(app['name'])}</a></div>
   </div>
 </section>
 </main>
@@ -1069,8 +1163,8 @@ def render_work(apps):
         o = a.get("outcome")
         tag = f'<span class="chip outcome-tag">{e(o["label"])} {fmt_date(o["date"])}</span>' if o and o["label"] != STATUS_LABEL[a["status"]] else ""
         line = f'<p class="w-outcome">{e(o["line"])}{" " + draft_mark() if o["draft"] else ""}</p>' if o else ""
-        return f"""<li class="work-item" data-status="{GROUP_ID[a['status']]}" data-kind="kind-{a['kind']}" style="--i:{i};view-transition-name:work-{a['id']}">
-  <a class="w-card glass" href="/apps/{a['id']}/" style="{tint_style(a)}">
+        return f"""<li class="work-item" data-status="{GROUP_ID[a['status']]}" data-kind="kind-{e(a['kind'])}" style="--i:{i};view-transition-name:work-{e(a['id'])}">
+  <a class="w-card glass" href="/apps/{e(a['id'])}/" style="{tint_style(a)}">
     {icon_html(a, vt=False)}
     <div class="w-main">
       <div class="w-head"><h2 class="name">{e(a['name'])}</h2>{status_html(a, o)}{tag}{draft_mark() if a.get("draft") else ""}</div>
@@ -1254,7 +1348,7 @@ def md_to_html(md, title_words):
     return "\n".join(html_out)
 
 
-def legal_shell(app_name, aid, path, title, description, crumb, inner, apps, side=""):
+def legal_shell(app_name, aid, path, title, description, crumb, inner, apps, side="", elsewhere=None):
     graph = [{"@type": "WebPage", "@id": SITE + path, "url": SITE + path, "name": title,
               "isPartOf": {"@id": SITE_ID}, "inLanguage": "en-US",
               "breadcrumb": {"@type": "BreadcrumbList", "itemListElement": [
@@ -1265,7 +1359,7 @@ def legal_shell(app_name, aid, path, title, description, crumb, inner, apps, sid
     body = f"""<body>
 {nav()}
 <main id="main" class="wrap">
-  <nav class="crumbs" aria-label="Breadcrumb"><a href="/">Modrn Magic</a> / <a href="/apps/{aid}/">{e(app_name)}</a> / <span aria-current="page">{e(crumb)}</span></nav>
+  <nav class="crumbs" aria-label="Breadcrumb"><a href="/">Modrn Magic</a> / <a href="/apps/{e(aid)}/">{e(app_name)}</a> / <span aria-current="page">{e(crumb)}</span></nav>
   <div class="legal">
 {inner}
     <aside class="legal-side" aria-label="About this page">
@@ -1281,6 +1375,9 @@ def legal_shell(app_name, aid, path, title, description, crumb, inner, apps, sid
 </html>
 """
     og = f"/assets/og/{aid}.jpg" if os.path.exists(os.path.join(ROOT, f"assets/og/{aid}.jpg")) else "/assets/og/home.jpg"
+    if elsewhere:   # a pointer to the policy on the product's own domain: never indexed here
+        refresh = f'<meta http-equiv="refresh" content="0; url={e(elsewhere)}">\n'
+        return head(title, description, path, og, graph, noindex=True, extra=refresh, canonical_url=elsewhere) + body
     return head(title, description, path, og, graph) + body
 
 
@@ -1292,8 +1389,12 @@ def render_legal(aid, apps):
     present = [k for k, (src, _) in LEGAL.items() if os.path.exists(os.path.join(ROOT, "apps", aid, k, src))]
     for key in present:
         src, label = LEGAL[key]
-        md = open(os.path.join(ROOT, "apps", aid, key, src), encoding="utf-8").read()
         path = f"/apps/{aid}/{key}/"
+        url = elsewhere(meta, key)
+        if url:
+            files.update(render_pointer(meta, key, url, apps))
+            continue
+        md = open(os.path.join(ROOT, "apps", aid, key, src), encoding="utf-8").read()
         words = ("privacy",) if key == "privacy" else ("terms",)
         if md.strip():
             doc = md_to_html(md, words)
@@ -1306,10 +1407,10 @@ def render_legal(aid, apps):
 {doc}
       </div>
     </article>"""
-        others = [f'<li><a href="/apps/{aid}/{k}/">{LEGAL[k][1]}</a></li>' for k in present if k != key]
+        others = [f'<li><a href="/apps/{e(aid)}/{k}/">{LEGAL[k][1]}</a></li>' for k in present if k != key]
         if key == "privacy" and os.path.exists(os.path.join(ROOT, "apps", aid, "privacy/delete-account/index.html")):
-            others.append(f'<li><a href="/apps/{aid}/privacy/delete-account/">Delete your account</a></li>')
-        others.append(f'<li><a href="/apps/{aid}/">About {e(name)}</a></li>')
+            others.append(f'<li><a href="/apps/{e(aid)}/privacy/delete-account/">Delete your account</a></li>')
+        others.append(f'<li><a href="/apps/{e(aid)}/">About {e(name)}</a></li>')
         side = f'        <p class="meta">Related</p>\n        <ul class="legal-links">{"".join(others)}</ul>'
         files[f"apps/{aid}/{key}/index.html"] = legal_shell(
             name, aid, path, f"{name} {label.lower()} | Modrn Magic",
@@ -1323,12 +1424,41 @@ def render_legal(aid, apps):
         <div class="btns"><a class="btn btn-primary" href="mailto:{SUPPORT}?subject={subject}">{icon("envelope-simple")}Request account deletion</a></div>
       </header>
     </article>"""
-        side = (f'        <p class="meta">Related</p>\n        <ul class="legal-links"><li><a href="/apps/{aid}/privacy/">Privacy policy</a></li>'
-                f'<li><a href="/apps/{aid}/">About {e(name)}</a></li></ul>')
+        side = (f'        <p class="meta">Related</p>\n        <ul class="legal-links"><li><a href="/apps/{e(aid)}/privacy/">Privacy policy</a></li>'
+                f'<li><a href="/apps/{e(aid)}/">About {e(name)}</a></li></ul>')
         files[f"apps/{aid}/privacy/delete-account/index.html"] = legal_shell(
             name, aid, path, f"Delete your {name} account | Modrn Magic",
             f"How to delete your {name} account and its data.", "Delete account", inner, apps, side)
     return files
+
+
+def elsewhere(app, folder):
+    """The https URL of a legal page that lives on the product's own domain, or None."""
+    key = next(k for k, f in LEGAL_FOLDER.items() if f == folder)
+    value = app["legal"].get(key) or ""
+    return value if value.startswith("https://") else None
+
+
+def render_pointer(app, folder, url, apps):
+    """apps/<id>/<folder>/ for a policy published on the product's own domain:
+    a short page that sends readers there (meta refresh, a canonical link, and a
+    visible link), plus the Markdown URL a store listing may use. The text is
+    never copied here, so the two can never disagree."""
+    aid, name = app["id"], app["name"]
+    src, label = LEGAL[folder]
+    host = urlsplit(url).hostname
+    path = f"/apps/{aid}/{folder}/"
+    inner = f"""    <article class="legal-doc">
+      <header class="page-hero"><h1>{e(name)} {label.lower()}</h1>
+        <p class="lead">{e(name)} publishes its {label.lower()} on its own site, {e(host)}.</p>
+        <div class="btns"><a class="btn btn-primary" href="{e(url)}" rel="noopener">{icon("arrow-up-right")}Read it on {e(host)}</a></div>
+      </header>
+    </article>"""
+    side = (f'        <p class="meta">Related</p>\n        <ul class="legal-links"><li><a href="/apps/{e(aid)}/">About {e(name)}</a></li></ul>')
+    page = legal_shell(name, aid, path, f"{name} {label.lower()} | Modrn Magic",
+                       f"{name} publishes its {label.lower()} on {host}.", label, inner, apps, side, elsewhere=url)
+    md = f"# {name} {label.lower()}\n\n{name} publishes its {label.lower()} at <{url}>.\n"
+    return {f"apps/{aid}/{folder}/index.html": page, f"apps/{aid}/{folder}/{src}": md}
 
 
 def legal_ids():
@@ -1355,9 +1485,9 @@ def render_sitemap(apps):
     for a in apps:
         if a["links"].get("home"):
             urls.append((f"/apps/{a['id']}/{a['links']['home']}", git_date(f"apps/{a['id']}/{a['links']['home']}index.html"), "0.7"))
-        for key in ("privacy", "terms", "deleteAccount"):
+        for key in LEGAL_KEYS:
             rel = a["legal"].get(key)
-            if rel:
+            if rel and not rel.startswith("https://"):   # a pointer page is noindex, so it stays out
                 src = "privacy-policy.md" if key == "privacy" else ("terms_of_service.md" if key == "terms" else "index.html")
                 urls.append((f"/apps/{a['id']}/{rel}", git_date(f"apps/{a['id']}/{rel}{src}"), "0.3"))
     rows = "\n".join(f"  <url><loc>{SITE}{u}</loc><lastmod>{d}</lastmod><priority>{p}</priority></url>" for u, d, p in urls)

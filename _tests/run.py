@@ -52,11 +52,17 @@ control, asserting what each one should do:
   on /work/ filters behave
 - check.py --release fails on draft output in HTML, and render.py --release
   deletes draft pages
-- held drafts (_drafts/) are nowhere in the published tree; check.py
-  --release fails on a held product in apps/ or held text in a page; the
-  preview shows each held product with its banner; promoting every held
-  draft with drafts.py and rendering passes check.py --release
-- in a temporary copy of the repo: renaming Ramble in its one name field
+- held drafts (.drafts/, local and gitignored) are nowhere in the published
+  tree; check.py --release fails on a held product in apps/, held text in a
+  page, or a drafts folder committed to git; the preview shows each held
+  product with its banner; promoting every held draft with drafts.py and
+  rendering passes check.py --release. These use the fictional drafts in
+  _tests/fixtures/drafts/, so they run the same in a fresh clone
+- render.py rejects unsafe data: non-slug ids, paths that leave the product
+  folder, non-https links, and the attribute-injection values from the review
+- 404.html is noindex, follow with no canonical; legal pages for a product
+  whose policy lives on its own domain point there (canonical, refresh, link)
+- in a temporary copy of the repo: renaming a product in its one name field
   leaves the old name nowhere; a push cycle renders What's new with working
   update links; bad product data makes render.py fail; check.py --release
   fails while drafts remain
@@ -85,9 +91,12 @@ from urllib.parse import urljoin, urlsplit
 from playwright.sync_api import sync_playwright
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "_scripts"))
-import drafts as held_drafts  # noqa: E402  the held drafts in _drafts/ (unpublished)
+import drafts as held_drafts  # noqa: E402  the held drafts in .drafts/ (local, unpublished)
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# Fictional held drafts. Every temp copy gets these in place of the local .drafts/,
+# so no test depends on which drafts (if any) exist on this machine.
+FIXTURE = os.path.join(ROOT, "_tests/fixtures/drafts")
 VERBOSE = "-v" in sys.argv
 ENGINE = next((a.split("=", 1)[1] for a in sys.argv if a.startswith("--browser=")), "chromium")
 # Safari, and so WebKit, moves Tab between form controls only by default;
@@ -265,12 +274,13 @@ FIXTURE_CYCLE = {
 
 
 def temp_copy(edit=None, merge=True):
-    """Copy the repo (without .git) to a temp folder, merge the held drafts into it
-    (the preview state, so every product is there to edit), apply edit(apps_dir),
-    and render it there."""
+    """Copy the repo (without .git) to a temp folder with the fixture drafts as its
+    .drafts/, merge them into it (the preview state, so every product is there to
+    edit), apply edit(apps_dir), and render it there."""
     tmp = tempfile.mkdtemp(prefix="modrn-site-test-")
     dest = os.path.join(tmp, "site")
-    shutil.copytree(ROOT, dest, ignore=shutil.ignore_patterns(".git", "__pycache__", "_attic", "_preview"))
+    shutil.copytree(ROOT, dest, ignore=shutil.ignore_patterns(".git", "__pycache__", "_attic", "_preview", ".drafts"))
+    shutil.copytree(FIXTURE, os.path.join(dest, held_drafts.DRAFTS))
     if merge:
         held_drafts.merge(dest)
     if edit:
@@ -287,13 +297,13 @@ def edit_app(apps_dir, aid, change):
 
 
 STATUS_GROUP = {"live": "live", "lab": "experiments", "archived": "archived"}
-PUSH_CYCLE = ("ramble", "nookly", "inboxhiiv", "hypebridge")
+PUSH_CYCLE = ("samplenote", "nookly", "inboxhiiv", "sampleboard")
 
 
 def load_all(root=ROOT, held=False):
-    """Products as published in `root`, or with the held drafts merged (held=True)."""
+    """Products as published in `root`, or with the fixture drafts merged (held=True)."""
     if held:
-        return held_drafts.merged_apps(root)
+        return held_drafts.merged_apps(root, FIXTURE)
     ids = json.load(open(os.path.join(root, "apps/index.json")))
     return [json.load(open(os.path.join(root, "apps", i, "app.json"))) for i in ids]
 
@@ -652,10 +662,10 @@ def bento_cases(apps):
                         and sum(s["shape"] == "phone" for s in a["screenshots"]) < 2), None)
     cases = [("nothing flagged", None)]
     cases += [(f"{aid} flagged", flag(aid)) for aid in live_now]
-    cases += [("hypebridge live", set_live(live_now + ["hypebridge"] if "hypebridge" not in live_now else live_now)),
-              ("hypebridge live and flagged", flag("hypebridge", live=True)),
-              ("ramble live", set_live([i for i in live_now if i != "ramble"] + ["ramble"])),
-              ("ramble live and flagged", flag("ramble", live=True)),
+    cases += [("sampleboard live", set_live(live_now + ["sampleboard"] if "sampleboard" not in live_now else live_now)),
+              ("sampleboard live and flagged", flag("sampleboard", live=True)),
+              ("samplenote live", set_live([i for i in live_now if i != "samplenote"] + ["samplenote"])),
+              ("samplenote live and flagged", flag("samplenote", live=True)),
               ("quietdesk flagged", flag("quietdesk")),
               ("nookly flagged", flag("nookly"))]
     pool = with_art + [a["id"] for a in apps if a["id"] not in with_art and a["status"] != "archived"]
@@ -807,7 +817,7 @@ def data_tests(browser):
             continue
         page = open(os.path.join(ROOT, "apps", i, "index.html")).read()
         leaks = [f for f, text in shared.items() if f"/apps/{i}/" in text]
-        record(not leaks and 'content="noindex"' in page and "draft-banner" in page,
+        record(not leaks and 'name="robots" content="noindex' in page and "draft-banner" in page,
                f"draft {i}: own noindex page with a banner, not on shared pages", ", ".join(leaks))
 
     # Drafts block a release: the gate agrees with the real data, and fails on a draft the test makes itself.
@@ -821,15 +831,22 @@ def data_tests(browser):
 
     # Held drafts: the committed tree carries none of them, the gate catches a
     # leak, the preview shows them marked, and promoting all of them is a release.
+    # The real local drafts, when this machine has any (a fresh clone has none).
     data, products = held_drafts.held(ROOT)
     published = "\n".join(open(f, encoding="utf-8", errors="replace").read() for f in published_text())
     leaks = [p for p in products if f"/apps/{p}/" in published or os.path.exists(os.path.join(ROOT, "apps", p))]
     leaks += [aid for aid, line in data["lines"].items()
               if (line.get("outcome") and line["outcome"]["line"] in published) or any(x["text"] in published for x in line.get("lessons", []))]
     record(not leaks, f"held drafts ({len(held_drafts.listing())}) are nowhere in the published tree", ", ".join(leaks))
+    tracked = subprocess.run(["git", "ls-files", "--", ".drafts", "_drafts"], cwd=ROOT, capture_output=True, text=True).stdout.split()
+    record(not tracked, "no held drafts are committed to git (the repository is public)", ", ".join(tracked[:5]))
+    ignored = subprocess.run(["git", "check-ignore", "-q", ".drafts/drafts.json"], cwd=ROOT).returncode == 0
+    record(ignored or not os.path.isdir(os.path.join(ROOT, ".git")), ".drafts/ is gitignored")
+    # The gate itself, against the fixture drafts installed in temp copies.
+    data, products = held_drafts.held(ROOT, FIXTURE)
     if products:
         def leak(d):
-            shutil.copytree(os.path.join(os.path.dirname(d), "_drafts/apps", products[0]), os.path.join(d, products[0]))
+            shutil.copytree(os.path.join(FIXTURE, "apps", products[0]), os.path.join(d, products[0]))
         tmp, dest, _ = temp_copy(leak, merge=False)
         r = subprocess.run([sys.executable, "_scripts/check.py", "--release"], cwd=dest, capture_output=True, text=True)
         record(r.returncode == 1 and f"DRAFT LEAK apps/{products[0]}" in r.stdout,
@@ -849,7 +866,7 @@ def data_tests(browser):
     # (in the preview copy release.py tests, they were merged before this suite ran).
     draft_ids = sorted(a["id"] for a in load_all(dest) if a.get("draft"))
     marked = [i for i in draft_ids if "draft-banner" in open(os.path.join(dest, "apps", i, "index.html")).read()]
-    record(r.returncode == 0 and set(products) <= set(draft_ids) and marked == draft_ids and not os.path.exists(os.path.join(dest, "_drafts")),
+    record(r.returncode == 0 and set(products) <= set(draft_ids) and marked == draft_ids and not os.path.exists(os.path.join(dest, held_drafts.DRAFTS)),
            "the preview merges every held draft product, each with its Draft banner", f"{marked} {r.stderr[-120:]}")
     shutil.rmtree(tmp)
     # Only where apps/ is the release build (in release.py's preview copy the drafts are already in apps/).
@@ -867,8 +884,8 @@ def data_tests(browser):
         shutil.rmtree(tmp)
 
     # Rename: the name lives in one field.
-    old, new = "Ramble", "Zephyrnote"
-    tmp, dest, r = temp_copy(lambda d: edit_app(d, "ramble", lambda a: a.update(name=new)))
+    old, new = "Samplenote", "Zephyrnote"
+    tmp, dest, r = temp_copy(lambda d: edit_app(d, "samplenote", lambda a: a.update(name=new)))
     hits = []
     for dirpath, dirnames, filenames in os.walk(dest):
         dirnames[:] = [x for x in dirnames if x not in ("_tests", "_attic", "_docs")]
@@ -877,7 +894,7 @@ def data_tests(browser):
                 text = open(os.path.join(dirpath, f), encoding="utf-8", errors="replace").read()
                 if re.search(rf"\b{old}\b", text):
                     hits.append(os.path.relpath(os.path.join(dirpath, f), dest))
-    page = open(os.path.join(dest, "apps/ramble/index.html")).read()
+    page = open(os.path.join(dest, "apps/samplenote/index.html")).read()
     record(r.returncode == 0 and not hits and page.count(new) >= 5,
            f"renaming {old} in app.json leaves the old name nowhere", ", ".join(hits) or r.stderr[-200:])
     shutil.rmtree(tmp)
@@ -886,18 +903,85 @@ def data_tests(browser):
     cases = {
         "two flagships": lambda d: (edit_app(d, "flowmoro", lambda a: a.update(flagship=True)),
                                     edit_app(d, "skywise", lambda a: a.update(flagship=True))),
-        "bad cycle date": lambda d: edit_app(d, "ramble", lambda a: a.update(cycle=dict(FIXTURE_CYCLE, start="Oct 5"))),
-        "update before start": lambda d: edit_app(d, "ramble", lambda a: a.update(cycle=dict(FIXTURE_CYCLE, start="2026-10-20"))),
+        "bad cycle date": lambda d: edit_app(d, "samplenote", lambda a: a.update(cycle=dict(FIXTURE_CYCLE, start="Oct 5"))),
+        "update before start": lambda d: edit_app(d, "samplenote", lambda a: a.update(cycle=dict(FIXTURE_CYCLE, start="2026-10-20"))),
         "unknown outcome label": lambda d: edit_app(d, "quorum", lambda a: a["outcome"].update(label="Dead")),
         "unknown field": lambda d: edit_app(d, "triply", lambda a: a.update(flagshp=True)),
         "archived flagship": lambda d: edit_app(d, "quorum", lambda a: a.update(flagship=True)),
-        "a tint that is not #rrggbb": lambda d: edit_app(d, "ramble", lambda a: a.update(tint="amber")),
+        "a tint that is not #rrggbb": lambda d: edit_app(d, "samplenote", lambda a: a.update(tint="amber")),
         "an unreadable color": lambda d: edit_app(d, "triply", lambda a: a.update(color="teal")),
+        # The adversarial review's repro values, then the rest of the schema they point at.
+        "an id that injects attributes": lambda d: edit_app(d, "flowmoro", lambda a: a.update(id='x" autofocus onfocus=alert(1) x="')),
+        "a home path that injects attributes": lambda d: edit_app(d, "flowmoro", lambda a: a["links"].update(home='home/" onmouseover=alert(1) x="')),
+        "an id that is not its folder": lambda d: edit_app(d, "flowmoro", lambda a: a.update(id="skywise")),
+        "a home path outside the folder": lambda d: edit_app(d, "flowmoro", lambda a: a["links"].update(home="../skywise/")),
+        "an absolute home path": lambda d: edit_app(d, "flowmoro", lambda a: a["links"].update(home="/home/")),
+        "a screenshot src outside the folder": lambda d: edit_app(d, "skywise", lambda a: a["screenshots"][0].update(src="../../index.html")),
+        "a screenshot from with a quote": lambda d: edit_app(d, "skywise", lambda a: a["screenshots"][0].update({"from": 'a".webp'})),
+        "an icon outside _src": lambda d: edit_app(d, "skywise", lambda a: a.update(icon="../../CNAME")),
+        "a legal path outside the folder": lambda d: edit_app(d, "skywise", lambda a: a["legal"].update(privacy="../flowmoro/privacy/")),
+        "a legal path that is a javascript URL": lambda d: edit_app(d, "skywise", lambda a: a["legal"].update(terms="javascript:alert(1)")),
+        "an http store link": lambda d: edit_app(d, "skywise", lambda a: a["links"].update(appStore="http://apps.apple.com/app/id1")),
+        "a javascript web link": lambda d: edit_app(d, "inboxhiiv", lambda a: a["links"].update(web="javascript:alert(1)")),
+        "a writing link with a quote": lambda d: edit_app(d, "inboxhiiv", lambda a: a["links"].update(writing='https://example.com/" onclick="x')),
+        "a store link without a host": lambda d: edit_app(d, "skywise", lambda a: a["links"].update(googlePlay="https:///x")),
+        "an unknown screenshot shape": lambda d: edit_app(d, "skywise", lambda a: a["screenshots"][0].update(shape='phone" x="')),
+        "an unknown kind": lambda d: edit_app(d, "skywise", lambda a: a.update(kind='app" x="')),
+        "an unknown platform": lambda d: edit_app(d, "skywise", lambda a: a.update(platforms=["ios", "beos"])),
     }
     for name, edit in cases.items():
         tmp, dest, r = temp_copy(edit)
         record(r.returncode != 0 and "app.json problems" in (r.stderr + r.stdout), f"render.py rejects {name}", r.stderr.strip()[-120:])
         shutil.rmtree(tmp)
+
+    # The review's repro values, straight through validate(): no build needed to see them rejected.
+    sys.path.insert(0, os.path.join(ROOT, "_scripts"))
+    import render   # noqa: E402
+    base_app = json.load(open(os.path.join(ROOT, "apps/flowmoro/app.json")))
+    for label, change in (("id", lambda a: a.update(id='x" autofocus onfocus=alert(1) x="')),
+                          ("links.home", lambda a: a["links"].update(home='home/" onmouseover=alert(1) x="'))):
+        a = json.loads(json.dumps(base_app))
+        change(a)
+        record(bool(render.validate(["flowmoro"], [a])), f"validate() rejects the review's {label} injection value")
+    record(not render.validate(["flowmoro"], [base_app]), "validate() accepts the real Flowmoro data")
+
+    # 404.html: not indexable at its direct URL, and no self-canonical.
+    page = open(os.path.join(ROOT, "404.html")).read()
+    record('<meta name="robots" content="noindex, follow">' in page and 'rel="canonical"' not in page,
+           "404.html is noindex, follow with no canonical")
+
+    # Files kept on purpose (outside links may use them): check.py fails if one goes missing.
+    sys.path.insert(0, os.path.join(ROOT, "_scripts"))
+    import check as site_check   # noqa: E402
+    record(all(os.path.isfile(os.path.join(ROOT, f)) for f in site_check.RETAINED), "retained legacy files exist: " + ", ".join(site_check.RETAINED))
+    tmp, dest, _ = temp_copy(merge=False)
+    os.remove(os.path.join(dest, "assets/og-image.png"))
+    r = subprocess.run([sys.executable, "_scripts/check.py"], cwd=dest, capture_output=True, text=True)
+    record(r.returncode == 1 and "assets/og-image.png: missing, but it is kept on purpose" in r.stdout,
+           "check.py fails when a retained legacy file is deleted", r.stdout.strip()[-160:])
+    shutil.rmtree(tmp)
+
+    # In a git checkout, the release gate fails on committed drafts and on a sitemap date older than a page commit.
+    tmp, dest, _ = temp_copy(merge=False)
+    env = dict(os.environ, GIT_AUTHOR_NAME="t", GIT_AUTHOR_EMAIL="t@example.com", GIT_COMMITTER_NAME="t", GIT_COMMITTER_EMAIL="t@example.com",
+               GIT_AUTHOR_DATE="2000-01-01T12:00:00", GIT_COMMITTER_DATE="2000-01-01T12:00:00")
+    git = lambda *a: subprocess.run(["git", *a], cwd=dest, capture_output=True, text=True, env=env)
+    git("init", "-q")
+    git("add", "-A")
+    git("commit", "-q", "-m", "base")
+    r = subprocess.run([sys.executable, "_scripts/check.py", "--release"], cwd=dest, capture_output=True, text=True)
+    record(r.returncode == 0 and "STALE" not in r.stdout and "committed to git" not in r.stdout,
+           "check.py --release passes in a fresh git checkout of the tree", r.stdout.strip()[-160:])
+    open(os.path.join(dest, "work/index.html"), "a").write("\n")
+    env.update(GIT_COMMITTER_DATE="2099-01-01T12:00:00")
+    git("add", "-A")
+    git("add", "-f", ".drafts/drafts.json")
+    git("commit", "-q", "-m", "later")
+    r = subprocess.run([sys.executable, "_scripts/check.py", "--release"], cwd=dest, capture_output=True, text=True)
+    record(r.returncode == 1 and "STALE sitemap.xml: https://modrnmagic.app/work/" in r.stdout
+           and "DRAFT LEAK .drafts/drafts.json: held draft content is committed to git" in r.stdout,
+           "check.py --release fails on a stale sitemap date and on drafts committed to git", r.stdout.strip()[-200:])
+    shutil.rmtree(tmp)
 
     # No drafts, release passes.
     def confirm_all(d):
@@ -935,10 +1019,10 @@ def data_tests(browser):
     shutil.rmtree(tmp)
 
     # A push cycle renders What's new, newest first, and each date link lands on its row.
-    tmp, dest, r = temp_copy(lambda d: edit_app(d, "ramble", lambda a: a.update(cycle=FIXTURE_CYCLE)))
+    tmp, dest, r = temp_copy(lambda d: edit_app(d, "samplenote", lambda a: a.update(cycle=FIXTURE_CYCLE)))
     server, base = serve(dest)
     page = browser.new_page(viewport={"width": 1440, "height": 900})
-    page.goto(base + "/apps/ramble/")
+    page.goto(base + "/apps/samplenote/")
     dates = page.eval_on_selector_all(".updates .update", "els => els.map(e => e.id)")
     want = ["update-" + u["date"] for u in sorted(FIXTURE_CYCLE["updates"], key=lambda u: u["date"], reverse=True)]
     record(dates == want, "What's new lists updates newest first", str(dates))
@@ -963,6 +1047,18 @@ def link_key(page, c):
 REDIRECTS = {"/mvp.html": "/contact/"}   # meta-refresh pages: tested for where they land
 
 
+def pointers():
+    """Legal pages for products whose policy lives on their own domain: the page
+    path, and the https URL it must point at (from app.json `legal`)."""
+    out = {}
+    for a in load_all():
+        for key, folder in (("privacy", "privacy"), ("terms", "tos")):
+            url = a["legal"].get(key) or ""
+            if url.startswith("https://"):
+                out[f"/apps/{a['id']}/{folder}/"] = url
+    return out
+
+
 def main():
     threading.Thread(target=watchdog, daemon=True).start()
     try:
@@ -975,7 +1071,8 @@ def main():
 
 def run_all():
     server, base = serve()
-    all_pages = [p for p in pages() if p not in REDIRECTS]
+    # Pointer pages refresh to another domain, so they are checked over HTTP below, not loaded.
+    all_pages = [p for p in pages() if p not in REDIRECTS and p not in pointers()]
     seen = {}       # key -> page where first found
     tested = set()
     with sync_playwright() as pw:
@@ -1265,12 +1362,20 @@ def run_all():
         rel = "/" + os.path.relpath(dirpath, ROOT).replace(os.sep, "/")
         if not any(seg in rel for seg in ("/privacy", "/tos")) or "index.html" not in filenames:
             continue
+        url = pointers().get(rel + "/")
         for form in (rel, rel + "/", rel + "/index.html") + tuple(f"{rel}/{f}" for f in filenames if f.endswith(".md")):
             try:
                 r = urllib.request.urlopen(base + form)
                 body = r.read().decode("utf-8", "replace")
                 ok = r.status == 200 and ("<h1>" in body if not form.endswith(".md") else True)
                 record(ok, f"legal URL {form} answers", str(r.status))
+                if url and form.endswith(".md"):
+                    record(f"<{url}>" in body, f"legal URL {form} points at {url}", body[:120])
+                elif url:
+                    want = (f'<link rel="canonical" href="{url}">', f'<meta http-equiv="refresh" content="0; url={url}">',
+                            '<meta name="robots" content="noindex, follow">', f'class="btn btn-primary" href="{url}"')
+                    missing = [w for w in want if w not in body]
+                    record(not missing, f"legal URL {form} points at {url} (canonical, refresh, visible link, noindex)", str(missing))
             except Exception as err:   # noqa: BLE001
                 record(False, f"legal URL {form} answers", str(err))
     server.shutdown()

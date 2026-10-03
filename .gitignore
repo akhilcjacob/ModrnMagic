@@ -15,3 +15,6 @@ __pycache__/
 
 # Draft preview build (_scripts/drafts.py preview)
 /_preview/
+
+# Held drafts: unconfirmed content, local only (see _docs/APPS.md, Held drafts)
+/.drafts/

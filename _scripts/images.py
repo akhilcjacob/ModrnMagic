@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Make web-sized copies of product images and the site icons.
 
-Reads each apps/<id>/app.json (and each held draft product in
-_drafts/apps/<id>/, whose copies stay there) and writes media/*.webp from the
+Reads each apps/<id>/app.json (and each held draft product in the gitignored
+.drafts/apps/<id>/, whose copies and originals stay there) and writes media/*.webp from the
 `from` path of every screenshot, plus a small icon. Those originals live in
 _src/apps/<id>/, outside the published tree, so only the WebP copies ship. Also writes favicons and
 the nav mark from _src/favicon.ico (the 500px original), and a small favicon.ico. Needs Pillow (with WebP support). Only rerun
@@ -33,11 +33,11 @@ def save_webp(im, path, width, quality=80):
 
 def main():
     ids = json.load(open(os.path.join(ROOT, "apps/index.json")))
-    held = os.path.join(ROOT, "_drafts/apps")
-    folders = [(i, os.path.join(ROOT, "apps", i)) for i in ids]
-    folders += [(i, os.path.join(held, i)) for i in sorted(os.listdir(held))] if os.path.isdir(held) else []
-    for app_id, folder in folders:
-        src = os.path.join(ROOT, "_src/apps", app_id)
+    held = os.path.join(ROOT, ".drafts/apps")
+    folders = [(i, os.path.join(ROOT, "apps", i), os.path.join(ROOT, "_src/apps", i)) for i in ids]
+    folders += [(i, os.path.join(held, i), os.path.join(ROOT, ".drafts/src/apps", i))
+                for i in sorted(os.listdir(held))] if os.path.isdir(held) else []
+    for app_id, folder, src in folders:
         path = os.path.join(folder, "app.json")
         app = json.load(open(path))
         for shot in app.get("screenshots", []):

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Render 1200x630 OpenGraph cards to assets/og/*.jpg with headless Chrome.
 
-Held draft products (_drafts/apps/<id>/) get their card in _drafts/assets/og/,
+Held draft products (.drafts/apps/<id>/, gitignored) get their card in .drafts/assets/og/,
 so it stays unpublished until the draft is promoted. Needs Google Chrome and Pillow. Rerun when a product's name, one-liner, icon,
 or color changes; the output is committed.
 
@@ -88,12 +88,12 @@ h1 span {{ color: #5f6674; }}
         print("ok home")
 
     status = {"live": "", "lab": "Experiment", "archived": "Archived"}
-    held = os.path.join(ROOT, "_drafts/apps")
+    held = os.path.join(ROOT, ".drafts/apps")
     jobs = [(a, "apps", out_dir) for a in apps]
     if os.path.isdir(held):
         for aid in sorted(os.listdir(held)):
             a = json.load(open(os.path.join(held, aid, "app.json")))
-            jobs.append((fill(a, a["name"]), "_drafts/apps", os.path.join(ROOT, "_drafts/assets/og")))
+            jobs.append((fill(a, a["name"]), ".drafts/apps", os.path.join(ROOT, ".drafts/assets/og")))
     for app, base, card_dir in jobs:
         if only and app["id"] not in only:
             continue

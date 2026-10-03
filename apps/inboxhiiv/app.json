@@ -93,7 +93,7 @@
   "cycle": null,
   "flagship": false,
   "legal": {
-    "privacy": "privacy/",
-    "terms": "tos/"
+    "privacy": "https://inboxhiive.com/privacy",
+    "terms": "https://inboxhiive.com/terms"
   }
 }

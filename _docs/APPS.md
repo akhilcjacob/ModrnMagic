@@ -1,6 +1,6 @@
 # Product data
 
-Every product on modrnmagic.app comes from one file: `apps/<id>/app.json`. `apps/index.json` lists the ids in display order. Nothing about products is hardcoded in HTML or JS. Content Akhil has not confirmed is held in `_drafts/`, which is not published (see Held drafts).
+Every product on modrnmagic.app comes from one file: `apps/<id>/app.json`. `apps/index.json` lists the ids in display order. Nothing about products is hardcoded in HTML or JS. Content Akhil has not confirmed is held in `.drafts/`, a local folder that is gitignored, so it is neither published nor in the public repository (see Held drafts).
 
 ## Add or change a product
 
@@ -67,37 +67,38 @@ GitHub Pages serves the committed files as they are. Its default Jekyll pass cop
 | `stack` | Technologies, shown as "Built with". |
 | `dates` | `started`, `shipped`, `updated`, `ended` as `YYYY-MM-DD` or `YYYY-MM`, or null. |
 | `platforms` | Any of `ios`, `android`, `web`. |
-| `links` | `appStore`, `googlePlay`, `web`, `home` (relative product site), `writing`, `source`. |
+| `links` | `appStore`, `googlePlay`, `web`, `writing`, `source`: null or an `https://` URL. `home`: null or a folder inside the product folder, like `home/`. |
 | `price` | App Store price from the store listing, for the Offer in JSON-LD. |
 | `wasOn` | For archived apps: stores it used to be on, shown as text, never as links. |
-| `icon`, `color` | Icon file in the folder (or null for a letter tile) and its tile color, as `#rrggbb` or `rgb(r,g,b)`. A near-black `color` makes the product's home bento cell dark. |
+| `icon`, `color` | Icon file in `_src/apps/<id>/`, as a plain relative path (or null for a letter tile) and its tile color, as `#rrggbb` or `rgb(r,g,b)`. A near-black `color` makes the product's home bento cell dark. |
 | `stars` | Optional, default false. A faint night sky in the product's dark bento cell. Only for products where it fits (Astro Defender, a space game); needs a near-black `color`. |
 | `tint` | Optional `#rrggbb`. The hue of the soft gradient in the product's cards, bento cell, and flagship panel. Without it the gradient uses `color`, unless `color` is near neutral or near black (OKLCH chroma under 0.04, or lightness outside 0.3 to 0.9): those turn into grey haze and pull meta text under AA, so the card gets no gradient. Take it from the product's own icon or UI; leave it out until the product has a brand hue (open choices are in `_docs/DRAFTS.md`). `og.py` uses the same rule for the share card wash. `_tests/run.py` measures card text contrast in both themes. |
-| `screenshots` | `{from, src, w, h, alt, shape}`. `shape` is `phone` or `wide`. `src`, `w`, `h` are written by `images.py`. |
-| `legal` | Relative paths to `privacy/`, `tos/`, and optional `deleteAccount`. |
-| `draft` | Optional, default false. Only held draft products in `_drafts/apps/<id>/app.json` carry it. In the preview a draft product gets its own page (noindex, with a Draft banner) and a marked row on /work/, and nothing else: no home, footer, sitemap, or llms.txt entry. `drafts.py promote` clears it. |
-| `outcome` | `null`, or `{label, date, line, draft}` once a keep or archive decision exists. `label` is `Kept`, `Paused`, `Parked`, or `Archived`; `date` is `YYYY-MM`; `line` is one sentence with the reason. Outcome text comes from Akhil or the cycle report; a line an agent drafted is held in `_drafts/drafts.json` until he confirms it. |
+| `screenshots` | `{from, src, w, h, alt, shape}`. `shape` is `phone` or `wide`. `from` is relative to `_src/apps/<id>/`, `src` to the product folder; both are plain relative paths. `src`, `w`, `h` are written by `images.py`. |
+| `legal` | `privacy`, `terms`, and optional `deleteAccount`: folders inside the product folder (`privacy/`, `tos/`, `privacy/delete-account/`). When a product publishes its policy on its own domain, `privacy` or `terms` is that `https://` URL instead (InboxHiive does): links go straight there, and `apps/<id>/privacy/` or `apps/<id>/tos/` becomes a short noindex page with a canonical link, a meta refresh, and a visible link to it, so old URLs keep working. Its `.md` is rewritten to a one-line pointer. |
+| `draft` | Optional, default false. Only held draft products in `.drafts/apps/<id>/app.json` carry it. In the preview a draft product gets its own page (noindex, with a Draft banner) and a marked row on /work/, and nothing else: no home, footer, sitemap, or llms.txt entry. `drafts.py promote` clears it. |
+| `outcome` | `null`, or `{label, date, line, draft}` once a keep or archive decision exists. `label` is `Kept`, `Paused`, `Parked`, or `Archived`; `date` is `YYYY-MM`; `line` is one sentence with the reason. Outcome text comes from Akhil or the cycle report; a line an agent drafted is held in `.drafts/drafts.json` until he confirms it. |
 | `lessons` | `[{text, draft}]`, shown as "What we learned". Same draft rule: published lessons have `draft: false`. |
 | `cycle` | `null`, or `{start, end, goal, updates}` during a push cycle. Dates are `YYYY-MM-DD`; `updates` is `[{date, text}]` with unique dates on or after `start`. The page shows them newest first as "What's new", each with its own link. |
 | `flagship` | `true` on at most one product, never an archived one. Home then shows that product in a full-width panel above the bento and drops it from the bento and the experiments strip. HQ picks it; with nothing flagged, home is complete without the panel. A draft flagship shows only in the preview. |
 
-Text fields (`oneliner`, `summary`, `description`, `features`, `faq`, screenshot `alt`) may write `{name}`; `render.py` fills in `name`. Use it when a product may be renamed, so the name lives in one field. Ramble does this.
+Text fields (`oneliner`, `summary`, `description`, `features`, `faq`, screenshot `alt`) may write `{name}`; `render.py` fills in `name`. Use it when a product may be renamed, so the name lives in one field.
 
-`render.py` validates all of the above, and rejects unknown keys, on every run, so `render.py --check` fails on bad data.
+`render.py` validates all of the above, and rejects unknown keys, on every run, so `render.py --check` fails on bad data. Ids must be slugs (lowercase letters, digits, single hyphens) equal to their folder name; every path must stay inside its folder (no `..`, leading slash, or characters that need escaping); store, web, writing, and source links must be `https://`. Every value is HTML-escaped in attributes as well.
 
 Rules: no invented metrics, ratings, or testimonials. Archived apps never link to a store.
 
 ## Held drafts
 
-GitHub Pages publishes every file outside `_` folders, so anything in `apps/`, `assets/`, or a page is public the moment it lands on `main`. Content Akhil has not confirmed therefore lives in `_drafts/`, which Jekyll skips:
+The repository is public, and GitHub Pages publishes every file outside `_` and dot folders on `main`. Content Akhil has not confirmed therefore never goes into git. It lives in `.drafts/` at the repo root, which `.gitignore` excludes:
 
 | Path | What |
 |---|---|
-| `_drafts/apps/<id>/` | A draft product: `app.json` with `"draft": true`, and its `media/` |
-| `_drafts/assets/og/<id>.jpg` | Its share card (`og.py` writes it there) |
-| `_drafts/drafts.json` | `order`: every id, drafts included, in display order. `lines`: per product, a held `outcome` and `lessons` |
+| `.drafts/apps/<id>/` | A draft product: `app.json` with `"draft": true`, and its `media/` |
+| `.drafts/assets/og/<id>.jpg` | Its share card (`og.py` writes it there) |
+| `.drafts/src/apps/<id>/` | Its originals (icon, screenshots); `promote` moves them to `_src/apps/<id>/` |
+| `.drafts/drafts.json` | `order`: every id, drafts included, in display order. `lines`: per product, a held `outcome` and `lessons` |
 
-The committed tree is the release build: no draft product, page, row, line, mark, data, or media. `images.py` and `og.py` write a held product's media and card inside `_drafts/`. Originals stay in `_src/apps/<id>/` as for any product.
+The committed tree is the release build: no draft product, page, row, line, mark, data, or media. `images.py` and `og.py` write a held product's media and card inside `.drafts/`. A fresh clone has no `.drafts/`, which reads as nothing held: every script and test works either way. To hand drafts to another machine, copy the folder; never commit it. `check.py --release` fails if any file under `.drafts/` or the old `_drafts/` is tracked by git. Drafts removed from git in PR #1 stay in its history; the current set is backed up in HQ's `_attic/site-drafts-backup-2026-10-03/`.
 
 ```
 python3 _scripts/drafts.py            # list held drafts
@@ -105,17 +106,19 @@ python3 _scripts/check.py serve --drafts  # preview with drafts merged and marke
 python3 _scripts/drafts.py preview    # only build that preview, in _preview/ (gitignored)
 ```
 
-The preview is a copy of the site with the drafts merged and the default build run, so draft pages, Draft marks, and the draft row on /work/ look as they did before drafts were held. It never touches the repo.
+The preview is a copy of the site with the drafts merged and the default build run, so draft pages, Draft marks, and the draft row on /work/ look as they would once published. It never touches the repo.
 
-**Promote a draft** once Akhil says yes (or after he rewrites it in `_drafts/`):
+**Promote a draft** once Akhil says yes (or after he rewrites it in `.drafts/`):
 
 ```
-python3 _scripts/drafts.py promote ramble   # a product: moves _drafts/apps/ramble/ and its card into place, clears draft, adds it to apps/index.json at its place in order
-python3 _scripts/drafts.py promote nookly   # lines: moves nookly's held outcome and lessons into apps/nookly/app.json as confirmed
+python3 _scripts/drafts.py promote <id>   # a product: moves .drafts/apps/<id>/, its originals, and its card into place, clears draft, adds it to apps/index.json at its place in order
+python3 _scripts/drafts.py promote nookly # lines: moves nookly's held outcome and lessons into apps/nookly/app.json as confirmed
 python3 _scripts/render.py
 ```
 
 Then run the launch checklist and commit. To drop a draft instead, delete its folder or its entry under `lines`. Record the decision in `_docs/DRAFTS.md`.
+
+The tests never read your local drafts for their draft scenarios. `_tests/fixtures/drafts/` is a fictional drafts folder (Samplenote, Sampleboard, and example lines) that `_tests/run.py` installs in each temporary copy.
 
 ## Launch checklist
 
@@ -125,7 +128,7 @@ Rehearse first: `python3 _tests/release.py` checks the committed tree, the draft
 
 1. Promote only what Akhil confirmed (`drafts.py promote <id>`). Everything else stays held.
 2. Build the public site: `python3 _scripts/render.py --release`. It leaves out any `draft` product or line still in `apps/` and deletes its page.
-3. `python3 _scripts/check.py --release` must print `READY`. It fails on any draft in published data (`DRAFT`), on published HTML that still carries a draft mark or banner (`DRAFT OUTPUT`), and on held draft content in the published tree (`DRAFT LEAK`: a held product's folder, page, card, or URL, or the text of a held line). Held drafts in `_drafts/` are listed but do not block.
+3. `python3 _scripts/check.py --release` must print `READY`. It fails on any draft in published data (`DRAFT`), on published HTML that still carries a draft mark or banner (`DRAFT OUTPUT`), and on held draft content in the published tree (`DRAFT LEAK`: a held product's folder, page, card, or URL, or the text of a held line). It also fails on a drafts folder tracked by git (`DRAFT LEAK`), and on a sitemap date older than the last commit to its page (`STALE`; set `SITE_DATE` in `render.py` to the release date). Held drafts in `.drafts/` are listed but do not block.
 4. `python3 _scripts/render.py --check` and `python3 _scripts/render.py --release --check` pass (the committed output is the release build).
 5. `python3 _tests/run.py` passes, then commit and open the PR.
 
@@ -137,5 +140,10 @@ Store listings and AdMob point at these. Do not move or delete them:
 
 Legal pages are generated: edit `apps/<id>/privacy/privacy-policy.md` or `apps/<id>/tos/terms_of_service.md` and run `render.py`. The text is reproduced verbatim inside the site chrome, and the `.md` files stay published at their paths. An empty Markdown file renders a page that says the policy is not published yet and gives the support address.
 - `app-ads.txt`
-- `apps/flowmoro/home/` (rendered from `home/descriptions.json`; its `icon.png` and `screenshots/*.png` stay at their old paths)
+- `apps/flowmoro/home/` (rendered from `home/descriptions.json`; its `screenshots/*.png` stay at their old paths)
+
+Kept on purpose although no page links to them (`RETAINED` in `check.py`, which fails if one goes missing; do not delete them in a cleanup):
+
+- `assets/og-image.png`: the share image of the site before the 2026-10 redesign. `main`'s live pages name it as `og:image`, so social sites have cached shares that point at it.
+- `apps/flowmoro/home/icon.png`: the Flowmoro icon at its old public path. Store listings or old links may point at it.
 - `CNAME`

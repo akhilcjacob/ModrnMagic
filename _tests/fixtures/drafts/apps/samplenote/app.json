@@ -1,0 +1,98 @@
+{
+  "id": "samplenote",
+  "name": "Samplenote",
+  "status": "lab",
+  "draft": true,
+  "kind": "app",
+  "oneliner": "Example draft product for the test suite.",
+  "summary": "{name} is a fictional draft product. It exists only so the tests can exercise held drafts.",
+  "description": [
+    "{name} is a fictional draft product used by _tests/run.py.",
+    "It is never published. Its text is an example."
+  ],
+  "features": [
+    {
+      "title": "Example feature one",
+      "body": "Example text for a feature card."
+    },
+    {
+      "title": "Example feature two",
+      "body": "Example text for a feature card."
+    },
+    {
+      "title": "Example feature three",
+      "body": "Example text for a feature card."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Is {name} real?",
+      "a": "No. {name} is a test fixture."
+    }
+  ],
+  "category": "UtilitiesApplication",
+  "genre": "Productivity",
+  "stack": [
+    "Example"
+  ],
+  "dates": {
+    "started": "2026-09",
+    "shipped": null,
+    "updated": "2026-10",
+    "ended": null
+  },
+  "platforms": [
+    "android"
+  ],
+  "links": {
+    "appStore": null,
+    "googlePlay": null,
+    "web": null,
+    "home": null,
+    "writing": null,
+    "source": null
+  },
+  "price": null,
+  "wasOn": [],
+  "icon": "icon.webp",
+  "color": "#1d1d1f",
+  "screenshots": [
+    {
+      "from": "screenshots/one.webp",
+      "alt": "Example screen 1",
+      "shape": "phone",
+      "src": "media/screenshots-one.webp",
+      "w": 640,
+      "h": 1387
+    },
+    {
+      "from": "screenshots/two.webp",
+      "alt": "Example screen 2",
+      "shape": "phone",
+      "src": "media/screenshots-two.webp",
+      "w": 640,
+      "h": 1387
+    },
+    {
+      "from": "screenshots/three.webp",
+      "alt": "Example screen 3",
+      "shape": "phone",
+      "src": "media/screenshots-three.webp",
+      "w": 640,
+      "h": 1387
+    },
+    {
+      "from": "screenshots/four.webp",
+      "alt": "Example screen 4",
+      "shape": "phone",
+      "src": "media/screenshots-four.webp",
+      "w": 640,
+      "h": 1387
+    }
+  ],
+  "lessons": [],
+  "outcome": null,
+  "cycle": null,
+  "flagship": false,
+  "legal": {}
+}

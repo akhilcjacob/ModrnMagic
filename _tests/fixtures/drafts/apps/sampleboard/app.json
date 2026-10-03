@@ -1,0 +1,91 @@
+{
+  "id": "sampleboard",
+  "name": "Sampleboard",
+  "status": "live",
+  "draft": true,
+  "kind": "web",
+  "oneliner": "Example live draft product for the test suite.",
+  "summary": "{name} is a fictional draft web product. It exists only so the tests can exercise held drafts.",
+  "description": [
+    "{name} is a fictional draft product used by _tests/run.py.",
+    "It is never published. Its text is an example.",
+    "A third example paragraph."
+  ],
+  "features": [
+    {
+      "title": "Example feature one",
+      "body": "Example text for a feature card."
+    },
+    {
+      "title": "Example feature two",
+      "body": "Example text for a feature card."
+    },
+    {
+      "title": "Example feature three",
+      "body": "Example text for a feature card."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Is {name} real?",
+      "a": "No. {name} is a test fixture."
+    }
+  ],
+  "category": "BusinessApplication",
+  "genre": "Business",
+  "stack": [
+    "Example"
+  ],
+  "dates": {
+    "started": "2024-10",
+    "shipped": null,
+    "updated": "2026-09",
+    "ended": null
+  },
+  "platforms": [
+    "web"
+  ],
+  "links": {
+    "appStore": null,
+    "googlePlay": null,
+    "web": "https://example.com/",
+    "home": null,
+    "writing": null,
+    "source": null
+  },
+  "price": null,
+  "wasOn": [],
+  "icon": "icon.webp",
+  "color": "#f4f2ec",
+  "screenshots": [
+    {
+      "from": "screenshots/one.webp",
+      "alt": "Example wide screen 1",
+      "shape": "wide",
+      "src": "media/screenshots-one.webp",
+      "w": 1600,
+      "h": 1600
+    },
+    {
+      "from": "screenshots/two.webp",
+      "alt": "Example wide screen 2",
+      "shape": "wide",
+      "src": "media/screenshots-two.webp",
+      "w": 1600,
+      "h": 1600
+    },
+    {
+      "from": "screenshots/three.webp",
+      "alt": "Example wide screen 3",
+      "shape": "wide",
+      "src": "media/screenshots-three.webp",
+      "w": 1600,
+      "h": 1600
+    }
+  ],
+  "lessons": [],
+  "outcome": null,
+  "cycle": null,
+  "flagship": false,
+  "legal": {}
+}

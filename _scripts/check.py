@@ -4,7 +4,7 @@
     python3 _scripts/check.py serve    # serve at http://localhost:8000 (PORT=xxxx to change)
     python3 _scripts/check.py serve --drafts  # build _preview/ with the held drafts merged and serve that
     python3 _scripts/check.py --release  # also fail while any draft remains in published data or HTML,
-                                         # or while held draft content (_drafts/) leaks into it
+                                         # or while held draft content (.drafts/, gitignored) leaks into it
 
 Python 3 standard library only. The checks cover the files GitHub Pages would
 publish (everything outside `_`-prefixed and hidden folders):
@@ -16,12 +16,16 @@ publish (everything outside `_`-prefixed and hidden folders):
   app.json `icon` and screenshot `from` point at originals in _src/apps/<id>/
 - every sitemap.xml <loc> maps to a file
 - nothing still mentions the removed "00_Future App Template" folder
+- the files in RETAINED, which no page links to but outside links may, still exist
+- with --release: every sitemap lastmod that comes from SITE_DATE is on or after
+  the last commit that changed its page, so a release cannot ship stale dates
 """
 import functools
 import http.server
 import json
 import os
 import re
+import subprocess
 import sys
 from html.parser import HTMLParser
 from urllib.parse import unquote, urlsplit
@@ -35,6 +39,12 @@ ABS_URL = re.compile(r"https://modrnmagic\.app(/[^\s\"'<>)\\]*)?")
 CSS_URL = re.compile(r"url\(\s*['\"]?([^'\")]+)['\"]?\s*\)")
 MD_LINK = re.compile(r"\]\(([^)\s]+)\)")
 REMOVED = ("00_Future", "Future App Template", "Future%20App%20Template")
+# Published files no page references, kept on purpose because URLs outside this
+# repo may point at them. Do not delete them in a cleanup. _docs/APPS.md explains each.
+RETAINED = {
+    "assets/og-image.png": "the og:image of the pre-2026-10 site; shares cached by social sites point at it",
+    "apps/flowmoro/home/icon.png": "the Flowmoro icon at its old public path; store listings or old links may use it",
+}
 
 
 def published_files():
@@ -155,6 +165,10 @@ def check():
         for ref in dict.fromkeys(refs):
             need(target(ref, f), f, ref)
 
+    for rel, why in RETAINED.items():
+        if not os.path.isfile(os.path.join(ROOT, rel)):
+            errors.append(f"{rel}: missing, but it is kept on purpose ({why})")
+
     sitemap = os.path.join(ROOT, "sitemap.xml")
     locs = re.findall(r"<loc>([^<]+)</loc>", open(sitemap, encoding="utf-8").read())
     if not locs:
@@ -200,7 +214,7 @@ def draft_output():
 
 
 def held_leaks():
-    """Held draft content (_drafts/) that shows up in the published tree: a draft
+    """Held draft content (.drafts/) that shows up in the published tree: a draft
     product's folder, page, or share card, any mention of its URL, or the text of a
     held outcome line or lesson."""
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -221,8 +235,44 @@ def held_leaks():
     return out
 
 
+def git(*args):
+    try:
+        r = subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True)
+        return r.stdout if r.returncode == 0 else None
+    except OSError:
+        return None
+
+
+def tracked_drafts():
+    """Held drafts must never be in git: the repository is public."""
+    out = git("ls-files", "--", ".drafts", "_drafts")
+    return out.split() if out else []
+
+
+def stale_dates():
+    """Sitemap entries dated SITE_DATE (home, work, contact, product pages) whose
+    page was committed after that date. Skipped outside a git checkout."""
+    if git("rev-parse", "--is-inside-work-tree") is None:
+        return []
+    site_date = re.search(r'^SITE_DATE = "([0-9-]+)"', open(os.path.join(ROOT, "_scripts/render.py")).read(), re.M).group(1)
+    out = []
+    for loc, lastmod in re.findall(r"<loc>([^<]+)</loc><lastmod>([^<]+)</lastmod>", open(os.path.join(ROOT, "sitemap.xml")).read()):
+        if lastmod != site_date:
+            continue
+        rel = loc[len(SITE) + 1:] + "index.html"
+        changed = (git("log", "-1", "--format=%cs", "--", rel) or "").strip()
+        if changed > lastmod:
+            out.append(f"sitemap.xml: {loc} says {lastmod}, but {rel} changed on {changed} (set SITE_DATE in render.py to the release date)")
+    return out
+
+
 def release():
     status = check()
+    for path in tracked_drafts():
+        print("DRAFT LEAK", f"{path}: held draft content is committed to git (it belongs in the gitignored .drafts/)")
+    dates = stale_dates()
+    for line in dates:
+        print("STALE", line)
     pending = drafts()
     for line in pending:
         print("DRAFT", line)
@@ -235,10 +285,10 @@ def release():
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     import drafts as held
     kept = len(held.listing(ROOT))
-    bad = pending or leaked or leaks
+    bad = pending or leaked or leaks or tracked_drafts() or dates
     print(f"{'NOT READY' if bad else 'READY'}: {len(pending)} draft(s) need Akhil's confirmation, "
           f"{len(leaked)} published page(s) carry draft output, {len(leaks)} leak(s) of held drafts; "
-          f"{kept} draft(s) held in _drafts/ (unpublished)")
+          f"{kept} draft(s) held in .drafts/ (local, unpublished)")
     return 1 if status or bad else 0
 
 

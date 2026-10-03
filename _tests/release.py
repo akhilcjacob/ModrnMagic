@@ -4,7 +4,7 @@
     python3 _tests/release.py            # all three runs below, exit 1 on any failure
     python3 _tests/release.py --cleared  # only the promoted-drafts rehearsal
 
-1. As committed (drafts held in _drafts/): `check.py --release` must print
+1. As committed (drafts held in the local, gitignored .drafts/, if any): `check.py --release` must print
    READY, `render.py --check` is clean, and `_tests/run.py` passes.
 2. Draft preview: in a temporary copy (never the repo), the held drafts are
    merged as `drafts.py preview` does, the local build runs, and
