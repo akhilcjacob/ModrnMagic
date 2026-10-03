@@ -1035,12 +1035,18 @@ def render_work(apps):
         return f"Showing {n} {noun}: {label}."
 
     targets = "".join(f'<span class="ftarget" id="{fid}"></span>' for fid, *_ in filters)
-    # The active pill: a left cap, a 1px middle scaled to length, and a right cap,
-    # so site.js can slide and stretch it with transforms alone, behind static labels.
-    pill = '<span class="fpill" aria-hidden="true"><i></i><i></i><i></i></span>'
+    # The active pill, over the chips: a copy of the group's labels in the pill's
+    # colors, clipped to the pill's shape (clip-path inset from site.js's --x, --y,
+    # --w, --h), so the text inverts exactly where the pill covers it. aria-hidden
+    # copies, not links: the real chips stay the only controls and work without JS.
+    def pill(labels):
+        copy = "".join(f"<span>{label}</span>" for label in labels)
+        return f'<span class="fpill" aria-hidden="true"><span class="flabels">{copy}</span></span>'
     chip_link = lambda fid, label: f'<a class="fchip" href="#{fid}" data-filter="{fid}">{label}</a>'
-    status_chips = "".join(chip_link(fid, label) for fid, label, _, group in filters if group in ("products", "status"))
-    kind_chips = "".join(chip_link(fid, label) for fid, label, _, group in filters if group == "kind")
+    status = [(fid, label) for fid, label, _, group in filters if group in ("products", "status")]
+    kind = [(fid, label) for fid, label, _, group in filters if group == "kind"]
+    status_chips = pill(l for _, l in status) + "".join(chip_link(*f) for f in status)
+    kind_chips = pill(l for _, l in kind) + "".join(chip_link(*f) for f in kind)
     counts = "".join(f'<span data-for="{fid}">{count_text(fid, label, test)}</span>' for fid, label, test, _ in filters)
 
     def row(a, i):
@@ -1064,9 +1070,8 @@ def render_work(apps):
         f'#{fid}:target~.work-list .work-item:not([data-{"status" if group == "status" else "kind"}="{fid}"]){{display:none}}'
         f'#{fid}:target~.work-count [data-for="{fid}"]{{display:inline}}'
         f'#{fid}:target~.work-count [data-for="all"]{{display:none}}'
-        f'#{fid}:target~.filters [data-filter="{fid}"]{{color:var(--bg)}}'
-        f'#{fid}:target~.filters:not(.pill) [data-filter="{fid}"]{{background:var(--ink)}}'
-        f'#{fid}:target~.filters [data-filter="all"]{{background:transparent;color:var(--ink-2)}}'
+        f'#{fid}:target~.filters:not(.pill) [data-filter="{fid}"]{{background:var(--ink);color:var(--bg)}}'
+        f'#{fid}:target~.filters:not(.pill) [data-filter="all"]{{background:transparent;color:var(--ink-2)}}'
         for fid, label, _, group in filters if fid != "all")
     drafts = sum(1 for a in items if a.get("draft"))
     draft_note = f' <span class="meta">Includes {drafts} draft{"s" if drafts != 1 else ""} {draft_mark()}</span>' if drafts else ""
@@ -1088,8 +1093,8 @@ def render_work(apps):
   </header>
   {targets}
   <nav class="filters" aria-label="Filter products">
-    <div class="fgroup" role="group" aria-label="Status">{pill}{status_chips}</div>
-    <div class="fgroup" role="group" aria-label="Kind">{pill}{kind_chips}</div>
+    <div class="fgroup" role="group" aria-label="Status">{status_chips}</div>
+    <div class="fgroup" role="group" aria-label="Kind">{kind_chips}</div>
   </nav>
   <p class="work-count meta" id="work-count">{counts}</p>
   <p class="sr-only" aria-live="polite" id="work-live"></p>

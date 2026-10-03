@@ -22,6 +22,9 @@ control, asserting what each one should do:
 - every legal URL answers bare, with a trailing slash, as /index.html, and
   as its Markdown source
 - every product in apps/index.json has a page; drafts stay off shared pages
+- the /work/ filter pill's label copy sits exactly on the chips and is
+  clipped to the pill on the active chip, at 1440 and 320 px and across
+  groups, is aria-hidden with no controls, and no label color animates
 - /work/ filters filter by mouse, keyboard, and with JavaScript off, keep
   aria-current and the live count right, never scroll, and skip the view
   transition under reduced motion; numbers lines match the data
@@ -227,6 +230,7 @@ def filter_tests(browser, base, seen, tested):
         key = ("filter", "/work/", chips.index(fid))
         if ok and key in seen:
             tested.add(key)
+    pill_tests(page, base)
     # Keyboard: chips in reading order, Enter activates, focus stays on the chip.
     page.goto(base + "/work/")
     page.locator(".fchip").first.focus()
@@ -248,6 +252,9 @@ def filter_tests(browser, base, seen, tested):
     vis_live = p2.eval_on_selector_all(".work-item", "els => els.filter(e => getComputedStyle(e).display !== 'none').map(e => e.dataset.status)")
     want_arch = sum(1 for a in apps if a["status"] == "archived")
     record(vis == want_arch and vis_live and set(vis_live) == {"live"}, "/work/ filters work with JavaScript off, deep links included", f"{vis} {vis_live}")
+    nojs = p2.evaluate("""() => [[...document.querySelectorAll('.fpill')].every(p => getComputedStyle(p).display === 'none'),
+        getComputedStyle(document.querySelector('.fchip[data-filter="live"]')).backgroundColor !== getComputedStyle(document.querySelector('.fchip[data-filter="all"]')).backgroundColor]""")
+    record(nojs == [True, True], "/work/ with JavaScript off: no label copy shows, the active chip itself is the pill", str(nojs))
     ctx.close()
     # Reduced motion: no view transition and no item animation, still filters.
     ctx = browser.new_context(viewport={"width": 1440, "height": 900}, reduced_motion="reduce")
@@ -300,6 +307,47 @@ def filter_tests(browser, base, seen, tested):
     record(got == ["#archived", y0, "archived"], "/work/ Space on a filter chip filters, keeps focus, and does not scroll", str(got))
     p4.close()
 
+
+PILL_GEO = """() => [...document.querySelectorAll('.fgroup')].map(g => {
+  const chips = [...g.querySelectorAll('.fchip')], copies = [...g.querySelectorAll('.flabels > span')];
+  const off = Math.max(...chips.map((c, i) => { const a = c.getBoundingClientRect(), b = copies[i] ? copies[i].getBoundingClientRect() : {};
+    return Math.max(Math.abs(a.left - b.left), Math.abs(a.top - b.top), Math.abs(a.width - b.width), Math.abs(a.height - b.height)); }));
+  const pill = g.querySelector('.fpill'), cur = g.querySelector('.fchip[aria-current]');
+  let pe = 0;
+  if (cur) { const a = cur.getBoundingClientRect(), r = pill.getBoundingClientRect(), v = k => +pill.style.getPropertyValue(k);
+    pe = Math.max(Math.abs(r.left + v('--x') - a.left), Math.abs(r.left + v('--x') + v('--w') - a.right), Math.abs(r.top + v('--y') - a.top), Math.abs(v('--h') - a.height)); }
+  return [copies.length === chips.length && copies.every((c, i) => c.textContent === chips[i].textContent), +off.toFixed(2), +pe.toFixed(2),
+    !!cur === (getComputedStyle(pill).opacity === '1'), pill.getAttribute('aria-hidden'), pill.querySelectorAll('a, button, [tabindex]').length];
+})"""
+
+
+def pill_tests(page, base):
+    """The pill is a copy of the labels clipped to the pill's shape (review
+    fix 3, item 1): copies sit exactly on the chips, the pill sits on the
+    active chip, the copy is hidden from assistive tech and holds no controls,
+    and no label color animates on a selection change."""
+    for w in (1440, 320):
+        page.set_viewport_size({"width": w, "height": 900})
+        page.goto(base + "/work/")
+        page.mouse.move(1, 1)
+        for fid in ("live", "archived", "kind-web", "kind-game", "all"):
+            settle(page)
+            # Record any color or background animation on a chip or copy while the pill moves.
+            page.evaluate("""() => { window.__color = []; const t0 = performance.now(); (function tick() {
+                document.getAnimations().forEach(a => { const p = a.transitionProperty || '', t = a.effect && a.effect.target;
+                  if (t && t.closest && t.closest('.fgroup') && /color/.test(p)) window.__color.push(p); });
+                if (performance.now() - t0 < 600) requestAnimationFrame(tick); else window.__colorDone = true; })(); }""")
+            # Keyboard, so no hover color (allowed on hover) muddies the check.
+            page.locator(f'.fchip[data-filter="{fid}"]').focus()
+            page.keyboard.press("Enter")
+            page.wait_for_function("window.__colorDone")
+            settle(page)
+            geo = page.evaluate(PILL_GEO)
+            colors = page.evaluate("window.__color")
+            same = page.evaluate("""() => new Set([...document.querySelectorAll('.fchip')].map(c => getComputedStyle(c).color)).size""")
+            ok = all(g[0] and g[1] <= 0.5 and g[2] <= 1 and g[3] and g[4] == "true" and g[5] == 0 for g in geo) and not colors and same == 1
+            record(ok, f"/work/ pill at {w}px on '{fid}': copies on the chips, pill on the active chip, aria-hidden, no color animation",
+                   f"{geo} color animations {colors} label colors {same}")
 
 def flagship_tests(browser):
     apps = {a["id"]: a for a in load_all()}

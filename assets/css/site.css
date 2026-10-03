@@ -614,36 +614,39 @@ dl, dd { margin: 0; }
 /* ---------- /work/ ---------- */
 .ftarget { position: fixed; top: 0; left: 0; width: 0; height: 0; }   /* :target hooks; fixed, so a filter never scrolls */
 .filters { display: flex; flex-wrap: wrap; gap: var(--s-3) var(--s-5); align-items: center; }
-.fgroup { position: relative; isolation: isolate; display: flex; flex-wrap: wrap; gap: var(--s-1); padding: var(--s-1); border-radius: var(--r-pill); background: var(--surface-sunk); }
-.fchip {
+.fgroup { position: relative; isolation: isolate; border-radius: var(--r-pill); background: var(--surface-sunk); }
+.fgroup, .flabels { display: flex; flex-wrap: wrap; gap: var(--s-1); padding: var(--s-1); }
+.fchip, .flabels > span {
   display: inline-flex; align-items: center; justify-content: center; min-height: 44px; min-width: 44px; padding: 0 var(--s-4);
-  border-radius: var(--r-pill); text-decoration: none; font-size: var(--t-small); font-weight: 560; color: var(--ink-2);
+  border-radius: var(--r-pill); font-size: var(--t-small); font-weight: 560;
   transition: background-color var(--d-fast) var(--ease-out), color var(--d-fast) var(--ease-out), transform var(--d-base) var(--ease-spring);
 }
+.fchip { text-decoration: none; color: var(--ink-2); }
 .fchip:hover { color: var(--ink); background: var(--surface); }
 .fchip:active { transform: scale(.96); }
-.filters [data-filter="all"] { color: var(--bg); }
-.filters:not(.pill) [data-filter="all"] { background: var(--ink); }   /* without JavaScript the chip itself is the pill */
-/* With JavaScript, one pill per group sits behind the labels and site.js moves it (--x, --y, --w, --h in px).
-   Caps translate; the 1px middle translates and scales, which never distorts a flat fill. Same easing on all
-   three, so the joins stay closed while it moves. */
-.fpill { display: none; position: absolute; inset: 0 auto auto 0; z-index: -1; pointer-events: none; opacity: 0; transition: opacity var(--d-fast) var(--ease-out); }
+.filters:not(.pill) [data-filter="all"] { background: var(--ink); color: var(--bg); }   /* without JavaScript the chip itself is the pill */
+/* With JavaScript, one pill per group sits over the chips and site.js moves it (--x, --y, --w, --h in px).
+   It is one layer the size of the group: the pill's fill with a copy of the labels in the pill's text color,
+   clipped to the pill's shape. Only the clip moves, so the labels invert exactly where the pill covers them,
+   with no color animation and nothing to keep in sync. */
+.fpill {
+  display: none; position: absolute; inset: 0; z-index: 1; pointer-events: none; user-select: none;
+  background: var(--ink); opacity: 0;
+  clip-path: inset(calc(var(--y, 0) * 1px) calc(100% - (var(--x, 0) + var(--w, 44)) * 1px) calc(100% - (var(--y, 0) + var(--h, 44)) * 1px) calc(var(--x, 0) * 1px) round calc(var(--h, 44) * .5px));
+  transition: opacity var(--d-fast) var(--ease-out), clip-path var(--d-base) var(--ease-out);
+}
 .filters.pill .fpill { display: block; }
 .fpill.on { opacity: 1; }
-.fpill > i {
-  position: absolute; top: 0; left: 0; height: calc(var(--h, 44) * 1px); background: var(--ink); transform-origin: 0 0;
-  transition: transform var(--d-base) var(--ease-out);
-}
-.fpill > i:nth-child(1) { width: calc(var(--h, 44) * .5px); border-radius: var(--r-pill) 0 0 var(--r-pill); transform: translate(calc(var(--x, 0) * 1px), calc(var(--y, 0) * 1px)); }
-.fpill > i:nth-child(2) { width: 1px; transform: translate(calc((var(--x, 0) + var(--h, 44) * .5 - 1) * 1px), calc(var(--y, 0) * 1px)) scaleX(calc(var(--w, 44) - var(--h, 44) + 2)); }
-.fpill > i:nth-child(3) { width: calc(var(--h, 44) * .5px); border-radius: 0 var(--r-pill) var(--r-pill) 0; transform: translate(calc((var(--x, 0) + var(--w, 44) - var(--h, 44) * .5) * 1px), calc(var(--y, 0) * 1px)); }
-.fpill.still, .fpill.still > i { transition: none; }
+.flabels > span { color: var(--bg); }
+.fpill.still { transition: none; }
 .filters.pill .fchip[aria-current="true"]:hover { background: transparent; }
-/* Labels change color as the pill passes: the incoming one as the pill lands under it, the outgoing one
-   once the pill has started to leave. Delays only during a filter change, so hover stays instant. */
-:root.filter-vt .filters.pill .fchip { transition-delay: 0s, calc(var(--d-fast) / 2), 0s; }
-:root.filter-vt .filters.pill .fchip[aria-current="true"] { transition-delay: 0s, calc(var(--d-base) - var(--d-fast)), 0s; }
-:root.filter-vt .fchip { transition-duration: 0s, var(--d-fast), var(--d-base); }   /* background, color, transform: no chip background fades while the pill moves */
+/* A pressed chip's copy presses with it, so the two never part at the pill's edge. */
+.fgroup:has(> .fchip:nth-of-type(1):active) .flabels > :nth-child(1),
+.fgroup:has(> .fchip:nth-of-type(2):active) .flabels > :nth-child(2),
+.fgroup:has(> .fchip:nth-of-type(3):active) .flabels > :nth-child(3),
+.fgroup:has(> .fchip:nth-of-type(4):active) .flabels > :nth-child(4),
+.fgroup:has(> .fchip:nth-of-type(5):active) .flabels > :nth-child(5),
+.fgroup:has(> .fchip:nth-of-type(6):active) .flabels > :nth-child(6) { transform: scale(.96); }
 .work-count { margin: var(--s-4) 0 var(--s-5); min-height: 1.4em; }
 .work-count span { display: none; }
 .work-count [data-for="all"] { display: inline; }
@@ -666,7 +669,7 @@ dl, dd { margin: 0; }
   .w-card { background-image: radial-gradient(70% 60% at 100% 0%, color-mix(in srgb, var(--glow, transparent) 14%, transparent), transparent 60%); }
   .fgroup { width: 100%; }
 }
-@media (max-width: 400px) { .fchip { padding: 0 var(--s-2); } .fgroup { gap: 0; } }   /* four status chips fit one row at 320px */
+@media (max-width: 400px) { .fchip, .flabels > span { padding: 0 var(--s-2); } .fgroup, .flabels { gap: 0; } }   /* four status chips fit one row at 320px */
 
 /* Outcome, lessons, and drafts */
 .outcome-tag { color: var(--ink); font-weight: 600; }

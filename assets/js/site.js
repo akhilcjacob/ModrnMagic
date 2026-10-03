@@ -141,7 +141,8 @@
     var chipsEls = filters.querySelectorAll(".fchip");
     var live = document.getElementById("work-live");
     var running = 0;   // filter view transitions in flight
-    // One pill per group, behind the labels. It slides within a row; it fades
+    // One pill per group, over the labels: CSS clips an inverted copy of them
+    // to the pill's box from these numbers. It slides within a row; it fades
     // in when it changes group or row, since a diagonal slide reads as a glitch.
     var place = function (pill, chip, slide) {
       if (!chip) { pill.classList.remove("on"); return; }
