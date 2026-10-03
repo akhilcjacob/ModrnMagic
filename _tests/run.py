@@ -683,26 +683,42 @@ def contrast_check(browser, base, path, label, themes=("light", "dark"), widths=
             contrast_one(browser, base, path, f"{label} at {w}px", theme, w)
 
 
-def contrast_one(browser, base, path, label, theme, width, retried=False):
+def contrast_one(browser, base, path, label, theme, width, diagnose=False):
     from io import BytesIO
     from PIL import Image
     ctx = browser.new_context(viewport={"width": width, "height": 900}, color_scheme=theme, reduced_motion="reduce")
     page = ctx.new_page()
+    pending, done = {}, []
+    page.on("request", lambda r: pending.__setitem__(r.url, r.resource_type))
+    page.on("requestfinished", lambda r: (pending.pop(r.url, None), done.append(r.url.replace(base, ""))))
+    page.on("requestfailed", lambda r: (pending.pop(r.url, None), done.append(f"FAILED {r.url.replace(base, '')} {r.failure}")))
     try:
         page.goto(base + path, wait_until="load", timeout=20000)
     except Exception as err:
-        ctx.close()
-        mine = [x for x in SERVED if path in x][-6:]
-        print(f"STALL {path} at {width}px ({theme}) in {ENGINE}: {str(err).splitlines()[0]}; "
-              f"server saw: {mine or 'nothing for this path'}", flush=True)
-        if retried:
-            record(False, f"card text contrast on {label} ({theme}): page loads", str(err).splitlines()[0])
-            return
-        fresh = browser.browser_type.launch()   # one retry, in a fresh browser, never more
+        # A load that never finishes is a failure, never retried into a pass. The
+        # evidence says where it stuck: what the page requested and never got,
+        # what the server saw, and whether a fresh browser loads the same page.
+        state = "unknown"
         try:
-            return contrast_one(fresh, base, path, label, theme, width, retried=True)
+            page.wait_for_function("true", timeout=3000)
+            state = page.evaluate("document.readyState")
+        except Exception:
+            state = "page not responding"
+        seen_by_server = [x for x in SERVED if path.rstrip("/") in x][-4:]
+        ctx.close()
+        detail = (f"{str(err).splitlines()[0]}; readyState {state}; pending {dict(list(pending.items())[:8])}; "
+                  f"finished {len(done)}: {done[-6:]}; server saw {seen_by_server or 'nothing for this path'}")
+        print(f"STALL {path} at {width}px ({theme}) in {ENGINE}: {detail}", flush=True)
+        if diagnose:
+            record(False, f"STALL DIAGNOSIS fresh {ENGINE} also fails to load {path} at {width}px ({theme})", detail)
+            return
+        record(False, f"card text contrast on {label} ({theme}): page loads in {ENGINE}", detail)
+        fresh = browser.browser_type.launch()   # evidence only: the failure above stands
+        try:
+            contrast_one(fresh, base, path, label + " (fresh browser, diagnosis)", theme, width, diagnose=True)
         finally:
             fresh.close()
+        return
     page.evaluate("document.querySelectorAll('img[loading=lazy]').forEach(i => i.loading = 'eager')")
     try:
         page.wait_for_function("[...document.images].every(i => i.complete)", timeout=15000)
