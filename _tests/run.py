@@ -31,6 +31,8 @@ control, asserting what each one should do:
 - home shows a flagship panel only when one is flagged (checked with nothing
   flagged and with each push-cycle product flagged, in temp copies), and the
   experiments strip holds the three newest experiments
+- home hides Products, and every link to it, when there is no live product
+  and no flagship
 - the home bento has one cell per live product, no empty grid area, and no
   cell more than 40% empty, at 1440, 800, 390, and 320 px, for every live set
   and flagship choice the reviews named (bento_cases); "N live" matches
@@ -493,6 +495,21 @@ def bento_check(browser, base, label, apps):
         record(cells == want and not holes and not empty and live_n == shown_live and sw <= w and not errors,
                f"bento {label} at {w}px: a cell per live product, no holes, no cell over {MAX_GAP:.0%} empty, '{live_n} live' matches",
                f"cells {cells} want {want} holes {holes} empty [id, size, height, gap] {empty} scrollWidth {sw} {errors}")
+        if w == 1440:
+            # Products shows only with a flagship panel or a bento cell, and no
+            # link anywhere points at /#products when it is gone (review item 6).
+            has = bool(want or flag)
+            got = page.evaluate("""() => [!!document.getElementById('products'),
+                [...document.querySelectorAll('h2')].some(h => h.textContent.trim() === 'Products'),
+                [...document.querySelectorAll('footer h2')].filter(h => !h.nextElementSibling || !h.nextElementSibling.children.length).length,
+                [...document.querySelectorAll('a[href$="#products"]')].length,
+                document.querySelector('.hero .btn-primary').getAttribute('href')]""")
+            page.goto(base + "/work/")
+            nav_link = page.evaluate("document.querySelectorAll('a[href=\"/#products\"]').length")
+            want_got = [True, True, 0, got[3] or -1, "#products"] if has else [False, False, 0, 0, "/work/"]
+            record(got == want_got and (nav_link > 0) == has,
+                   f"bento {label}: Products section {'shown' if has else 'hidden, no links to it'}",
+                   f"[section, heading, empty footer columns, #products links, hero button] {got} want {want_got}, /work/ links {nav_link}")
         ctx.close()
 
 

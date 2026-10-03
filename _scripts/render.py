@@ -425,6 +425,16 @@ def head(title, description, path, og_image, graph, noindex=False, extra=""):
 """
 
 
+# Whether home has a Products section. outputs() sets it before rendering, so
+# no page links to /#products when there is no section to land on.
+HOME_PRODUCTS = True
+
+
+def home_products(apps):
+    """Home shows Products only when there is a flagship panel or a bento cell."""
+    return bool(flagship(apps) or any(a["status"] == "live" for a in listed(apps)))
+
+
 def nav(current=""):
     def link(href, label, key):
         cur = ' aria-current="page"' if key == current else ""
@@ -433,7 +443,7 @@ def nav(current=""):
 <header class="nav glass">
   <a class="brand" href="/" aria-label="Modrn Magic home"><img src="/assets/img/mark-96.webp" alt="" width="30" height="30"><span>Modrn Magic</span></a>
   <nav class="nav-links" aria-label="Main">
-    {link("/#products", "Products", "products")}
+    {link("/#products", "Products", "products") if HOME_PRODUCTS else ""}
     {link("/work/", "Work", "work")}
     {link("/contact/", "Contact", "contact")}
   </nav>
@@ -453,14 +463,14 @@ def footer(apps):
       <a class="brand" href="/"><img src="/assets/img/mark-96.webp" alt="" width="30" height="30" loading="lazy"><span>Modrn Magic</span></a>
       <p style="margin-top:var(--s-3);max-width:34ch">An independent product studio founded by <a href="https://akhilcjacob.com/">Akhil Jacob</a>.</p>
     </div>
-    <div><h2>Products</h2><ul>{items}</ul></div>
+    {f'<div><h2>Products</h2><ul>{items}</ul></div>' if items else ""}
     <div><h2>Studio</h2><ul>
       <li><a href="/work/">All work</a></li>
       <li><a href="/#about">About</a></li>
       <li><a href="/contact/">Contact</a></li>
       <li><a href="https://akhilcjacob.com/">Akhil's portfolio</a></li>
     </ul></div>
-    <div><h2>Legal</h2><ul>{legal}</ul></div>
+    {f'<div><h2>Legal</h2><ul>{legal}</ul></div>' if legal else ""}
   </div>
   <div class="fine"><span>&copy; {SITE_DATE[:4]} Modrn Magic LLC</span><span><a href="mailto:{EMAIL}">{EMAIL}</a></span></div>
 </footer>
@@ -631,6 +641,16 @@ def render_home(apps):
     sizes = bento_sizes(len(bento_apps), bool(bento_apps and bento_apps[0]["screenshots"]))
     bento = "\n".join(bento_cell(a, size, shot) for a, size in zip(bento_apps, sizes))
     strip = "\n".join(strip_card(a, i) for i, a in enumerate(experiments))
+    # No flagship and no live product: no Products section, not an empty heading.
+    products = f"""<section class="wrap section" id="products" aria-labelledby="products-title" style="padding-top:var(--s-7)">
+  <div class="section-head">
+    <h2 class="h2" id="products-title">Products</h2>
+    <p class="lead">Live on the App Store, Google Play, and the web.</p>
+  </div>
+  {flagship_html(flag) if flag else ""}
+  {f'<div class="bento">{chr(10)}{bento}{chr(10)}  </div>' if bento else ""}
+</section>
+""" if flag or bento else ""
 
     names = [a["name"] for a in live]
     makes = (names[0] if len(names) == 1 else " and ".join(names) if len(names) == 2
@@ -666,7 +686,7 @@ def render_home(apps):
     <h1>Independent apps for <em>everyday things.</em></h1>
     <p class="lead">Modrn Magic is a product studio founded by Akhil Jacob. We design, build, and run our own apps.</p>
     <div class="btns">
-      <a class="btn btn-primary" href="#products">See the products</a>
+      {'<a class="btn btn-primary" href="#products">See the products</a>' if flag or bento else '<a class="btn btn-primary" href="/work/">See all work</a>'}
       <a class="btn btn-glass glass" href="#about">Meet the founder</a>
     </div>
     <p class="meta numbers tnum"><a href="/work/">{numbers(apps)}</a></p>
@@ -674,15 +694,7 @@ def render_home(apps):
   {hero_art}
 </section>
 
-<section class="wrap section" id="products" aria-labelledby="products-title" style="padding-top:var(--s-7)">
-  <div class="section-head">
-    <h2 class="h2" id="products-title">Products</h2>
-    <p class="lead">Live on the App Store, Google Play, and the web.</p>
-  </div>
-  {flagship_html(flag) if flag else ""}
-  {f'<div class="bento">{chr(10)}{bento}{chr(10)}  </div>' if bento else ""}
-</section>
-
+{products}
 <section class="wrap section" id="experiments" aria-labelledby="exp-title">
   <div class="section-head">
     <h2 class="h2" id="exp-title">Experiments</h2>
@@ -1406,7 +1418,9 @@ Key facts:
 # ---------------------------------------------------------------- main
 
 def outputs():
+    global HOME_PRODUCTS
     apps = load_apps()
+    HOME_PRODUCTS = home_products(apps)
     files = {
         "index.html": render_home(apps),
         "contact/index.html": render_contact(apps),
