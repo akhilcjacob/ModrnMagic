@@ -27,9 +27,13 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 def step(name, cmd, cwd, want=None):
     print(f"--- {name}: {' '.join(cmd[1:])}", flush=True)
     r = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True)
-    tail = "\n".join((r.stdout + r.stderr).strip().splitlines()[-4:])
+    lines = (r.stdout + r.stderr).strip().splitlines()
+    tail = lines[-4:]
+    # Every failing check by name, not only the summary, so a failure in a
+    # long child run says which test it was.
+    fails = [x for x in lines[:-4] if x.startswith("FAIL")]
     ok = r.returncode == 0 and (want is None or want in r.stdout)
-    print(("ok " if ok else "FAIL ") + tail.replace("\n", "\n    "), flush=True)
+    print(("ok " if ok else "FAIL ") + "\n    ".join(fails + tail), flush=True)
     return ok
 
 
