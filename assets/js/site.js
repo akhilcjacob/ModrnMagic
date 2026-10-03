@@ -116,6 +116,34 @@
     var chipsEls = filters.querySelectorAll(".fchip");
     var live = document.getElementById("work-live");
     var running = 0;   // filter view transitions in flight
+    // One pill per group, behind the labels. It slides within a row; it fades
+    // in when it changes group or row, since a diagonal slide reads as a glitch.
+    var place = function (pill, chip, slide) {
+      if (!chip) { pill.classList.remove("on"); return; }
+      var y = chip.offsetTop;
+      var glide = slide && pill.classList.contains("on") && pill.getAttribute("data-y") === String(y);
+      if (!glide) {
+        pill.classList.add("still");
+        if (slide) pill.classList.remove("on");
+      }
+      pill.style.setProperty("--x", chip.offsetLeft);
+      pill.style.setProperty("--y", y);
+      pill.style.setProperty("--w", chip.offsetWidth);
+      pill.style.setProperty("--h", chip.offsetHeight);
+      pill.setAttribute("data-y", y);
+      if (!slide) pill.classList.add("on");
+      if (!glide) {
+        void pill.offsetWidth;   // commit the jump before transitions come back
+        pill.classList.remove("still");
+      }
+      pill.classList.add("on");
+    };
+    var placePills = function (slide) {
+      filters.querySelectorAll(".fgroup").forEach(function (g) {
+        var pill = g.querySelector(".fpill");
+        if (pill) place(pill, g.querySelector('.fchip[aria-current="true"]'), slide);
+      });
+    };
     var syncFilters = function (announce) {
       var id = location.hash.slice(1);
       if (!document.querySelector('.filters [data-filter="' + id + '"]')) id = "all";
@@ -123,6 +151,7 @@
         if (c.getAttribute("data-filter") === id) c.setAttribute("aria-current", "true");
         else c.removeAttribute("aria-current");
       });
+      placePills(announce);
       var msg = document.querySelector('.work-count [data-for="' + id + '"]');
       if (announce && live && msg) live.textContent = msg.textContent;
     };
@@ -159,7 +188,14 @@
     });
     addEventListener("hashchange", function () { syncFilters(true); });
     if (document.startViewTransition) root.classList.add("vt-filters");
+    filters.classList.add("pill");
     syncFilters(false);
+    // Chips change size when the font loads or the bar wraps: follow without sliding.
+    if ("ResizeObserver" in window) {
+      var ro = new ResizeObserver(function () { placePills(false); });
+      chipsEls.forEach(function (c) { ro.observe(c); });
+      ro.observe(filters);
+    }
   }
 
   // Reveal sections once as they enter the viewport. Anything already on

@@ -1035,6 +1035,9 @@ def render_work(apps):
         return f"Showing {n} {noun}: {label}."
 
     targets = "".join(f'<span class="ftarget" id="{fid}"></span>' for fid, *_ in filters)
+    # The active pill: a left cap, a 1px middle scaled to length, and a right cap,
+    # so site.js can slide and stretch it with transforms alone, behind static labels.
+    pill = '<span class="fpill" aria-hidden="true"><i></i><i></i><i></i></span>'
     chip_link = lambda fid, label: f'<a class="fchip" href="#{fid}" data-filter="{fid}">{label}</a>'
     status_chips = "".join(chip_link(fid, label) for fid, label, _, group in filters if group in ("products", "status"))
     kind_chips = "".join(chip_link(fid, label) for fid, label, _, group in filters if group == "kind")
@@ -1061,7 +1064,8 @@ def render_work(apps):
         f'#{fid}:target~.work-list .work-item:not([data-{"status" if group == "status" else "kind"}="{fid}"]){{display:none}}'
         f'#{fid}:target~.work-count [data-for="{fid}"]{{display:inline}}'
         f'#{fid}:target~.work-count [data-for="all"]{{display:none}}'
-        f'#{fid}:target~.filters [data-filter="{fid}"]{{background:var(--ink);color:var(--bg)}}'
+        f'#{fid}:target~.filters [data-filter="{fid}"]{{color:var(--bg)}}'
+        f'#{fid}:target~.filters:not(.pill) [data-filter="{fid}"]{{background:var(--ink)}}'
         f'#{fid}:target~.filters [data-filter="all"]{{background:transparent;color:var(--ink-2)}}'
         for fid, label, _, group in filters if fid != "all")
     drafts = sum(1 for a in items if a.get("draft"))
@@ -1084,8 +1088,8 @@ def render_work(apps):
   </header>
   {targets}
   <nav class="filters" aria-label="Filter products">
-    <div class="fgroup" role="group" aria-label="Status">{status_chips}</div>
-    <div class="fgroup" role="group" aria-label="Kind">{kind_chips}</div>
+    <div class="fgroup" role="group" aria-label="Status">{pill}{status_chips}</div>
+    <div class="fgroup" role="group" aria-label="Kind">{pill}{kind_chips}</div>
   </nav>
   <p class="work-count meta" id="work-count">{counts}</p>
   <p class="sr-only" aria-live="polite" id="work-live"></p>

@@ -613,7 +613,7 @@ dl, dd { margin: 0; }
 /* ---------- /work/ ---------- */
 .ftarget { position: fixed; top: 0; left: 0; width: 0; height: 0; }   /* :target hooks; fixed, so a filter never scrolls */
 .filters { display: flex; flex-wrap: wrap; gap: var(--s-3) var(--s-5); align-items: center; }
-.fgroup { display: flex; flex-wrap: wrap; gap: var(--s-1); padding: var(--s-1); border-radius: var(--r-pill); background: var(--surface-sunk); }
+.fgroup { position: relative; isolation: isolate; display: flex; flex-wrap: wrap; gap: var(--s-1); padding: var(--s-1); border-radius: var(--r-pill); background: var(--surface-sunk); }
 .fchip {
   display: inline-flex; align-items: center; justify-content: center; min-height: 44px; min-width: 44px; padding: 0 var(--s-4);
   border-radius: var(--r-pill); text-decoration: none; font-size: var(--t-small); font-weight: 560; color: var(--ink-2);
@@ -621,7 +621,28 @@ dl, dd { margin: 0; }
 }
 .fchip:hover { color: var(--ink); background: var(--surface); }
 .fchip:active { transform: scale(.96); }
-.filters [data-filter="all"] { background: var(--ink); color: var(--bg); }
+.filters [data-filter="all"] { color: var(--bg); }
+.filters:not(.pill) [data-filter="all"] { background: var(--ink); }   /* without JavaScript the chip itself is the pill */
+/* With JavaScript, one pill per group sits behind the labels and site.js moves it (--x, --y, --w, --h in px).
+   Caps translate; the 1px middle translates and scales, which never distorts a flat fill. Same easing on all
+   three, so the joins stay closed while it moves. */
+.fpill { display: none; position: absolute; inset: 0 auto auto 0; z-index: -1; pointer-events: none; opacity: 0; transition: opacity var(--d-fast) var(--ease-out); }
+.filters.pill .fpill { display: block; }
+.fpill.on { opacity: 1; }
+.fpill > i {
+  position: absolute; top: 0; left: 0; height: calc(var(--h, 44) * 1px); background: var(--ink); transform-origin: 0 0;
+  transition: transform var(--d-base) var(--ease-out);
+}
+.fpill > i:nth-child(1) { width: calc(var(--h, 44) * .5px); border-radius: var(--r-pill) 0 0 var(--r-pill); transform: translate(calc(var(--x, 0) * 1px), calc(var(--y, 0) * 1px)); }
+.fpill > i:nth-child(2) { width: 1px; transform: translate(calc((var(--x, 0) + var(--h, 44) * .5 - 1) * 1px), calc(var(--y, 0) * 1px)) scaleX(calc(var(--w, 44) - var(--h, 44) + 2)); }
+.fpill > i:nth-child(3) { width: calc(var(--h, 44) * .5px); border-radius: 0 var(--r-pill) var(--r-pill) 0; transform: translate(calc((var(--x, 0) + var(--w, 44) - var(--h, 44) * .5) * 1px), calc(var(--y, 0) * 1px)); }
+.fpill.still, .fpill.still > i { transition: none; }
+.filters.pill .fchip[aria-current="true"]:hover { background: transparent; }
+/* Labels change color as the pill passes: the incoming one as the pill lands under it, the outgoing one
+   once the pill has started to leave. Delays only during a filter change, so hover stays instant. */
+:root.filter-vt .filters.pill .fchip { transition-delay: 0s, calc(var(--d-fast) / 2), 0s; }
+:root.filter-vt .filters.pill .fchip[aria-current="true"] { transition-delay: 0s, calc(var(--d-base) - var(--d-fast)), 0s; }
+:root.filter-vt .fchip { transition-duration: 0s, var(--d-fast), var(--d-base); }   /* background, color, transform: no chip background fades while the pill moves */
 .work-count { margin: var(--s-4) 0 var(--s-5); min-height: 1.4em; }
 .work-count span { display: none; }
 .work-count [data-for="all"] { display: inline; }
@@ -731,9 +752,11 @@ dl, dd { margin: 0; }
   /* A filter change is a small move: every group finishes within --d-base, so the page is interactive again quickly. */
   :root.filter-vt::view-transition-group(*), :root.filter-vt::view-transition-old(root), :root.filter-vt::view-transition-new(root) { animation-duration: var(--d-base); }
   ::view-transition-old(*.work-item) { animation-duration: var(--d-fast); }
-  /* The active chip is its own shared element, so the pill slides from chip to chip instead of two half pills cross-fading. */
-  .filters .fchip[aria-current="true"] { view-transition-name: fchip-active; }
-  ::view-transition-old(fchip-active), ::view-transition-new(fchip-active) { height: 100%; }   /* chips differ in width, never in height */
+  /* The filter bar sits out of the page cross-fade: only its live new state shows, so the pill's own
+     transform transition is the one motion there, with no old snapshot fading beside it. */
+  .vt-filters .filters { view-transition-name: filters; }
+  :root.filter-vt::view-transition-old(filters) { display: none; }
+  :root.filter-vt::view-transition-new(filters), :root.filter-vt::view-transition-group(filters) { animation: none; }
 
   .js .reveal { opacity: 0; transform: translateY(12px); transition: opacity var(--d-slow) var(--ease-out), transform var(--d-slow) var(--ease-out); transition-delay: calc(var(--i, 0) * var(--d-stagger)); }
   .js .reveal.in { opacity: 1; transform: none; }
