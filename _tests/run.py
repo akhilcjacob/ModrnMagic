@@ -4,6 +4,11 @@
     python3 _tests/run.py            # all pages, exit 1 on any failure
     python3 _tests/run.py -v         # also print every passing check
     python3 _tests/run.py --browser=firefox  # the same suite in firefox or webkit
+    RUN_TIMEOUT=2400 python3 _tests/run.py   # whole-run limit in seconds (default 2400)
+
+It never hangs: each section has its own time limit and the whole run has
+one. Past a limit it prints TIMEOUT with the section and the last check,
+closes the browsers, and exits 2.
 
 Needs Python 3 and Playwright for Python with Chromium
 (`pip install playwright && playwright install chromium`). It serves the repo
@@ -71,7 +76,10 @@ import subprocess
 import sys
 import tempfile
 import threading
+import time
+import signal
 import urllib.request
+from collections import deque
 from urllib.parse import urljoin, urlsplit
 
 from playwright.sync_api import sync_playwright
@@ -82,6 +90,9 @@ import drafts as held_drafts  # noqa: E402  the held drafts in _drafts/ (unpubli
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 VERBOSE = "-v" in sys.argv
 ENGINE = next((a.split("=", 1)[1] for a in sys.argv if a.startswith("--browser=")), "chromium")
+# Safari, and so WebKit, moves Tab between form controls only by default;
+# Option+Tab is its key for "every item", which is what these tests mean.
+TAB = "Alt+Tab" if ENGINE == "webkit" else "Tab"
 
 results = []   # (ok, name, detail)
 
@@ -107,7 +118,38 @@ def scroll_settle(locator, timeout=5000):
         if (same >= 6 || performance.now() - t0 > timeout) r(); else requestAnimationFrame(tick); })(); })""", timeout)
 
 
+# Time limits. A watchdog thread sends SIGINT to the main thread when the current
+# section or the whole run is over its limit; the interrupt unwinds through
+# sync_playwright(), which closes every browser. If that does not finish in
+# 30 s, the process exits hard (the Playwright driver then closes the browsers).
+RUN_LIMIT = float(os.environ.get("RUN_TIMEOUT", "2400"))
+STARTED = time.monotonic()
+NOW = {"section": "start", "deadline": STARTED + RUN_LIMIT, "last": "none", "fired": None}
+
+
+def watchdog():
+    while True:
+        time.sleep(2)
+        t = time.monotonic()
+        if NOW["fired"] is None and t > min(NOW["deadline"], STARTED + RUN_LIMIT):
+            what = "the whole run" if t > STARTED + RUN_LIMIT else f"section '{NOW['section']}'"
+            NOW["fired"] = t
+            print(f"\nTIMEOUT: {what} is over its limit; last check: {NOW['last']}", flush=True)
+            os.kill(os.getpid(), signal.SIGINT)   # a real signal also wakes a blocking wait
+        elif NOW["fired"] is not None and t > NOW["fired"] + 30:
+            print("TIMEOUT: browsers did not close within 30 s; exiting hard", flush=True)
+            os._exit(2)
+
+
+def begin(name, limit):
+    """Start a section of checks with its own time limit in seconds."""
+    if VERBOSE and NOW.get("t0"):
+        print(f"section '{NOW['section']}': {time.monotonic() - NOW['t0']:.0f}s", flush=True)
+    NOW.update(section=name, deadline=time.monotonic() + limit, t0=time.monotonic())
+
+
 def record(ok, name, detail=""):
+    NOW["last"] = name
     results.append((ok, name, detail))
     if VERBOSE or not ok:
         print(("PASS " if ok else "FAIL ") + name + (f": {detail}" if detail else ""))
@@ -133,9 +175,12 @@ def published_text():
                 yield os.path.join(dirpath, name)
 
 
+SERVED = deque(maxlen=200)   # recent requests, for diagnosing a stalled load
+
+
 class Quiet(http.server.SimpleHTTPRequestHandler):
-    def log_message(self, *args):
-        pass
+    def log_message(self, fmt, *args):
+        SERVED.append(f"{time.strftime('%H:%M:%S')} {self.client_address[1]} {fmt % args}")
 
 
 class Server(http.server.ThreadingHTTPServer):
@@ -264,7 +309,7 @@ def filter_tests(browser, base, seen, tested):
     page.locator(".fchip").first.focus()
     order = [page.evaluate("document.activeElement.dataset.filter")]
     for _ in range(len(chips) - 1):
-        page.keyboard.press("Tab")
+        page.keyboard.press(TAB)
         order.append(page.evaluate("document.activeElement.dataset.filter"))
     page.keyboard.press("Enter")
     settle(page)
@@ -418,7 +463,7 @@ def flagship_tests(browser):
                f"flagship {aid}: one panel, labelled, right call to action, not repeated below", f"{name} {cta} bento {in_bento} strip {in_strip}")
         # Keyboard: the name link, then the call to action.
         panel.locator("#flagship-title a").focus()
-        page.keyboard.press("Tab")
+        page.keyboard.press(TAB)
         focus_ok = page.evaluate("document.activeElement.closest('.flagship') && document.activeElement.classList.contains('btn')")
         record(bool(focus_ok), f"flagship {aid}: Tab goes from the name to the call to action")
         # Click the call to action.
@@ -638,14 +683,34 @@ def contrast_check(browser, base, path, label, themes=("light", "dark"), widths=
             contrast_one(browser, base, path, f"{label} at {w}px", theme, w)
 
 
-def contrast_one(browser, base, path, label, theme, width):
+def contrast_one(browser, base, path, label, theme, width, retried=False):
     from io import BytesIO
     from PIL import Image
     ctx = browser.new_context(viewport={"width": width, "height": 900}, color_scheme=theme, reduced_motion="reduce")
     page = ctx.new_page()
-    page.goto(base + path, wait_until="networkidle")
+    try:
+        page.goto(base + path, wait_until="load", timeout=20000)
+    except Exception as err:
+        ctx.close()
+        mine = [x for x in SERVED if path in x][-6:]
+        print(f"STALL {path} at {width}px ({theme}) in {ENGINE}: {str(err).splitlines()[0]}; "
+              f"server saw: {mine or 'nothing for this path'}", flush=True)
+        if retried:
+            record(False, f"card text contrast on {label} ({theme}): page loads", str(err).splitlines()[0])
+            return
+        fresh = browser.browser_type.launch()   # one retry, in a fresh browser, never more
+        try:
+            return contrast_one(fresh, base, path, label, theme, width, retried=True)
+        finally:
+            fresh.close()
     page.evaluate("document.querySelectorAll('img[loading=lazy]').forEach(i => i.loading = 'eager')")
-    page.wait_for_function("[...document.images].every(i => i.complete)")
+    try:
+        page.wait_for_function("[...document.images].every(i => i.complete)", timeout=15000)
+    except Exception:
+        stuck = page.evaluate("[...document.images].filter(i => !i.complete).map(i => i.currentSrc || i.src)")
+        record(False, f"card text contrast on {label} ({theme}): images load", f"incomplete {stuck}")
+        ctx.close()
+        return
     settle(page)
     boxes = page.evaluate("""([cards, sel]) => [...document.querySelectorAll(cards)].flatMap(card =>
       [...card.querySelectorAll(sel)].filter(el => el.getBoundingClientRect().width > 0).map(el => {
@@ -844,6 +909,16 @@ REDIRECTS = {"/mvp.html": "/contact/"}   # meta-refresh pages: tested for where 
 
 
 def main():
+    threading.Thread(target=watchdog, daemon=True).start()
+    try:
+        return run_all()
+    except KeyboardInterrupt:
+        print(f"TIMEOUT: stopped in section '{NOW['section']}' after {time.monotonic() - STARTED:.0f}s; "
+              f"last check: {NOW['last']}; {sum(1 for r in results if r[0])} passed before it", flush=True)
+        return 2
+
+
+def run_all():
     server, base = serve()
     all_pages = [p for p in pages() if p not in REDIRECTS]
     seen = {}       # key -> page where first found
@@ -857,6 +932,7 @@ def main():
         page.on("pageerror", lambda e: errors.append(str(e)))
         page.on("console", lambda m: m.type == "error" and errors.append(m.text))
 
+        begin("page loads", 300)
         # Page-level checks and control inventory.
         inventory = []
         for path in all_pages:
@@ -873,6 +949,7 @@ def main():
             inventory.append(path)
         third_party = sum(1 for ok, n, _ in results if "third-party" in n and not ok)
 
+        begin("narrow overflow", 180)
         # Narrow-screen overflow.
         narrow = browser.new_context(viewport={"width": 320, "height": 800})
         np_ = narrow.new_page()
@@ -882,6 +959,7 @@ def main():
             record(sw <= 320, f"{path} no sideways scroll at 320px", f"scrollWidth {sw}")
         narrow.close()
 
+        begin("touch targets", 180)
         # Nav links and the theme toggle meet the 44px touch floor at every width.
         for w in (320, 360, 390, 560, 768, 1024, 1440):
             ctx = browser.new_context(viewport={"width": w, "height": 800})
@@ -894,12 +972,14 @@ def main():
                 record(not small, f"{path} nav targets are at least 44px and on screen at {w}px", str(small))
             ctx.close()
 
+        begin("breadcrumbs", 60)
         # Breadcrumb links reach 24px tall (WCAG 2.5.8) from padding alone.
         for path in ("/apps/flowmoro/", "/apps/flowmoro/home/", "/apps/flowmoro/privacy/"):
             page.goto(base + path)
             crumbs = page.evaluate("[...document.querySelectorAll('.crumbs a')].map(a => a.getBoundingClientRect().height)")
             record(bool(crumbs) and min(crumbs) >= 24, f"{path} breadcrumb links are at least 24px tall", str(crumbs))
 
+        begin("links", 600)
         # Links.
         for key, (path, c) in seen.items():
             if key[0] != "link":
@@ -940,6 +1020,7 @@ def main():
                 record(ok, name + " receives the click", str(got))
             tested.add(key)
 
+        begin("theme toggle", 300)
         # Theme toggle, on every page template that has one (tested once per page).
         for key, (path, c) in seen.items():
             if key[0] != "toggle":
@@ -960,6 +1041,7 @@ def main():
             record(ok and kept and back, f"theme toggle on {path} switches, persists, and switches back", str(after))
             tested.add(key)
 
+        begin("faq", 180)
         # FAQ disclosures.
         for key, (path, c) in seen.items():
             if key[0] != "faq":
@@ -1004,6 +1086,7 @@ def main():
                    f"FAQ on {path}: a click during the close reverses it from where it is, the next click closes it",
                    f"mid {mid} opacity at click {dip[0]:.2f}, lowest after {dip[1]:.2f}, state {state} closed {closed}")
 
+        begin("rails", 180)
         # Rails, at phone width where they overflow.
         phone = browser.new_context(viewport={"width": 390, "height": 844}, has_touch=False)
         rp = phone.new_page()
@@ -1040,10 +1123,11 @@ def main():
             tested.add(key)
         phone.close()
 
+        begin("skip link", 60)
         # Skip link on one page per template.
         for path in ("/", "/apps/flowmoro/", "/apps/flowmoro/privacy/", "/apps/flowmoro/home/"):
             page.goto(base + path)
-            page.keyboard.press("Tab")
+            page.keyboard.press(TAB)
             settle(page)
             shown = page.evaluate("[document.activeElement.className, document.activeElement.getBoundingClientRect().top]")
             page.keyboard.press("Enter")
@@ -1051,6 +1135,7 @@ def main():
             record(shown[0] == "skip" and shown[1] >= 0 and page.url.endswith("#main"),
                    f"skip link on {path} shows on Tab and jumps to #main", f"{shown} {page.url}")
 
+        begin("reduced motion", 60)
         # Reduced motion: transitions off, FAQ still works.
         still = browser.new_context(viewport={"width": 1440, "height": 900}, reduced_motion="reduce")
         sp = still.new_page()
@@ -1067,6 +1152,7 @@ def main():
             page.wait_for_url(base + dest, timeout=5000)
             record(True, f"{src} redirects to {dest}")
 
+        begin("footer link", 60)
         # The vision doc's open item: footer "Flowmoro privacy" from home, real mouse click.
         page.goto(base + "/")
         link = page.get_by_role("link", name="Flowmoro privacy")
@@ -1076,13 +1162,19 @@ def main():
         h1 = page.locator("h1").inner_text()
         record(urlsplit(page.url).path == "/apps/flowmoro/privacy/" and "privacy" in h1.lower(),
                "footer 'Flowmoro privacy' link navigates from home", f"{page.url} h1={h1!r}")
+        begin("data and drafts", 600)
         data_tests(browser)
+        begin("filters", 300)
         filter_tests(browser, base, seen, tested)
+        begin("flagship", 600)
         flagship_tests(browser)
+        begin("contrast", 900)
         for path in ("/", "/work/") + tinted_pages():
             contrast_check(browser, base, path, path)
+        begin("bento", 1500)
         bento_tests(browser)
         browser.close()
+    begin("legal URLs", 120)
 
     # Legal URLs answer in every form a store listing might use.
     for dirpath, _, filenames in os.walk(os.path.join(ROOT, "apps")):
