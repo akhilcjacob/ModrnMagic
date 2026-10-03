@@ -98,8 +98,12 @@ results = []   # (ok, name, detail)
 
 
 def frames(page, n=2):
-    """Wait for n animation frames."""
-    page.evaluate("n => new Promise(r => { const f = k => k ? requestAnimationFrame(() => f(k - 1)) : r(); f(n); })", n)
+    """Wait for n animation frames, at most 3 s. A page that stops painting is logged, not waited on forever."""
+    ok = page.evaluate("""n => new Promise(r => { setTimeout(() => r(false), 3000);
+        const f = k => k ? requestAnimationFrame(() => f(k - 1)) : r(true); f(n); })""", n)
+    if not ok:
+        print(f"RAF STALL: no animation frame in 3 s on {page.url} in {ENGINE}", flush=True)
+    return ok
 
 
 def settle(page, timeout=15000):
@@ -139,6 +143,35 @@ def watchdog():
         elif NOW["fired"] is not None and t > NOW["fired"] + 30:
             print("TIMEOUT: browsers did not close within 30 s; exiting hard", flush=True)
             os._exit(2)
+
+
+class Recycled:
+    """A WebKit browser that is relaunched every `limit` contexts.
+
+    One Playwright WebKit browser (Playwright 1.60, WebKit 26.4, macOS) stops
+    responding after 50 to 64 contexts, with no site involved: a page set with
+    set_content and no network hangs in ctx.close() by context 64, and a
+    one-line page from a local server hangs in goto at context 64. Evidence in
+    ~/Development/modrn/_attic/site-qa-2026-10-03/webkit-wedge.md. Earlier
+    browsers stay open for the contexts they already hold."""
+
+    def __init__(self, browser_type, limit):
+        self.browser_type, self.limit = browser_type, limit
+        self.browsers, self.count = [browser_type.launch()], 0
+
+    def new_context(self, **kw):
+        if self.count >= self.limit:
+            self.browsers.append(self.browser_type.launch())
+            self.count = 0
+        self.count += 1
+        return self.browsers[-1].new_context(**kw)
+
+    def new_page(self, **kw):
+        return self.new_context(**kw).new_page()
+
+    def close(self):
+        for b in self.browsers:
+            b.close()
 
 
 def begin(name, limit):
@@ -940,7 +973,7 @@ def run_all():
     seen = {}       # key -> page where first found
     tested = set()
     with sync_playwright() as pw:
-        browser = getattr(pw, ENGINE).launch()
+        browser = getattr(pw, ENGINE).launch() if ENGINE != "webkit" else Recycled(pw.webkit, 40)
         ctx = browser.new_context(viewport={"width": 1440, "height": 900})
         page = ctx.new_page()
         off_site, errors = [], []
