@@ -28,10 +28,13 @@ control, asserting what each one should do:
 - home shows a flagship panel only when one is flagged (checked with nothing
   flagged and with each push-cycle product flagged, in temp copies), and the
   experiments strip holds the three newest experiments
-- the home bento has one cell per live product and no empty grid area at
-  1440, 800, and 390 px, with nothing flagged, each live product flagged,
-  and a live draft cleared; its "N live" count matches the cells
-- text on cards reaches 4.5:1 against the pixels behind it, in both themes
+- the home bento has one cell per live product, no empty grid area, and no
+  cell more than 40% empty, at 1440, 800, 390, and 320 px, for every live set
+  and flagship choice the reviews named (bento_cases); "N live" matches
+- text on tinted surfaces reaches 4.5:1 against the pixels behind it, in both
+  themes, at 320, 360, 390, 800, and 1440 px
+- no test depends on which products are drafts: each sets the state it needs
+  in a temp copy (_tests/release.py runs the suite with drafts cleared too)
 - nav links and the theme toggle are at least 44 px at seven widths
 - a FAQ click during the close animation reopens it; Space and fast clicks
   on /work/ filters behave
@@ -191,7 +194,7 @@ def expected_numbers(apps):
     n = {k: sum(1 for a in apps if a["status"] == k) for k in ("live", "lab", "archived")}
     starts = [v for a in apps for v in (a["dates"].get("started"), a["dates"].get("shipped"), a["dates"].get("updated")) if v]
     exp = f"{n['lab']} experiment" + ("s" if n["lab"] != 1 else "")
-    return f"{len(apps)} products since {min(starts)[:4]}: {n['live']} live, {exp}, and {n['archived']} archived."
+    return f"{len(apps)} product" + ("s" if len(apps) != 1 else "") + f" since {min(starts)[:4]}: {n['live']} live, {exp}, and {n['archived']} archived."
 
 
 def filter_tests(browser, base, seen, tested):
@@ -363,14 +366,18 @@ def flagship_tests(browser):
         shutil.rmtree(tmp)
 
     # Release build: no drafts on /work/ or home, even when a draft is flagged.
-    tmp, dest, r = temp_copy(lambda d: edit_app(d, "ramble", lambda a: a.update(flagship=True)))
+    # The test makes its own draft (a live product with art), so it holds
+    # whether or not the real data still has any.
+    pick = next(a["id"] for a in apps.values() if a["status"] == "live" and a["screenshots"])
+    tmp, dest, r = temp_copy(lambda d: edit_app(d, pick, lambda a: a.update(draft=True, flagship=True)))
     rel = subprocess.run([sys.executable, "_scripts/render.py", "--release"], cwd=dest, capture_output=True, text=True)
     work = open(os.path.join(dest, "work/index.html")).read()
     home = open(os.path.join(dest, "index.html")).read()
-    drafts = [a for a in apps.values() if a.get("draft")]
+    drafts = [a for a in load_all(dest) if a.get("draft")]
     leak = [a["id"] for a in drafts if f"/apps/{a['id']}/" in work or f"/apps/{a['id']}/" in home]
-    record(rel.returncode == 0 and not leak and 'class="draft-mark"' not in work and 'class="flagship' not in home,
-           "release build: no drafts on /work/ or home, and a draft flagship falls back", ", ".join(leak) or rel.stderr[-120:])
+    record(rel.returncode == 0 and pick in [a["id"] for a in drafts] and not leak and 'class="draft-mark"' not in work
+           and 'class="flagship' not in home,
+           f"release build: no drafts on /work/ or home, and a draft flagship ({pick}) falls back", ", ".join(leak) or rel.stderr[-120:])
     shutil.rmtree(tmp)
     # /work/ is in the sitemap and llms.txt.
     sm, llms = open(os.path.join(ROOT, "sitemap.xml")).read(), open(os.path.join(ROOT, "llms.txt")).read()
@@ -393,44 +400,121 @@ BENTO_HOLES = """() => {
 }"""
 
 
+# Each bento cell's largest empty vertical stretch, as a share of its height.
+# Content is every child box (arrow aside) plus the visible part of a peek, so
+# a cell stretched by its row neighbour shows up even when the grid has no hole.
+BENTO_GAPS = """() => [...document.querySelectorAll('.bento .cell')].map(c => {
+  const r = c.getBoundingClientRect(), pad = parseFloat(getComputedStyle(c).paddingTop);
+  const boxes = [...c.children].filter(k => !k.classList.contains('arrow') && !k.classList.contains('peek-clip'))
+    .map(k => k.getBoundingClientRect()).filter(k => k.height > 0);
+  const clip = c.querySelector('.peek-clip'), peek = c.querySelector('.peek');
+  if (clip && peek && getComputedStyle(clip).display !== 'none') {
+    const p = peek.getBoundingClientRect(); boxes.push({top: Math.max(p.top, r.top), bottom: Math.min(p.bottom, r.bottom)}); }
+  boxes.sort((a, b) => a.top - b.top);
+  let gap = 0, prev = r.top + pad;
+  boxes.forEach(k => { gap = Math.max(gap, k.top - prev); prev = Math.max(prev, k.bottom); });
+  gap = Math.max(gap, r.bottom - pad - prev);
+  return [c.dataset.app, c.className.match(/cell-(\\w+)/)[1], Math.round(r.height), Math.round(gap)];
+})"""
+MAX_GAP = .4    # no cell may be more than 40% empty space
+MIN_GAP = 64    # gaps under this many px are air, not a broken row
+
+
 def bento_check(browser, base, label, apps):
-    """Home bento: one cell per live, listed, non-flagship product, no grid holes at any width, and the live count matches."""
+    """Home bento: one cell per live, listed, non-flagship product, no grid holes
+    and no mostly empty cell at any width, and the live count matches."""
     listed_apps = [a for a in apps if not a.get("draft")]
     flag = next((a for a in listed_apps if a.get("flagship")), None)
     want = [a["id"] for a in listed_apps if a["status"] == "live" and a is not flag]
-    for w in (1440, 800, 390):
+    for w in (1440, 800, 390, 320):
         ctx = browser.new_context(viewport={"width": w, "height": 900}, reduced_motion="reduce")
         page = ctx.new_page()
+        errors = []
+        page.on("pageerror", lambda e: errors.append(str(e)))
         page.goto(base + "/")
+        page.evaluate("document.querySelectorAll('.bento img[loading=lazy]').forEach(i => i.loading = 'eager')")
+        page.wait_for_function("[...document.querySelectorAll('.bento img')].every(i => i.complete)")
         cells = page.eval_on_selector_all(".bento .cell", "els => els.map(e => e.dataset.app)")
         holes = page.evaluate(BENTO_HOLES)
+        empty = [c for c in page.evaluate(BENTO_GAPS) if c[3] > MIN_GAP and c[3] > MAX_GAP * c[2]]
         live_n = int(re.search(r"(\d+) live", page.locator(".hero .numbers").inner_text()).group(1))
         shown_live = len(cells) + (1 if flag and flag["status"] == "live" else 0)
-        record(cells == want and not holes and live_n == shown_live,
-               f"bento {label} at {w}px: a cell per live product, no holes, '{live_n} live' matches",
-               f"cells {cells} want {want} holes {holes}")
+        sw = page.evaluate("document.documentElement.scrollWidth")
+        record(cells == want and not holes and not empty and live_n == shown_live and sw <= w and not errors,
+               f"bento {label} at {w}px: a cell per live product, no holes, no cell over {MAX_GAP:.0%} empty, '{live_n} live' matches",
+               f"cells {cells} want {want} holes {holes} empty [id, size, height, gap] {empty} scrollWidth {sw} {errors}")
         ctx.close()
 
 
+def set_live(ids):
+    """An edit that makes exactly these products live and listed, in this order at the top of apps/index.json."""
+    def edit(d):
+        order = json.load(open(os.path.join(d, "index.json")))
+        for aid in order:
+            def change(a, on=aid in ids):
+                if on:
+                    a.pop("draft", None)
+                    a.update(status="live", outcome=None)
+                elif a["status"] == "live":
+                    a["status"] = "lab"
+                a["flagship"] = False
+            edit_app(d, aid, change)
+        json.dump(list(ids) + [i for i in order if i not in ids], open(os.path.join(d, "index.json"), "w"), indent=2)
+    return edit
+
+
+def flag(aid, live=False):
+    """An edit that flags one product, first making it live and listed when asked."""
+    def edit(d):
+        edit_app(d, aid, lambda a: (a.pop("draft", None), a.update(status="live", outcome=None)) if live else a.pop("draft", None))
+        edit_app(d, aid, lambda a: a.update(flagship=True))
+    return edit
+
+
+def bento_cases(apps):
+    """Every live set and flagship choice the reviews named. Each edit states the
+    state it needs, so no case depends on which products are drafts today."""
+    live_now = [a["id"] for a in apps if a["status"] == "live"]
+    with_art = [a["id"] for a in apps if a["screenshots"] and a["status"] != "archived"]
+    no_art = next((a["id"] for a in apps if not a["screenshots"] and a["status"] != "archived"), None)
+    wide_first = next((a["id"] for a in apps if a["screenshots"] and all(s["shape"] == "wide" for s in a["screenshots"][:2])), None)
+    mixed_first = next((a["id"] for a in apps if any(s["shape"] == "wide" for s in a["screenshots"])
+                        and sum(s["shape"] == "phone" for s in a["screenshots"]) < 2), None)
+    cases = [("nothing flagged", None)]
+    cases += [(f"{aid} flagged", flag(aid)) for aid in live_now]
+    cases += [("hypebridge live", set_live(live_now + ["hypebridge"] if "hypebridge" not in live_now else live_now)),
+              ("hypebridge live and flagged", flag("hypebridge", live=True)),
+              ("ramble live", set_live([i for i in live_now if i != "ramble"] + ["ramble"])),
+              ("ramble live and flagged", flag("ramble", live=True)),
+              ("quietdesk flagged", flag("quietdesk")),
+              ("nookly flagged", flag("nookly"))]
+    pool = with_art + [a["id"] for a in apps if a["id"] not in with_art and a["status"] != "archived"]
+    cases += [(f"{n} cells", set_live(pool[:n])) for n in (0, 1, 2, 3, 4, 5, 6, 7)]
+    if wide_first:
+        cases.append((f"wide-shot lead ({wide_first})", set_live([wide_first] + [i for i in pool if i != wide_first][:4])))
+    if mixed_first:
+        cases.append((f"one-phone lead ({mixed_first})", set_live([mixed_first] + [i for i in pool if i != mixed_first][:4])))
+    if no_art:
+        cases.append((f"no-art lead ({no_art})", set_live([no_art] + [i for i in pool if i != no_art][:4])))
+        cases.append((f"no-art half ({no_art})", set_live(pool[:2] + [no_art] + pool[2:4])))
+    return cases
+
+
 def bento_tests(browser):
-    apps = load_all()
-    server, base = serve()
-    bento_check(browser, base, "nothing flagged", apps)
-    server.shutdown()
-    cases = [(f"{a['id']} flagged", lambda d, aid=a["id"]: edit_app(d, aid, lambda x: x.update(flagship=True)))
-             for a in apps if a["status"] == "live" and not a.get("draft")]
-    drafts = [a["id"] for a in apps if a.get("draft") and a["status"] == "live"]
-    for aid in drafts:
-        cases.append((f"{aid} draft cleared", lambda d, aid=aid: edit_app(d, aid, lambda x: x.pop("draft"))))
-        cases.append((f"{aid} draft cleared and flagged", lambda d, aid=aid: edit_app(d, aid, lambda x: (x.pop("draft"), x.update(flagship=True)))))
-    for label, edit in cases:
-        tmp, dest, r = temp_copy(edit)
+    for label, edit in bento_cases(load_all()):
+        if edit is None:
+            server, base = serve()
+            bento_check(browser, base, label, load_all())
+            server.shutdown()
+            continue
+        tmp, dest, r = temp_copy(lambda d, edit=edit: edit(d))
         if r.returncode:
             record(False, f"bento {label}: renders", r.stderr[-200:])
+            shutil.rmtree(tmp)
             continue
         server, base = serve(dest)
         bento_check(browser, base, label, load_all(dest))
-        contrast_check(browser, base, "/", f"home with {label}")
+        contrast_check(browser, base, "/", f"home with {label}", widths=(390, 1440))
         server.shutdown()
         shutil.rmtree(tmp)
 
@@ -438,8 +522,9 @@ def bento_tests(browser):
 # Text on product surfaces must reach WCAG AA (4.5:1) against what is actually
 # painted behind it: glass, tint gradient, and wash. The text is hidden, the
 # page is captured, and each text box is measured against its own pixels.
-CARD_TEXT = ".cell, .card, .w-card, .flagship"
-TEXT_SEL = ".meta, .status, .chip, .one, .w-outcome, .draft-mark, .name, .fl-news"
+CARD_TEXT = ".cell, .card, .w-card, .flagship, .feature"
+TEXT_SEL = ".meta, .status, .chip, .one, .w-outcome, .draft-mark, .name, .fl-news, .h3, p"
+CONTRAST_WIDTHS = (320, 360, 390, 800, 1440)   # text moves under the tint gradient on narrow cards
 
 
 def luminance(rgb):
@@ -455,37 +540,53 @@ def contrast(a, b):
     return (la + .05) / (lb + .05)
 
 
-def contrast_check(browser, base, path, label, themes=("light", "dark")):
+def contrast_check(browser, base, path, label, themes=("light", "dark"), widths=CONTRAST_WIDTHS):
+    for w in widths:
+        for theme in themes:
+            contrast_one(browser, base, path, f"{label} at {w}px", theme, w)
+
+
+def contrast_one(browser, base, path, label, theme, width):
     from io import BytesIO
     from PIL import Image
-    for theme in themes:
-        ctx = browser.new_context(viewport={"width": 1440, "height": 900}, color_scheme=theme, reduced_motion="reduce")
-        page = ctx.new_page()
-        page.goto(base + path, wait_until="networkidle")
-        page.evaluate("document.querySelectorAll('img[loading=lazy]').forEach(i => i.loading = 'eager')")
-        page.wait_for_function("[...document.images].every(i => i.complete)")
-        settle(page)
-        boxes = page.evaluate("""([cards, sel]) => [...document.querySelectorAll(cards)].flatMap(card =>
-          [...card.querySelectorAll(sel)].filter(el => el.getBoundingClientRect().width > 0).map(el => {
-            const r = el.getBoundingClientRect(); const c = getComputedStyle(el).color.match(/[\\d.]+/g).map(Number);
-            return {x: r.left + scrollX, y: r.top + scrollY, w: r.width, h: r.height, color: c,
-                    what: (card.querySelector('.name') || card).textContent.trim().slice(0, 20) + ' ' + el.className + ' ' + el.textContent.trim().slice(0, 16)};
-          }))""", [CARD_TEXT, TEXT_SEL])
-        page.add_style_tag(content="* { color: transparent !important; text-shadow: none !important; -webkit-text-fill-color: transparent !important; border-color: transparent !important; }")
-        settle(page)
-        shot = Image.open(BytesIO(page.screenshot(full_page=True))).convert("RGB")
-        worst = []
-        for b in boxes:
-            crop = shot.crop((int(b["x"]), int(b["y"]), int(b["x"] + b["w"]), int(b["y"] + b["h"])))
-            px = list(crop.get_flattened_data() if hasattr(crop, "get_flattened_data") else crop.getdata())
-            if not px:
-                continue
-            ratios = sorted(contrast(b["color"], p) for p in px)
-            low = ratios[len(ratios) // 50]   # 2nd percentile: one stray edge pixel does not decide
-            if low < 4.5:
-                worst.append(f"{b['what']} {low:.2f}")
-        record(not worst and bool(boxes), f"card text contrast >= 4.5 on {label} ({theme}), {len(boxes)} text boxes", "; ".join(worst[:6]))
-        ctx.close()
+    ctx = browser.new_context(viewport={"width": width, "height": 900}, color_scheme=theme, reduced_motion="reduce")
+    page = ctx.new_page()
+    page.goto(base + path, wait_until="networkidle")
+    page.evaluate("document.querySelectorAll('img[loading=lazy]').forEach(i => i.loading = 'eager')")
+    page.wait_for_function("[...document.images].every(i => i.complete)")
+    settle(page)
+    boxes = page.evaluate("""([cards, sel]) => [...document.querySelectorAll(cards)].flatMap(card =>
+      [...card.querySelectorAll(sel)].filter(el => el.getBoundingClientRect().width > 0).map(el => {
+        const r = el.getBoundingClientRect(); const c = getComputedStyle(el).color.match(/[\\d.]+/g).map(Number);
+        return {x: r.left + scrollX, y: r.top + scrollY, w: r.width, h: r.height, color: c,
+                what: (card.querySelector('.name') || card).textContent.trim().slice(0, 20) + ' ' + el.className + ' ' + el.textContent.trim().slice(0, 16)};
+      }))""", [CARD_TEXT, TEXT_SEL])
+    page.add_style_tag(content="* { color: transparent !important; text-shadow: none !important; -webkit-text-fill-color: transparent !important; border-color: transparent !important; }")
+    settle(page)
+    shot = Image.open(BytesIO(page.screenshot(full_page=True))).convert("RGB")
+    worst = []
+    for b in boxes:
+        crop = shot.crop((int(b["x"]), int(b["y"]), int(b["x"] + b["w"]), int(b["y"] + b["h"])))
+        px = list(crop.get_flattened_data() if hasattr(crop, "get_flattened_data") else crop.getdata())
+        if not px:
+            continue
+        ratios = sorted(contrast(b["color"], p) for p in px)
+        low = ratios[len(ratios) // 50]   # 2nd percentile: one stray edge pixel does not decide
+        if low < 4.5:
+            worst.append(f"{b['what']} {low:.2f}")
+    record(not worst and bool(boxes), f"card text contrast >= 4.5 on {label} ({theme}), {len(boxes)} text boxes", "; ".join(worst[:6]))
+    ctx.close()
+
+
+def tinted_pages():
+    """Product pages and product sites whose own surfaces carry the product tint."""
+    out = []
+    for path in pages():
+        if path.startswith("/apps/") and path.count("/") <= 4 and not any(x in path for x in ("/privacy", "/tos")):
+            html = open(os.path.join(ROOT, path.lstrip("/"), "index.html")).read()
+            if re.search(r'class="features n3" style="[^"]*--glow', html) or re.search(r'<main id="main" style="[^"]*--glow', html):
+                out.append(path)
+    return tuple(out)
 
 
 def data_tests(browser):
@@ -503,10 +604,14 @@ def data_tests(browser):
         record(not leaks and 'content="noindex"' in page and "draft-banner" in page,
                f"draft {i}: own noindex page with a banner, not on shared pages", ", ".join(leaks))
 
-    # Drafts block a release.
+    # Drafts block a release: the gate agrees with the real data, and fails on a draft the test makes itself.
     r = subprocess.run([sys.executable, "_scripts/check.py", "--release"], cwd=ROOT, capture_output=True, text=True)
-    pending = any((json.load(open(os.path.join(ROOT, "apps", i, "app.json"))).get("draft")) for i in ids)
-    record((r.returncode == 1) == pending, "check.py --release fails while drafts remain", r.stdout.strip().splitlines()[-1])
+    pending = any(a.get("draft") or (a.get("outcome") or {}).get("draft") or any(x["draft"] for x in a["lessons"]) for a in load_all())
+    record((r.returncode == 1) == pending, "check.py --release agrees with the drafts in the real data", r.stdout.strip().splitlines()[-1])
+    tmp, dest, _ = temp_copy(lambda d: edit_app(d, ids[0], lambda a: a.update(draft=True)))
+    r = subprocess.run([sys.executable, "_scripts/check.py", "--release"], cwd=dest, capture_output=True, text=True)
+    record(r.returncode == 1 and f"DRAFT apps/{ids[0]}" in r.stdout, "check.py --release fails while a draft remains", r.stdout.strip()[-120:])
+    shutil.rmtree(tmp)
 
     # Rename: the name lives in one field.
     old, new = "Ramble", "Zephyrnote"
@@ -563,13 +668,15 @@ def data_tests(browser):
     shutil.rmtree(tmp)
 
     # The release build deletes draft products' pages, leaves no draft output, and is then not stale.
-    tmp, dest, r = temp_copy()
+    # One product is made a draft here, so the deletion is tested even once the real drafts are gone.
+    tmp, dest, r = temp_copy(lambda d: edit_app(d, ids[-1], lambda a: a.update(draft=True)))
     rel = subprocess.run([sys.executable, "_scripts/render.py", "--release"], cwd=dest, capture_output=True, text=True)
     gone = [i for i in ids if json.load(open(os.path.join(dest, "apps", i, "app.json"))).get("draft")
             and os.path.exists(os.path.join(dest, "apps", i, "index.html"))]
     again = subprocess.run([sys.executable, "_scripts/render.py", "--release", "--check"], cwd=dest, capture_output=True, text=True)
     gate = subprocess.run([sys.executable, "_scripts/check.py", "--release"], cwd=dest, capture_output=True, text=True)
-    record(rel.returncode == 0 and not gone and again.returncode == 0 and "DRAFT OUTPUT" not in gate.stdout
+    record(rel.returncode == 0 and not gone and not os.path.exists(os.path.join(dest, "apps", ids[-1], "index.html"))
+           and again.returncode == 0 and "DRAFT OUTPUT" not in gate.stdout
            and " 0 published page(s) carry draft output" in gate.stdout,
            "render.py --release deletes draft pages and leaves no draft output", f"left {gone} {gate.stdout.strip()[-120:]}")
     shutil.rmtree(tmp)
@@ -738,14 +845,19 @@ def main():
             settle(page)
             item.locator("summary").click()
             mid = item.evaluate("d => d.classList.contains('closing')")
-            item.locator("summary").click()   # within the --d-fast close
+            frames(page, 3)   # part way through the --d-fast close
+            # Reopen and sample the answer's opacity every frame: it must climb back from where the close left it, never restart at 0.
+            dip = item.evaluate("""d => new Promise(r => { const p = d.querySelector('p'); const from = +getComputedStyle(p).opacity;
+              d.querySelector('summary').click(); let low = 1, n = 0;
+              (function tick() { low = Math.min(low, +getComputedStyle(p).opacity); if (++n < 20) requestAnimationFrame(tick); else r([from, low]); })(); })""")
             settle(page)
             state = item.evaluate("d => [d.open, d.classList.contains('closing'), getComputedStyle(d.querySelector('p')).opacity]")
             item.locator("summary").click()
             settle(page)
             closed = item.evaluate("d => !d.open")
-            record(mid and state == [True, False, "1"] and closed,
-                   f"FAQ on {path}: a click during the close animation reopens it, the next click closes it", f"mid {mid} state {state} closed {closed}")
+            record(mid and state == [True, False, "1"] and closed and dip[1] >= dip[0] - .05,
+                   f"FAQ on {path}: a click during the close reverses it from where it is, the next click closes it",
+                   f"mid {mid} opacity at click {dip[0]:.2f}, lowest after {dip[1]:.2f}, state {state} closed {closed}")
 
         # Rails, at phone width where they overflow.
         phone = browser.new_context(viewport={"width": 390, "height": 844}, has_touch=False)
@@ -822,7 +934,7 @@ def main():
         data_tests(browser)
         filter_tests(browser, base, seen, tested)
         flagship_tests(browser)
-        for path in ("/", "/work/"):
+        for path in ("/", "/work/") + tinted_pages():
             contrast_check(browser, base, path, path)
         bento_tests(browser)
         browser.close()
