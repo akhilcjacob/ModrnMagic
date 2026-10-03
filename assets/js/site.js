@@ -38,26 +38,51 @@
 
   // FAQ: the answer fades in on open (CSS). Closing plays the reverse before
   // the <details> closes, so both directions read the same way. A click during
-  // that close cancels it, so the item stays open instead of eating the click.
+  // that close runs it backwards from where it is, so the item stays open
+  // without the answer blinking out and fading in again.
   document.querySelectorAll(".faq details").forEach(function (d) {
     var summary = d.querySelector("summary");
     var answer = d.querySelector("p");
     if (!summary || !answer) return;
-    var pending = null;
-    function settle() {
+    var pending = null;   // the close in flight
+    var back = null;      // a close running backwards
+    function stop() {
+      if (!pending) return;
       answer.removeEventListener("animationend", pending);
-      clearTimeout(pending && pending.timer);
+      clearTimeout(pending.timer);
       pending = null;
-      d.classList.remove("closing");
+    }
+    function close() {
+      pending = function () { stop(); d.classList.remove("closing"); d.open = false; };
+      pending.timer = setTimeout(pending, 400);
+      answer.addEventListener("animationend", pending, { once: true });
     }
     summary.addEventListener("click", function (ev) {
       if (!d.open || still.matches) return;
       ev.preventDefault();
-      if (pending) { settle(); return; }   // reopen: cancel the close in flight
+      var anim = answer.getAnimations ? answer.getAnimations()[0] : null;
+      if (pending) {   // reopen: reverse the close from its current point
+        stop();
+        if (!anim) { d.classList.remove("closing"); return; }
+        back = anim;
+        anim.playbackRate = -1;   // takes effect this frame; reverse() would wait a frame and dip first
+        anim.finished.then(function () {
+          if (back !== anim) return;
+          back = null;
+          d.classList.add("reopened");
+          d.classList.remove("closing");
+        }, function () {});
+        return;
+      }
+      if (back) {   // close again while reversing: run forward again
+        back.playbackRate = 1;
+        back = null;
+        close();
+        return;
+      }
+      d.classList.remove("reopened");
       d.classList.add("closing");
-      pending = function () { settle(); d.open = false; };
-      pending.timer = setTimeout(pending, 400);
-      answer.addEventListener("animationend", pending, { once: true });
+      close();
     });
   });
 

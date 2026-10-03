@@ -736,6 +736,7 @@ dl, dd { margin: 0; }
 
   /* FAQ: the answer settles in on open and lifts out on close (site.js). */
   .faq details[open] p { animation: answer-in var(--d-base) var(--ease-out); }
+  .faq details.reopened p { animation: none; }   /* a close that was reversed (site.js) already ends fully shown */
   .faq details.closing p { animation: answer-out var(--d-fast) var(--ease-out) forwards; }
   .faq details.closing summary::after { transform: none; }
   @keyframes answer-in { from { opacity: 0; transform: translateY(-6px); } }
