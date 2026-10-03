@@ -489,7 +489,8 @@ dl, dd { margin: 0; }
 .rail figure { margin: 0; flex: none; scroll-snap-align: start; }
 .rail img { border-radius: var(--r-shot); border: 1px solid var(--line); box-shadow: var(--shadow-1); background: var(--surface-solid); }
 .rail .phone img { height: min(560px, 70vh); width: auto; border-radius: var(--r-shot-phone); }
-.rail .wide img { height: min(440px, 52vw); width: auto; }
+/* Wide shots: up to 440px tall, never wider than the content column (a very wide shot would run off the page, and a lone shot has no rail buttons). */
+.rail .wide img { height: min(440px, 52vw, calc(min(var(--w-content), 100vw - 2 * var(--gutter)) / var(--ar, 1))); width: auto; }
 @media (max-width: 600px) { .rail .phone img { height: 440px; } .rail .wide img { height: auto; width: 86vw; } }
 
 /* Rail controls: shown by site.js only when the rail overflows. */

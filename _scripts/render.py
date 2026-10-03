@@ -757,7 +757,9 @@ def render_product(app, apps):
     rail = ""
     if app["screenshots"]:
         figs = "\n".join(
-            f'<figure class="{s["shape"]}"><img src="/apps/{aid}/{s["src"]}" alt="{e(s["alt"])}" width="{s["w"]}" height="{s["h"]}" '
+            # A wide shot carries its aspect ratio, so CSS can cap its height to fit the content column before it loads.
+            f'<figure class="{s["shape"]}"' + (f' style="--ar:{s["w"] / s["h"]:.3f}"' if s["shape"] == "wide" else "")
+            + f'><img src="/apps/{aid}/{s["src"]}" alt="{e(s["alt"])}" width="{s["w"]}" height="{s["h"]}" '
             + ('fetchpriority="high"' if i == 0 else 'loading="lazy" decoding="async"') + "></figure>"
             for i, s in enumerate(app["screenshots"]))
         rail = rail_html(figs, f"{app['name']} screenshots", len(app["screenshots"]))

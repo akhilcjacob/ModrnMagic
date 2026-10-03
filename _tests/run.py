@@ -1148,7 +1148,7 @@ def run_all():
             if not ctl.is_visible():
                 count = wrap.locator("figure").count()
                 fits = wrap.locator(".rail").evaluate("r => r.scrollWidth <= r.clientWidth + 2")
-                record(fits or count == 1, f"rail on {path} hides controls only when it fits or holds one shot", f"{count} shots")
+                record(fits, f"rail on {path} hides controls only when it fits (a lone shot too: nothing runs off the page)", f"{count} shots")
                 tested.add(key)
                 continue
             n = wrap.locator("figure").count()
@@ -1171,6 +1171,35 @@ def run_all():
                    f"start/next {ok} keyboard {ok_kb} end {at_end} back {back}")
             tested.add(key)
         phone.close()
+        # Wide screens: where a rail still overflows, previous steps back from the end.
+        # (The shot before the last can sit past the furthest scroll; stepping back by
+        # index once left the rail where it was.)
+        for w in (800, 1440):
+            wide = browser.new_context(viewport={"width": w, "height": 900})
+            wp = wide.new_page()
+            for key, (path, c) in seen.items():
+                if key[0] != "rail":
+                    continue
+                wp.goto(base + path, wait_until="load")
+                wrap = wp.locator(".rail-wrap").nth(c["i"])
+                ctl = wrap.locator(".rail-ctl")
+                if not ctl.is_visible():
+                    fits = wrap.locator(".rail").evaluate("r => r.scrollWidth <= r.clientWidth + 2")
+                    record(fits, f"rail '{c['name']}' on {path} at {w}px: no buttons, and nothing runs off the page")
+                    continue
+                rail = wrap.locator(".rail")
+                nxt, prev = ctl.locator('[data-step="1"]'), ctl.locator('[data-step="-1"]')
+                for _ in range(wrap.locator("figure").count()):
+                    if nxt.get_attribute("aria-disabled") == "true":
+                        break
+                    nxt.click(); scroll_settle(rail); settle(wp)
+                end = rail.evaluate("r => r.scrollLeft")
+                at_end = nxt.get_attribute("aria-disabled") == "true"
+                prev.click(); scroll_settle(rail); settle(wp)
+                back = rail.evaluate("r => r.scrollLeft")
+                record(at_end and back < end - 2,
+                       f"rail '{c['name']}' on {path} at {w}px: previous steps back from the end", f"{end} -> {back}")
+            wide.close()
 
         begin("skip link", 60)
         # Skip link on one page per template.

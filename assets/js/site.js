@@ -116,9 +116,22 @@
       prev.setAttribute("aria-disabled", String(rail.scrollLeft <= 2));
       next.setAttribute("aria-disabled", String(rail.scrollLeft >= max() - 2));
     }
+    // Step from where the rail is, not from the shot it reads as: at the end,
+    // the shot before the last can sit past the furthest scroll, so stepping
+    // back by index would not move at all.
     function go(step) {
-      var target = Math.max(0, Math.min(figs.length - 1, index() + step));
-      rail.scrollTo({ left: figs[target].offsetLeft - start(), behavior: still.matches ? "auto" : "smooth" });
+      var x = rail.scrollLeft, left = 0;
+      if (step > 0) {
+        left = max();
+        for (var i = 0; i < figs.length; i++) {
+          if (figs[i].offsetLeft - start() > x + 2) { left = figs[i].offsetLeft - start(); break; }
+        }
+      } else {
+        for (var j = figs.length - 1; j >= 0; j--) {
+          if (figs[j].offsetLeft - start() < x - 2) { left = figs[j].offsetLeft - start(); break; }
+        }
+      }
+      rail.scrollTo({ left: Math.max(0, Math.min(max(), left)), behavior: still.matches ? "auto" : "smooth" });
     }
     [prev, next].forEach(function (btn) {
       btn.addEventListener("click", function () {
@@ -130,6 +143,8 @@
     }, { passive: true });
     if ("ResizeObserver" in window) new ResizeObserver(update).observe(rail);
     addEventListener("load", update);
+    // Lazy shots can load after the page does; each one can change what overflows.
+    rail.querySelectorAll("img").forEach(function (img) { img.addEventListener("load", update); });
     update();
   });
 
