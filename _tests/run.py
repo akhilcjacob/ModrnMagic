@@ -38,7 +38,8 @@ control, asserting what each one should do:
   themes, at 320, 360, 390, 800, and 1440 px
 - no test depends on which products are drafts: each sets the state it needs
   in a temp copy (_tests/release.py runs the suite with drafts cleared too)
-- nav links and the theme toggle are at least 44 px at seven widths
+- nav links and the theme toggle are at least 44 px at seven widths, and
+  breadcrumb links at least 24 px tall
 - a FAQ click during the close animation reopens it; Space and fast clicks
   on /work/ filters behave
 - check.py --release fails on draft output in HTML, and render.py --release
@@ -809,6 +810,12 @@ def main():
                     .filter(([n, w, h, right]) => w < 44 || h < 44 || right > innerWidth)""")
                 record(not small, f"{path} nav targets are at least 44px and on screen at {w}px", str(small))
             ctx.close()
+
+        # Breadcrumb links reach 24px tall (WCAG 2.5.8) from padding alone.
+        for path in ("/apps/flowmoro/", "/apps/flowmoro/home/", "/apps/flowmoro/privacy/"):
+            page.goto(base + path)
+            crumbs = page.evaluate("[...document.querySelectorAll('.crumbs a')].map(a => a.getBoundingClientRect().height)")
+            record(bool(crumbs) and min(crumbs) >= 24, f"{path} breadcrumb links are at least 24px tall", str(crumbs))
 
         # Links.
         for key, (path, c) in seen.items():

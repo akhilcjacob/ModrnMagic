@@ -465,7 +465,7 @@ dl, dd { margin: 0; }
 
 /* ---------- Product page ---------- */
 .crumbs { font-size: var(--t-meta); color: var(--ink-3); margin-top: var(--s-7); }
-.crumbs a { text-decoration: none; color: var(--ink-3); }
+.crumbs a { text-decoration: none; color: var(--ink-3); padding-block: 5px; }   /* 24px tall target; vertical padding on an inline link leaves the line where it was */
 .crumbs a:hover { color: var(--accent); }
 .p-hero { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--s-6); align-items: center; padding-block: var(--s-5) var(--s-7); }
 .p-hero .icon { --size: clamp(88px, 12vw, 132px); box-shadow: 0 0 0 1px var(--line), var(--shadow-2); }
