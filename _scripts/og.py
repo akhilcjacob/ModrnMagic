@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Render 1200x630 OpenGraph cards to assets/og/*.jpg with headless Chrome.
 
-Needs Google Chrome and Pillow. Rerun when a product's name, one-liner, icon,
+Held draft products (_drafts/apps/<id>/) get their card in _drafts/assets/og/,
+so it stays unpublished until the draft is promoted. Needs Google Chrome and Pillow. Rerun when a product's name, one-liner, icon,
 or color changes; the output is committed.
 
     python3 _scripts/og.py                    # every card
@@ -17,7 +18,7 @@ import tempfile
 from PIL import Image
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from render import glow, listed, load_apps  # noqa: E402  validated data with {name} filled in, and the site's tint rule
+from render import fill, glow, listed, load_apps  # noqa: E402  validated data with {name} filled in, and the site's tint rule
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CHROME = os.environ.get("CHROME", "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome")
@@ -57,10 +58,10 @@ def shoot(markup, out_jpg):
         Image.open(png).convert("RGB").crop((0, 0, 1200, 630)).save(out_jpg, "JPEG", quality=86, optimize=True, progressive=True)
 
 
-def icon_markup(app, size):
+def icon_markup(app, size, base="apps"):
     if app.get("icon"):
         return (f'<div class="icon" style="width:{size}px;height:{size}px;background:{app["color"]}">'
-                f'<img src="file://{ROOT}/apps/{app["id"]}/media/icon-256.webp"></div>')
+                f'<img src="file://{ROOT}/{base}/{app["id"]}/media/icon-256.webp"></div>')
     return (f'<div class="icon mono" style="width:{size}px;height:{size}px;background:{app["color"]};font-size:{size * .42}px">'
             f'{e(app["name"][0])}</div>')
 
@@ -87,7 +88,13 @@ h1 span {{ color: #5f6674; }}
         print("ok home")
 
     status = {"live": "", "lab": "Experiment", "archived": "Archived"}
-    for app in apps:
+    held = os.path.join(ROOT, "_drafts/apps")
+    jobs = [(a, "apps", out_dir) for a in apps]
+    if os.path.isdir(held):
+        for aid in sorted(os.listdir(held)):
+            a = json.load(open(os.path.join(held, aid, "app.json")))
+            jobs.append((fill(a, a["name"]), "_drafts/apps", os.path.join(ROOT, "_drafts/assets/og")))
+    for app, base, card_dir in jobs:
         if only and app["id"] not in only:
             continue
         badge = f'<span style="margin-left:16px;font-size:24px;letter-spacing:0;color:#875700;font-weight:650">{status[app["status"]]}</span>' if status[app["status"]] else ""
@@ -103,10 +110,11 @@ h1 {{ font-size: 84px; line-height: 1; letter-spacing: -.035em; font-weight: 650
 p {{ font-size: 36px; line-height: 1.25; color: #474d59; margin-top: 18px; max-width: 22ch; letter-spacing: -.01em; }}
 </style></head><body><div class="wash"></div><div class="card">
 <div class="brand"><img src="{mark}">Modrn Magic</div>
-<div class="main">{icon_markup(app, 200)}<div><h1>{e(app["name"])}{badge}</h1><p>{e(app["oneliner"])}</p></div></div>
+<div class="main">{icon_markup(app, 200, base)}<div><h1>{e(app["name"])}{badge}</h1><p>{e(app["oneliner"])}</p></div></div>
 <div class="foot"><span>{e(", ".join({"ios": "iPhone", "android": "Android", "web": "Web"}[p] for p in app["platforms"]))}</span><span>modrnmagic.app/apps/{app["id"]}</span></div>
 </div></body></html>"""
-        shoot(markup, os.path.join(out_dir, f"{app['id']}.jpg"))
+        os.makedirs(card_dir, exist_ok=True)
+        shoot(markup, os.path.join(card_dir, f"{app['id']}.jpg"))
         print("ok", app["id"])
 
 

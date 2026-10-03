@@ -40,18 +40,8 @@
   "icon": null,
   "color": "#f3c98b",
   "screenshots": [],
-  "lessons": [
-    {
-      "text": "The landing page and domain went up before the app had its own name or app id, and the domain lapsed after work stopped.",
-      "draft": true
-    }
-  ],
-  "outcome": {
-    "label": "Archived",
-    "date": "2024-01",
-    "line": "A prototype of podcasts you could join, with AI personas in the conversation. It did not ship, and work stopped in January 2024.",
-    "draft": true
-  },
+  "lessons": [],
+  "outcome": null,
   "cycle": null,
   "flagship": false,
   "legal": {}

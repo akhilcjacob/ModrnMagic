@@ -39,18 +39,8 @@
   "icon": null,
   "color": "#9fd8c8",
   "screenshots": [],
-  "lessons": [
-    {
-      "text": "Maps, sign-in, and a backend are a lot of surface for a first test. A smaller slice would have reached people sooner.",
-      "draft": true
-    }
-  ],
-  "outcome": {
-    "label": "Parked",
-    "date": "2025-02",
-    "line": "A prototype with day-by-day itineraries, maps, and sign-in. Work stopped in February 2025 before any release.",
-    "draft": true
-  },
+  "lessons": [],
+  "outcome": null,
   "cycle": null,
   "flagship": false,
   "legal": {}

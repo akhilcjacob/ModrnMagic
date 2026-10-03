@@ -71,18 +71,8 @@
       "src": "media/screenshots-os-connect-ai-token.webp"
     }
   ],
-  "lessons": [
-    {
-      "text": "The first Nookly apps for homeowners and contractors never shipped. Nookly OS narrows to one user: the owner of a trade business.",
-      "draft": true
-    }
-  ],
-  "outcome": {
-    "label": "Paused",
-    "date": "2026-10",
-    "line": "On hold for cleanup while the studio pushes other products. Not released.",
-    "draft": true
-  },
+  "lessons": [],
+  "outcome": null,
   "cycle": null,
   "flagship": false,
   "legal": {}

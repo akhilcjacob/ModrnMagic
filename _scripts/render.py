@@ -11,8 +11,10 @@ committed, so GitHub Pages serves plain files with no build step.
     python3 _scripts/render.py --release  # the public build: no drafts anywhere,
                                           # and draft products' pages are deleted
 
-The default build is the local one: drafts show on /work/ (marked) and on
-their own pages. The release build leaves them out entirely.
+Any product or line marked `draft` shows on /work/ (marked) and on its own
+page; the release build leaves them out entirely. Unconfirmed content is held
+in _drafts/ (unpublished), so apps/ has no drafts and the two builds match.
+`drafts.py preview` runs this build on a copy with the drafts merged.
 
 Bump SITE_DATE when page content changes; it feeds sitemap lastmod.
 """

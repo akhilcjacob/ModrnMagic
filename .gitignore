@@ -12,3 +12,6 @@
 /test.png
 /production-ready.html
 __pycache__/
+
+# Draft preview build (_scripts/drafts.py preview)
+/_preview/

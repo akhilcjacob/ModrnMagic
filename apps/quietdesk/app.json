@@ -38,18 +38,8 @@
   "icon": null,
   "color": "#c9c3f0",
   "screenshots": [],
-  "lessons": [
-    {
-      "text": "A launcher is mostly platform plumbing, such as package install and removal events, not screens.",
-      "draft": true
-    }
-  ],
-  "outcome": {
-    "label": "Parked",
-    "date": "2024-07",
-    "line": "An Android launcher prototype, never released. Launchers only run on Android and are hard to charge for.",
-    "draft": true
-  },
+  "lessons": [],
+  "outcome": null,
   "cycle": null,
   "flagship": false,
   "legal": {}

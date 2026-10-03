@@ -46,6 +46,10 @@ control, asserting what each one should do:
   on /work/ filters behave
 - check.py --release fails on draft output in HTML, and render.py --release
   deletes draft pages
+- held drafts (_drafts/) are nowhere in the published tree; check.py
+  --release fails on a held product in apps/ or held text in a page; the
+  preview shows each held product with its banner; promoting every held
+  draft with drafts.py and rendering passes check.py --release
 - in a temporary copy of the repo: renaming Ramble in its one name field
   leaves the old name nowhere; a push cycle renders What's new with working
   update links; bad product data makes render.py fail; check.py --release
@@ -70,6 +74,9 @@ import urllib.request
 from urllib.parse import urljoin, urlsplit
 
 from playwright.sync_api import sync_playwright
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "_scripts"))
+import drafts as held_drafts  # noqa: E402  the held drafts in _drafts/ (unpublished)
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 VERBOSE = "-v" in sys.argv
@@ -113,6 +120,15 @@ def pages():
                 rel = os.path.relpath(os.path.join(dirpath, name), ROOT).replace(os.sep, "/")
                 out.append("/" + rel[: -len("index.html")] if rel.endswith("index.html") else "/" + rel)
     return out
+
+
+def published_text():
+    """Every text file GitHub Pages would publish (outside `_` and dot folders)."""
+    for dirpath, dirnames, filenames in os.walk(ROOT):
+        dirnames[:] = [d for d in dirnames if not d.startswith((".", "_"))]
+        for name in filenames:
+            if os.path.splitext(name)[1] in (".html", ".css", ".js", ".json", ".xml", ".txt", ".md"):
+                yield os.path.join(dirpath, name)
 
 
 class Quiet(http.server.SimpleHTTPRequestHandler):
@@ -168,11 +184,15 @@ FIXTURE_CYCLE = {
 }
 
 
-def temp_copy(edit=None):
-    """Copy the repo (without .git) to a temp folder, apply edit(apps_dir), render it there."""
+def temp_copy(edit=None, merge=True):
+    """Copy the repo (without .git) to a temp folder, merge the held drafts into it
+    (the preview state, so every product is there to edit), apply edit(apps_dir),
+    and render it there."""
     tmp = tempfile.mkdtemp(prefix="modrn-site-test-")
     dest = os.path.join(tmp, "site")
-    shutil.copytree(ROOT, dest, ignore=shutil.ignore_patterns(".git", "__pycache__", "_attic"))
+    shutil.copytree(ROOT, dest, ignore=shutil.ignore_patterns(".git", "__pycache__", "_attic", "_preview"))
+    if merge:
+        held_drafts.merge(dest)
     if edit:
         edit(os.path.join(dest, "apps"))
     r = subprocess.run([sys.executable, "_scripts/render.py"], cwd=dest, capture_output=True, text=True)
@@ -190,7 +210,10 @@ STATUS_GROUP = {"live": "live", "lab": "experiments", "archived": "archived"}
 PUSH_CYCLE = ("ramble", "nookly", "inboxhiiv", "hypebridge")
 
 
-def load_all(root=ROOT):
+def load_all(root=ROOT, held=False):
+    """Products as published in `root`, or with the held drafts merged (held=True)."""
+    if held:
+        return held_drafts.merged_apps(root)
     ids = json.load(open(os.path.join(root, "apps/index.json")))
     return [json.load(open(os.path.join(root, "apps", i, "app.json"))) for i in ids]
 
@@ -354,7 +377,7 @@ def pill_tests(page, base):
                    f"{geo} color animations {colors} label colors {same}")
 
 def flagship_tests(browser):
-    apps = {a["id"]: a for a in load_all()}
+    apps = {a["id"]: a for a in load_all(held=True)}
     listed_apps = [a for a in apps.values() if not a.get("draft")]
     # Nothing flagged (the real data): home is complete without the panel.
     server, base = serve()
@@ -568,7 +591,7 @@ def bento_cases(apps):
 
 
 def bento_tests(browser):
-    for label, edit in bento_cases(load_all()):
+    for label, edit in bento_cases(load_all(held=True)):
         if edit is None:
             server, base = serve()
             bento_check(browser, base, label, load_all())
@@ -680,6 +703,47 @@ def data_tests(browser):
     record(r.returncode == 1 and f"DRAFT apps/{ids[0]}" in r.stdout, "check.py --release fails while a draft remains", r.stdout.strip()[-120:])
     shutil.rmtree(tmp)
 
+    # Held drafts: the committed tree carries none of them, the gate catches a
+    # leak, the preview shows them marked, and promoting all of them is a release.
+    data, products = held_drafts.held(ROOT)
+    published = "\n".join(open(f, encoding="utf-8", errors="replace").read() for f in published_text())
+    leaks = [p for p in products if f"/apps/{p}/" in published or os.path.exists(os.path.join(ROOT, "apps", p))]
+    leaks += [aid for aid, line in data["lines"].items()
+              if (line.get("outcome") and line["outcome"]["line"] in published) or any(x["text"] in published for x in line.get("lessons", []))]
+    record(not leaks, f"held drafts ({len(held_drafts.listing())}) are nowhere in the published tree", ", ".join(leaks))
+    if products:
+        def leak(d):
+            shutil.copytree(os.path.join(os.path.dirname(d), "_drafts/apps", products[0]), os.path.join(d, products[0]))
+        tmp, dest, _ = temp_copy(leak, merge=False)
+        r = subprocess.run([sys.executable, "_scripts/check.py", "--release"], cwd=dest, capture_output=True, text=True)
+        record(r.returncode == 1 and f"DRAFT LEAK apps/{products[0]}" in r.stdout,
+               "check.py --release fails when a held draft product lands in apps/", r.stdout.strip()[-160:])
+        shutil.rmtree(tmp)
+    if data["lines"]:
+        aid, line = next(iter(data["lines"].items()))
+        text = line["outcome"]["line"] if line.get("outcome") else line["lessons"][0]["text"]
+        tmp, dest, _ = temp_copy(merge=False)
+        open(os.path.join(dest, "work/index.html"), "a").write(f"<p>{text}</p>")
+        r = subprocess.run([sys.executable, "_scripts/check.py", "--release"], cwd=dest, capture_output=True, text=True)
+        record(r.returncode == 1 and "DRAFT LEAK work/index.html" in r.stdout,
+               "check.py --release fails when held draft text lands in a published page", r.stdout.strip()[-160:])
+        shutil.rmtree(tmp)
+    tmp, dest, r = temp_copy()
+    marked = [a["id"] for a in load_all(dest) if a.get("draft") and "draft-banner" in open(os.path.join(dest, "apps", a["id"], "index.html")).read()]
+    record(r.returncode == 0 and sorted(marked) == products and not os.path.exists(os.path.join(dest, "_drafts")),
+           "the preview merges every held draft product, each with its Draft banner", f"{marked} {r.stderr[-120:]}")
+    shutil.rmtree(tmp)
+    tmp, dest, _ = temp_copy(merge=False)
+    steps = [subprocess.run([sys.executable, "_scripts/drafts.py", "promote", i], cwd=dest, capture_output=True, text=True)
+             for i in products + list(data["lines"])]
+    steps.append(subprocess.run([sys.executable, "_scripts/render.py"], cwd=dest, capture_output=True, text=True))
+    gate = subprocess.run([sys.executable, "_scripts/check.py", "--release"], cwd=dest, capture_output=True, text=True)
+    pages_ok = all(os.path.isfile(os.path.join(dest, "apps", p, "index.html")) for p in products)
+    record(all(x.returncode == 0 for x in steps) and gate.returncode == 0 and "0 draft(s) held" in gate.stdout and pages_ok,
+           "drafts.py promote on every held draft, then render.py, passes check.py --release",
+           " ".join(x.stderr.strip()[-80:] for x in steps) + gate.stdout.strip()[-160:])
+    shutil.rmtree(tmp)
+
     # Rename: the name lives in one field.
     old, new = "Ramble", "Zephyrnote"
     tmp, dest, r = temp_copy(lambda d: edit_app(d, "ramble", lambda a: a.update(name=new)))
@@ -715,7 +779,7 @@ def data_tests(browser):
 
     # No drafts, release passes.
     def confirm_all(d):
-        for i in ids:
+        for i in json.load(open(os.path.join(d, "index.json"))):
             def clear(a):
                 a.pop("draft", None)
                 if a.get("outcome"):

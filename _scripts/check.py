@@ -2,7 +2,9 @@
 
     python3 _scripts/check.py          # run the checks, exit 1 on any failure
     python3 _scripts/check.py serve    # serve at http://localhost:8000 (PORT=xxxx to change)
-    python3 _scripts/check.py --release  # also fail while any draft remains in data or in published HTML
+    python3 _scripts/check.py serve --drafts  # build _preview/ with the held drafts merged and serve that
+    python3 _scripts/check.py --release  # also fail while any draft remains in published data or HTML,
+                                         # or while held draft content (_drafts/) leaks into it
 
 Python 3 standard library only. The checks cover the files GitHub Pages would
 publish (everything outside `_`-prefixed and hidden folders):
@@ -197,6 +199,28 @@ def draft_output():
     return out
 
 
+def held_leaks():
+    """Held draft content (_drafts/) that shows up in the published tree: a draft
+    product's folder, page, or share card, any mention of its URL, or the text of a
+    held outcome line or lesson."""
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import drafts as held
+    data, products = held.held(ROOT)
+    out = []
+    for aid in products:
+        for rel in (f"apps/{aid}", f"assets/og/{aid}.jpg"):
+            if os.path.exists(os.path.join(ROOT, rel)):
+                out.append(f"{rel}: a held draft product is in the published tree")
+    needles = [f"/apps/{aid}/" for aid in products] + [f"og/{aid}.jpg" for aid in products]
+    needles += [line["outcome"]["line"] for line in data["lines"].values() if line.get("outcome")]
+    needles += [x["text"] for line in data["lines"].values() for x in line.get("lessons", [])]
+    for f in sorted(published_files()):
+        if os.path.splitext(f)[1].lower() in TEXT_EXT:
+            text = open(f, encoding="utf-8", errors="replace").read()
+            out += [f"{os.path.relpath(f, ROOT)}: mentions held draft content: {n[:50]}" for n in needles if n in text]
+    return out
+
+
 def release():
     status = check()
     pending = drafts()
@@ -205,21 +229,36 @@ def release():
     leaked = draft_output()
     for rel in leaked:
         print("DRAFT OUTPUT", f"{rel}: draft marker in published HTML (run render.py --release)")
-    print(f"{'NOT READY' if pending or leaked else 'READY'}: {len(pending)} draft(s) need Akhil's confirmation, "
-          f"{len(leaked)} published page(s) carry draft output")
-    return 1 if status or pending or leaked else 0
+    leaks = held_leaks()
+    for line in leaks:
+        print("DRAFT LEAK", line)
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import drafts as held
+    kept = len(held.listing(ROOT))
+    bad = pending or leaked or leaks
+    print(f"{'NOT READY' if bad else 'READY'}: {len(pending)} draft(s) need Akhil's confirmation, "
+          f"{len(leaked)} published page(s) carry draft output, {len(leaks)} leak(s) of held drafts; "
+          f"{kept} draft(s) held in _drafts/ (unpublished)")
+    return 1 if status or bad else 0
 
 
-def serve():
+def serve(drafts=False):
     port = int(os.environ.get("PORT", "8000"))
-    handler = functools.partial(http.server.SimpleHTTPRequestHandler, directory=ROOT)
-    print(f"Serving {ROOT} at http://localhost:{port}/ (Ctrl+C to stop)")
+    root = ROOT
+    if drafts:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        import drafts as held
+        root = held.preview()
+    handler = functools.partial(http.server.SimpleHTTPRequestHandler, directory=root)
+    print(f"Serving {root} at http://localhost:{port}/ (Ctrl+C to stop)")
     http.server.ThreadingHTTPServer(("127.0.0.1", port), handler).serve_forever()
 
 
 if __name__ == "__main__":
     if sys.argv[1:] == ["serve"]:
         serve()
+    elif sys.argv[1:] == ["serve", "--drafts"]:
+        serve(drafts=True)
     elif sys.argv[1:] == ["--release"]:
         sys.exit(release())
     elif not sys.argv[1:]:
