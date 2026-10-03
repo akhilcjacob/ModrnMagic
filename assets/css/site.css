@@ -597,7 +597,10 @@ dl, dd { margin: 0; }
   text-decoration: none; color: var(--ink);
   transition: transform var(--d-base) var(--ease-out);
 }
-.card, .w-card { background-image: radial-gradient(120% 90% at 100% 0%, color-mix(in srgb, var(--glow, transparent) 22%, transparent), transparent 60%); }
+.card, .w-card { background-image: radial-gradient(120% 90% at 100% 0%, color-mix(in srgb, var(--glow, transparent) var(--glow-mix, 22%), transparent), transparent 60%); }
+/* A /work/ row with no outcome line is short, so its years sit in the glow; pale tints there need a fainter glow in dark. */
+:root[data-theme="dark"] .w-card { --glow-mix: 17%; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .w-card { --glow-mix: 17%; } }
 .card:hover, .w-card:hover { transform: translateY(-2px); color: var(--ink); }
 .card:active, .w-card:active { transform: scale(.98); }
 .card-top { display: flex; align-items: center; gap: var(--s-3); }

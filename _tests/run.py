@@ -3,6 +3,7 @@
 
     python3 _tests/run.py            # all pages, exit 1 on any failure
     python3 _tests/run.py -v         # also print every passing check
+    python3 _tests/run.py --browser=firefox  # the same suite in firefox or webkit
 
 Needs Python 3 and Playwright for Python with Chromium
 (`pip install playwright && playwright install chromium`). It serves the repo
@@ -80,6 +81,7 @@ import drafts as held_drafts  # noqa: E402  the held drafts in _drafts/ (unpubli
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 VERBOSE = "-v" in sys.argv
+ENGINE = next((a.split("=", 1)[1] for a in sys.argv if a.startswith("--browser=")), "chromium")
 
 results = []   # (ok, name, detail)
 
@@ -847,7 +849,7 @@ def main():
     seen = {}       # key -> page where first found
     tested = set()
     with sync_playwright() as pw:
-        browser = pw.chromium.launch()
+        browser = getattr(pw, ENGINE).launch()
         ctx = browser.new_context(viewport={"width": 1440, "height": 900})
         page = ctx.new_page()
         off_site, errors = [], []
