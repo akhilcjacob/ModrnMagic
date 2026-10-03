@@ -640,6 +640,8 @@ dl, dd { margin: 0; }
   .w-card { grid-template-columns: auto minmax(0, 1fr); align-items: start; }
   .w-meta { grid-column: 2; justify-items: start; display: flex; gap: var(--s-3); align-items: center; }
   .w-card .icon { --size: 44px; }
+  /* On a narrow row the status sits under the top-right corner, so the glow is smaller and fainter there. */
+  .w-card { background-image: radial-gradient(70% 60% at 100% 0%, color-mix(in srgb, var(--glow, transparent) 14%, transparent), transparent 60%); }
   .fgroup { width: 100%; }
 }
 @media (max-width: 400px) { .fchip { padding: 0 var(--s-2); } .fgroup { gap: 0; } }   /* four status chips fit one row at 320px */
