@@ -79,7 +79,7 @@ def frames(page, n=2):
     page.evaluate("n => new Promise(r => { const f = k => k ? requestAnimationFrame(() => f(k - 1)) : r(); f(n); })", n)
 
 
-def settle(page, timeout=5000):
+def settle(page, timeout=15000):
     """Wait until no animation or view transition is running, then one more
     frame so animationend handlers have run. No fixed sleeps: steady on a slow
     machine, quick on a fast one."""
@@ -244,7 +244,8 @@ def filter_tests(browser, base, seen, tested):
     record(order == chips and after == [chips[-1], "#" + chips[-1]], "/work/ filters: Tab order follows the chips, Enter filters, focus stays", f"{order} {after}")
     page.close()
     # JavaScript off: :target alone filters, and deep links work.
-    ctx = browser.new_context(viewport={"width": 390, "height": 844}, java_script_enabled=False)
+    # Reduced motion, so chip colors read their final values right after a click (no transition to wait for).
+    ctx = browser.new_context(viewport={"width": 390, "height": 844}, java_script_enabled=False, reduced_motion="reduce")
     p2 = ctx.new_page()
     p2.goto(base + "/work/#archived")
     vis = p2.eval_on_selector_all(".work-item", "els => els.filter(e => getComputedStyle(e).display !== 'none').length")
@@ -891,19 +892,25 @@ def main():
             item = page.locator(".faq details").first
             item.locator("summary").click()
             settle(page)
-            item.locator("summary").click()
-            mid = item.evaluate("d => d.classList.contains('closing')")
-            frames(page, 3)   # part way through the --d-fast close
-            # Reopen and sample the answer's opacity every frame: it must climb back from where the close left it, never restart at 0.
-            dip = item.evaluate("""d => new Promise(r => { const p = d.querySelector('p'); const from = +getComputedStyle(p).opacity;
-              d.querySelector('summary').click(); let low = 1, n = 0;
-              (function tick() { low = Math.min(low, +getComputedStyle(p).opacity); if (++n < 20) requestAnimationFrame(tick); else r([from, low]); })(); })""")
+            # Close, put the close animation part way (10% of the time, about 0.6 opacity
+            # with --ease-out), and reopen, all in one task: the
+            # click lands mid-close however slow the machine is. (Waiting a few frames
+            # instead let a loaded run finish the 140ms close first, then reopen from 0.)
+            # Then sample the answer's opacity every frame: it must climb back from
+            # where the close left it, never restart at 0.
+            mid, dip = item.evaluate("""d => new Promise(r => { const s = d.querySelector('summary'), p = d.querySelector('p');
+              s.click();
+              const a = p.getAnimations()[0], mid = d.classList.contains('closing') && !!a && d.open;
+              if (a) a.currentTime = a.effect.getComputedTiming().duration * .1;
+              const from = +getComputedStyle(p).opacity;
+              s.click(); let low = 1, n = 0;
+              (function tick() { low = Math.min(low, +getComputedStyle(p).opacity); if (++n < 20) requestAnimationFrame(tick); else r([mid, [from, low]]); })(); })""")
             settle(page)
             state = item.evaluate("d => [d.open, d.classList.contains('closing'), getComputedStyle(d.querySelector('p')).opacity]")
             item.locator("summary").click()
             settle(page)
             closed = item.evaluate("d => !d.open")
-            record(mid and state == [True, False, "1"] and closed and dip[1] >= dip[0] - .05,
+            record(mid and .2 < dip[0] < .9 and state == [True, False, "1"] and closed and dip[1] >= dip[0] - .05,
                    f"FAQ on {path}: a click during the close reverses it from where it is, the next click closes it",
                    f"mid {mid} opacity at click {dip[0]:.2f}, lowest after {dip[1]:.2f}, state {state} closed {closed}")
 
