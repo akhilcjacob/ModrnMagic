@@ -7,7 +7,7 @@
   "summary": "Flowmoro is a Pomodoro focus timer for iPhone and Android. It keeps the screen quiet, lets you set your own work and break lengths, and collects no data.",
   "description": [
     "Flowmoro is a focus timer built around the Pomodoro Technique: work in short, timed sessions and take regular breaks so you stay sharp through the day without burning out.",
-    "The interface is deliberately uncluttered. You see the time left, a simple fill that drains as the session runs, and one button. Work length, break length, and the number of cycles are all adjustable, and a set of theme colors plus a dark mode let it match your setup.",
+    "The interface is deliberately uncluttered. You see the time left, a fill that tracks the session, and one button. Work length, break length, and the number of cycles are all adjustable, and a set of theme colors plus a dark mode let it match your setup.",
     "Flowmoro does not collect or share any data. There is no account and no sign-in."
   ],
   "features": [
@@ -20,8 +20,8 @@
       "body": "One timer, one button. No feeds, no streaks, no clutter."
     },
     {
-      "title": "Themes and dark mode",
-      "body": "Pick a theme color and switch to a clean dark mode for late sessions."
+      "title": "Theme colors",
+      "body": "Pick a theme color to match your style. Flowmoro follows your phone's light or dark setting."
     },
     {
       "title": "Private by design",

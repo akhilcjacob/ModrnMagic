@@ -166,7 +166,7 @@ a {
 }
 a:hover { color: var(--accent); }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
-h1, h2, h3 { margin: 0; font-weight: 620; text-wrap: balance; }
+h1, h2, h3 { margin: 0; font-weight: 620; text-wrap: balance; overflow-wrap: break-word; }
 p { margin: 0; text-wrap: pretty; }
 ul { margin: 0; padding: 0; list-style: none; }
 dl, dd { margin: 0; }
@@ -191,7 +191,7 @@ dl, dd { margin: 0; }
 .h2 { font-size: var(--t-h2); letter-spacing: -.025em; line-height: 1.1; }
 .h3 { font-size: var(--t-h3); letter-spacing: -.01em; line-height: 1.3; font-weight: 600; }
 .meta { font-size: var(--t-meta); font-weight: 550; letter-spacing: .01em; color: var(--ink-3); }
-.section-head { display: grid; gap: var(--s-3); margin-bottom: var(--s-7); }
+.section-head { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-3); margin-bottom: var(--s-7); }
 
 /* ---------- Glass ---------- */
 .glass {
@@ -213,8 +213,8 @@ dl, dd { margin: 0; }
   position: sticky; top: var(--s-3); z-index: var(--z-nav);
   width: min(var(--w-content), 100% - 2 * var(--gutter));
   margin: var(--s-3) auto 0;
-  height: 56px;
-  display: flex; align-items: center; gap: var(--s-2);
+  min-height: 56px;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 0 var(--s-2);   /* wraps only under large text zoom, never sideways off screen */
   padding: 0 var(--s-2) 0 var(--s-3);
   border-radius: var(--r-pill);
 }
@@ -239,6 +239,8 @@ dl, dd { margin: 0; }
   border: 0; border-radius: var(--r-pill); background: transparent; color: var(--ink-2); cursor: pointer;
   transition: background-color var(--d-fast) var(--ease-out), color var(--d-fast) var(--ease-out), transform var(--d-fast) var(--ease-out);
 }
+/* Without JavaScript the toggle cannot work, so it keeps its slot but is not shown or focusable. */
+:root:not(.js) .theme-toggle { visibility: hidden; }
 .theme-toggle:hover { background: var(--surface-sunk); color: var(--ink); }
 .theme-toggle:active { transform: scale(.94); }
 .theme-toggle svg { width: 20px; height: 20px; }
@@ -266,11 +268,12 @@ dl, dd { margin: 0; }
   display: inline-flex; align-items: center; gap: var(--s-2);
   min-height: 48px; padding: 0 var(--s-5);
   border-radius: var(--r-pill); border: 1px solid transparent;
-  font: inherit; font-size: var(--t-small); font-weight: 600; white-space: nowrap;
+  font: inherit; font-size: var(--t-small); font-weight: 600; white-space: nowrap; max-width: 100%;
   text-decoration: none; cursor: pointer;
   transition: transform var(--d-base) var(--ease-spring), background-color var(--d-fast) var(--ease-out);
 }
 .btn svg { width: 18px; height: 18px; flex: none; }
+@media (max-width: 480px) { .btn { white-space: normal; overflow-wrap: anywhere; } }   /* a long label wraps instead of widening the page under large text */
 .btn:hover { transform: translateY(-2px); }
 .btn:active { transform: scale(.98); transition-duration: var(--d-fast); }
 .btn-primary { background: var(--ink); color: var(--bg); box-shadow: var(--shadow-1); }
@@ -417,8 +420,9 @@ dl, dd { margin: 0; }
 .chip {
   display: inline-flex; align-items: center; min-height: 26px; padding: 0 var(--s-3);
   border-radius: var(--r-pill); background: var(--surface-sunk);
-  font-size: var(--t-meta); font-weight: 550; color: var(--ink-2); white-space: nowrap;
+  font-size: var(--t-meta); font-weight: 550; color: var(--ink-2); white-space: nowrap; max-width: 100%;
 }
+@media (max-width: 480px) { .chip { white-space: normal; } }
 .status { font-size: var(--t-meta); font-weight: 650; letter-spacing: .01em; }
 .status-live { color: var(--status-live); }
 .status-lab { color: var(--status-lab); }
@@ -448,8 +452,8 @@ dl, dd { margin: 0; }
 
 /* ---------- Contact band ---------- */
 .contact-band { border-radius: var(--r-sheet); padding: clamp(32px, 6vw, 72px); text-align: center; display: grid; justify-items: center; gap: var(--s-4); }
-.contact-band .h2 { max-width: 20ch; }
-.contact-band .mail { font-size: clamp(1.25rem, 1rem + 1.4vw, 2rem); font-weight: 620; letter-spacing: -.02em; text-decoration: none; }
+.contact-band .h2 { max-width: 20ch; overflow-wrap: anywhere; }
+.contact-band .mail { max-width: 100%; overflow-wrap: anywhere; font-size: clamp(1.25rem, 1rem + 1.4vw, 2rem); font-weight: 620; letter-spacing: -.02em; text-decoration: none; }
 .contact-band .mail:hover { color: var(--accent); }
 
 /* ---------- Footer ---------- */
@@ -460,7 +464,8 @@ dl, dd { margin: 0; }
 .footer a { text-decoration: none; color: var(--ink-2); }
 .footer p a { text-decoration: underline; text-decoration-color: color-mix(in srgb, currentColor 28%, transparent); }
 .footer a:hover { color: var(--accent); }
-.footer .fine { margin-top: var(--s-7); display: flex; flex-wrap: wrap; gap: var(--s-4); justify-content: space-between; }
+.footer .fine { margin-top: var(--s-7); display: flex; flex-wrap: wrap; gap: var(--s-4); justify-content: space-between; overflow-wrap: anywhere; }
+.footer .fine > * { min-width: 0; }
 @media (max-width: 760px) { .footer-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .footer-grid > :first-child { grid-column: 1 / -1; } }
 
 /* ---------- Product page ---------- */
@@ -703,7 +708,7 @@ dl, dd { margin: 0; }
 .notice { border-radius: var(--r-card); padding: var(--s-4) var(--s-5); color: var(--ink-2); font-size: var(--t-small); max-width: 62ch; }
 
 /* ---------- Simple pages ---------- */
-.page-hero { padding-block: var(--s-8) var(--s-6); display: grid; gap: var(--s-4); }
+.page-hero { padding-block: var(--s-8) var(--s-6); display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-4); }
 .page-hero h1 { font-size: var(--t-h1); letter-spacing: -.03em; line-height: 1.05; font-weight: 650; }
 
 /* ---------- Legal pages ---------- */
@@ -721,7 +726,7 @@ dl, dd { margin: 0; }
 .legal-body li + li { margin-top: var(--s-1); }
 .legal-body a, .legal-side a { text-decoration: underline; text-decoration-color: color-mix(in srgb, currentColor 28%, transparent); }
 .legal-side { position: sticky; top: var(--nav-clear); }
-.legal-side .facts { display: grid; gap: var(--s-2); }
+.legal-side .facts { display: grid; gap: var(--s-2); overflow-wrap: anywhere; }
 .legal-side .meta + * { margin-bottom: var(--s-3); }
 .legal-side .facts > :last-child { margin-bottom: 0; }
 .legal-links { display: grid; gap: var(--s-1); font-size: var(--t-small); }
@@ -777,4 +782,14 @@ dl, dd { margin: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition-duration: 0ms !important; animation-duration: 0ms !important; }
+}
+
+/* ---------- Forced colors ----------
+   Selection elsewhere is a background pill, which forced colors paint over. A system-colored
+   outline marks the current nav item and filter instead, and the moving pill layer is dropped. */
+@media (forced-colors: active) {
+  .nav-links a[aria-current="page"], .fchip[aria-current="true"], .filters:not(.pill) [data-filter="all"] {
+    outline: 2px solid Highlight; outline-offset: -2px;
+  }
+  .fpill { display: none !important; }
 }

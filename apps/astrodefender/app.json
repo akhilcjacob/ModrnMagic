@@ -7,18 +7,18 @@
   "oneliner": "A fast arcade space shooter. Rotate, aim, and defend Earth.",
   "summary": "Astro Defender is an arcade space shooter for iPhone and Android. You hold the center of the screen, rotate, and shoot down incoming enemies before they reach Earth, earning upgrades as you go.",
   "description": [
-    "Astro Defender is the kind of game you open for two minutes and play for twenty. Earth sits in the middle of the screen and enemies close in. You rotate your ship and fire.",
-    "As you play you earn upgrades for your ship. The game plays fully offline, so it works on a plane or on the subway.",
+    "Earth sits in the middle of the screen and enemies close in. You rotate your ship around it and fire.",
+    "As you play you earn upgrades for your ship. The game plays offline, so you can play anywhere.",
     "It is free to download on the App Store and Google Play and is supported by ads."
   ],
   "features": [
     {
       "title": "Pick up and play",
-      "body": "One-thumb controls: rotate and shoot. Easy to learn, hard to put down."
+      "body": "One-thumb controls: rotate and shoot. Easy to pick up, hard to put down."
     },
     {
       "title": "Upgrades",
-      "body": "Earn upgrades for your ship and take on tougher waves."
+      "body": "Earn upgrades for your ship as you play."
     },
     {
       "title": "Plays offline",

@@ -73,6 +73,7 @@ unique controls found.
 """
 import functools
 import http.server
+import difflib
 import json
 import os
 import re
@@ -372,6 +373,17 @@ def filter_tests(browser, base, seen, tested):
     nojs = p2.evaluate("""() => [[...document.querySelectorAll('.fpill')].every(p => getComputedStyle(p).display === 'none'),
         getComputedStyle(document.querySelector('.fchip[data-filter="live"]')).backgroundColor !== getComputedStyle(document.querySelector('.fchip[data-filter="all"]')).backgroundColor]""")
     record(nojs == [True, True], "/work/ with JavaScript off: no label copy shows, the active chip itself is the pill", str(nojs))
+    hidden = p2.evaluate("getComputedStyle(document.querySelector('.theme-toggle')).visibility")
+    record(hidden == "hidden", "with JavaScript off the theme toggle, which cannot work, is hidden and not focusable", hidden)
+    ctx.close()
+    # Forced colors: the current nav item and filter chip keep a visible mark (an outline), and the pill layer is dropped.
+    ctx = browser.new_context(viewport={"width": 390, "height": 844}, forced_colors="active", reduced_motion="reduce")
+    p4 = ctx.new_page()
+    p4.goto(base + "/work/")
+    fc = p4.evaluate("""() => [getComputedStyle(document.querySelector('.nav-links a[aria-current="page"]')).outlineStyle,
+        getComputedStyle(document.querySelector('.fchip[aria-current="true"]')).outlineStyle,
+        [...document.querySelectorAll('.fpill')].every(p => getComputedStyle(p).display === 'none')]""")
+    record(fc == ["solid", "solid", True], "forced colors: current nav item and filter chip are outlined, pill layer hidden", str(fc))
     ctx.close()
     # Reduced motion: no view transition and no item animation, still filters.
     ctx = browser.new_context(viewport={"width": 1440, "height": 900}, reduced_motion="reduce")
@@ -949,6 +961,20 @@ def data_tests(browser):
     page = open(os.path.join(ROOT, "404.html")).read()
     record('<meta name="robots" content="noindex, follow">' in page and 'rel="canonical"' not in page,
            "404.html is noindex, follow with no canonical")
+    # Placeholder legal pages (empty Markdown) stay out of search; published ones are indexable.
+    for aid in sorted(os.listdir(os.path.join(ROOT, "apps"))):
+        for folder, src in (("privacy", "privacy-policy.md"), ("tos", "terms_of_service.md")):
+            md = os.path.join(ROOT, "apps", aid, folder, src)
+            if not os.path.isfile(md) or open(md).read().startswith("# ") and "publishes its" in open(md).read():
+                continue   # no page, or a pointer page (tested with the legal URLs)
+            out = open(os.path.join(ROOT, "apps", aid, folder, "index.html")).read()
+            noindex = 'content="noindex' in out
+            record(noindex == (not open(md).read().strip()), f"apps/{aid}/{folder}/ is {'noindex (placeholder)' if noindex else 'indexable'} to match its Markdown")
+    # Short URLs that outside listings use redirect to the real page.
+    for rel, target in (("skywise/index.html", "/apps/skywise/"), ("mvp.html", "/contact/")):
+        page = open(os.path.join(ROOT, rel)).read()
+        record(f'content="0; url={target}"' in page and f'href="{target}"' in page and 'content="noindex, follow"' in page,
+               f"/{rel.replace('index.html', '')} redirects to {target} (refresh, visible link, noindex)")
 
     # Files kept on purpose (outside links may use them): check.py fails if one goes missing.
     sys.path.insert(0, os.path.join(ROOT, "_scripts"))
@@ -961,27 +987,38 @@ def data_tests(browser):
            "check.py fails when a retained legacy file is deleted", r.stdout.strip()[-160:])
     shutil.rmtree(tmp)
 
-    # In a git checkout, the release gate fails on committed drafts and on a sitemap date older than a page commit.
+    # The release gate never reads git dates or today's date: a squash merge committed on a later
+    # day, checked on a later day, is still READY. It fails on a page changed without re-rendering
+    # and on drafts committed to git.
     tmp, dest, _ = temp_copy(merge=False)
     env = dict(os.environ, GIT_AUTHOR_NAME="t", GIT_AUTHOR_EMAIL="t@example.com", GIT_COMMITTER_NAME="t", GIT_COMMITTER_EMAIL="t@example.com",
-               GIT_AUTHOR_DATE="2000-01-01T12:00:00", GIT_COMMITTER_DATE="2000-01-01T12:00:00")
+               GIT_AUTHOR_DATE="2099-01-01T12:00:00", GIT_COMMITTER_DATE="2099-01-01T12:00:00",
+               SOURCE_DATE_EPOCH=str(4070908800))   # 2099-01-01
     git = lambda *a: subprocess.run(["git", *a], cwd=dest, capture_output=True, text=True, env=env)
     git("init", "-q")
     git("add", "-A")
-    git("commit", "-q", "-m", "base")
-    r = subprocess.run([sys.executable, "_scripts/check.py", "--release"], cwd=dest, capture_output=True, text=True)
-    # (In release.py's preview copy apps/ holds drafts on purpose, so only these two signals are asserted.)
-    record("STALE" not in r.stdout and "committed to git" not in r.stdout,
-           "check.py --release finds no stale date or committed drafts in a fresh git checkout", r.stdout.strip()[-160:])
+    git("commit", "-q", "-m", "squash merge on a later day")
+    r = subprocess.run([sys.executable, "_scripts/check.py", "--release"], cwd=dest, capture_output=True, text=True, env=env)
+    rc = subprocess.run([sys.executable, "_scripts/render.py", "--check"], cwd=dest, capture_output=True, text=True, env=env)
+    # (In release.py's preview copy apps/ holds drafts on purpose, so only these signals are asserted.)
+    record("STALE" not in r.stdout and "committed to git" not in r.stdout and rc.returncode == 0,
+           "a later commit date and a later build day leave check.py --release and render.py --check clean", (r.stdout + rc.stdout).strip()[-160:])
+    sm_before = open(os.path.join(dest, "sitemap.xml")).read()
+    edit_app(os.path.join(dest, "apps"), ids[0], lambda a: a.update(oneliner=a["oneliner"] + " Changed."))
+    subprocess.run([sys.executable, "_scripts/render.py"], cwd=dest, capture_output=True, text=True, env=env)
+    moved = [l for l in difflib.unified_diff(sm_before.splitlines(), open(os.path.join(dest, "sitemap.xml")).read().splitlines(), lineterm="", n=0)
+             if l.startswith("+  <url>")]
+    record(moved and all("<lastmod>2099-01-01</lastmod>" in l for l in moved) and any(f"/apps/{ids[0]}/<" in l for l in moved)
+           and not any("/privacy/<" in l or "/tos/<" in l for l in moved),
+           "a content change moves only the changed pages' lastmod, to the build day", " | ".join(moved)[:200])
     open(os.path.join(dest, "work/index.html"), "a").write("\n")
-    env.update(GIT_COMMITTER_DATE="2099-01-01T12:00:00")
     git("add", "-A")
     git("add", "-f", ".drafts/drafts.json")
     git("commit", "-q", "-m", "later")
     r = subprocess.run([sys.executable, "_scripts/check.py", "--release"], cwd=dest, capture_output=True, text=True)
-    record(r.returncode == 1 and "STALE sitemap.xml: https://modrnmagic.app/work/" in r.stdout
+    record(r.returncode == 1 and "STALE work/index.html: changed since its lastmod" in r.stdout
            and "DRAFT LEAK .drafts/drafts.json: held draft content is committed to git" in r.stdout,
-           "check.py --release fails on a stale sitemap date and on drafts committed to git", r.stdout.strip()[-200:])
+           "check.py --release fails on a page changed after its lastmod and on drafts committed to git", r.stdout.strip()[-200:])
     shutil.rmtree(tmp)
 
     # No drafts, release passes.
@@ -1045,7 +1082,7 @@ def link_key(page, c):
     return ("link", c["name"], c["abs"].split("#")[0] if not c["href"].startswith("#") else page + c["href"])
 
 
-REDIRECTS = {"/mvp.html": "/contact/"}   # meta-refresh pages: tested for where they land
+REDIRECTS = {"/mvp.html": "/contact/", "/skywise/": "/apps/skywise/"}   # meta-refresh pages: tested for where they land
 
 
 def pointers():
@@ -1110,6 +1147,12 @@ def run_all():
             np_.goto(base + path)
             sw = np_.evaluate("document.documentElement.scrollWidth")
             record(sw <= 320, f"{path} no sideways scroll at 320px", f"scrollWidth {sw}")
+            # Text-only zoom (browser font size setting): still no sideways scroll at 150% and 200%.
+            zoomed = []
+            for z in ("150%", "200%"):
+                np_.add_style_tag(content=f"html{{font-size:{z} !important}}")
+                zoomed.append(np_.evaluate("document.documentElement.scrollWidth"))
+            record(max(zoomed) <= 320, f"{path} no sideways scroll at 320px with text zoomed to 150% and 200%", f"scrollWidth {zoomed}")
         narrow.close()
 
         begin("touch targets", 180)
@@ -1193,6 +1236,13 @@ def run_all():
             back = page.evaluate("document.documentElement.dataset.theme") == "light"
             record(ok and kept and back, f"theme toggle on {path} switches, persists, and switches back", str(after))
             tested.add(key)
+        # A stored value other than light or dark is ignored: the page follows the system and the toggle agrees.
+        page.goto(base + "/")
+        page.evaluate("localStorage.setItem('theme', 'garbage')")
+        page.reload()
+        junk = page.evaluate("[document.documentElement.getAttribute('data-theme'), document.querySelector('.theme-toggle').getAttribute('aria-pressed'), matchMedia('(prefers-color-scheme: dark)').matches]")
+        page.evaluate("localStorage.clear()")
+        record(junk[0] is None and junk[1] == str(junk[2]).lower(), "a stored theme other than light or dark is ignored", str(junk))
 
         begin("faq", 180)
         # FAQ disclosures.

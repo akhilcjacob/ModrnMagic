@@ -17,8 +17,9 @@ publish (everything outside `_`-prefixed and hidden folders):
 - every sitemap.xml <loc> maps to a file
 - nothing still mentions the removed "00_Future App Template" folder
 - the files in RETAINED, which no page links to but outside links may, still exist
-- with --release: every sitemap lastmod that comes from SITE_DATE is on or after
-  the last commit that changed its page, so a release cannot ship stale dates
+- with --release: sitemap.xml, _scripts/lastmod.json, and the pages on disk
+  agree, so every lastmod matches its page's current content. This never
+  reads git dates or today's date, so it passes the same on any day
 """
 import functools
 import http.server
@@ -250,20 +251,10 @@ def tracked_drafts():
 
 
 def stale_dates():
-    """Sitemap entries dated SITE_DATE (home, work, contact, product pages) whose
-    page was committed after that date. Skipped outside a git checkout."""
-    if git("rev-parse", "--is-inside-work-tree") is None:
-        return []
-    site_date = re.search(r'^SITE_DATE = "([0-9-]+)"', open(os.path.join(ROOT, "_scripts/render.py")).read(), re.M).group(1)
-    out = []
-    for loc, lastmod in re.findall(r"<loc>([^<]+)</loc><lastmod>([^<]+)</lastmod>", open(os.path.join(ROOT, "sitemap.xml")).read()):
-        if lastmod != site_date:
-            continue
-        rel = loc[len(SITE) + 1:] + "index.html"
-        changed = (git("log", "-1", "--format=%cs", "--", rel) or "").strip()
-        if changed > lastmod:
-            out.append(f"sitemap.xml: {loc} says {lastmod}, but {rel} changed on {changed} (set SITE_DATE in render.py to the release date)")
-    return out
+    """Sitemap dates that no longer match their page's content (see lastmod.py)."""
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import lastmod
+    return lastmod.problems(ROOT, open(os.path.join(ROOT, "sitemap.xml")).read())
 
 
 def release():
@@ -292,6 +283,27 @@ def release():
     return 1 if status or bad else 0
 
 
+class PagesHandler(http.server.SimpleHTTPRequestHandler):
+    """Serves only what GitHub Pages would publish: `_` and dot folders and
+    files are 404, and a missing path gets 404.html, as on Pages."""
+    def send_head(self):
+        parts = [p for p in self.path.split("?", 1)[0].split("#", 1)[0].split("/") if p]
+        local = self.translate_path(self.path)
+        hidden = any(p.startswith((".", "_", "%2e", "%2E", "%5f", "%5F")) for p in parts)
+        if hidden or not (os.path.isfile(local) or os.path.isfile(os.path.join(local, "index.html"))):
+            body = b"Not found"
+            page = os.path.join(self.directory, "404.html")
+            if os.path.isfile(page):
+                body = open(page, "rb").read()
+            self.send_response(404)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            from io import BytesIO
+            return BytesIO(body)
+        return super().send_head()
+
+
 def serve(drafts=False):
     port = int(os.environ.get("PORT", "8000"))
     root = ROOT
@@ -299,7 +311,7 @@ def serve(drafts=False):
         sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
         import drafts as held
         root = held.preview()
-    handler = functools.partial(http.server.SimpleHTTPRequestHandler, directory=root)
+    handler = functools.partial(PagesHandler, directory=root)
     print(f"Serving {root} at http://localhost:{port}/ (Ctrl+C to stop)")
     http.server.ThreadingHTTPServer(("127.0.0.1", port), handler).serve_forever()
 

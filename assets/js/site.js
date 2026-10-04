@@ -10,7 +10,8 @@
   // one frame, where the View Transitions API exists and motion is allowed.
   var toggle = document.querySelector(".theme-toggle");
   function currentTheme() {
-    return root.getAttribute("data-theme") || (dark.matches ? "dark" : "light");
+    var t = root.getAttribute("data-theme");
+    return t === "light" || t === "dark" ? t : (dark.matches ? "dark" : "light");
   }
   function syncToggle() {
     if (toggle) toggle.setAttribute("aria-pressed", String(currentTheme() === "dark"));

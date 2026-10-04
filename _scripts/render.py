@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Render the static site from apps/index.json and apps/<id>/app.json.
 
-Writes: index.html, apps/<id>/index.html, contact/index.html, mvp.html,
-404.html, sitemap.xml, llms.txt, and the legal pages apps/<id>/privacy/,
+Writes: index.html, apps/<id>/index.html, contact/index.html, mvp.html, skywise/index.html,
+404.html, sitemap.xml, _scripts/lastmod.json, llms.txt, and the legal pages apps/<id>/privacy/,
 apps/<id>/tos/, and apps/<id>/privacy/delete-account/ from their Markdown. Standard library only. The output is
 committed, so GitHub Pages serves plain files with no build step.
 
@@ -16,22 +16,24 @@ page; the release build leaves them out entirely. Unconfirmed content is held
 in .drafts/ (gitignored, never committed), so apps/ has no drafts and the two
 builds match. `drafts.py preview` runs this build on a copy with the drafts merged.
 
-Set SITE_DATE to the release date whenever page content changes; it is the
-sitemap lastmod of home, work, contact, and the product pages, and
-`check.py --release` fails while it is older than a commit to those pages.
+Sitemap lastmod follows each page's content (see lastmod.py): a page keeps its
+date until its content changes, so the output does not depend on git or on
+the day it is built or checked.
 """
 import datetime as dt
 import html
 import json
 import os
 import re
-import subprocess
 import sys
 from urllib.parse import urlsplit
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import lastmod  # noqa: E402
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SITE = "https://modrnmagic.app"
-SITE_DATE = "2026-10-03"
+YEAR = None   # footer copyright year: the newest sitemap lastmod, set in outputs()
 EMAIL = "hello@modrnmagic.app"
 ORG_ID = f"{SITE}/#org"
 SITE_ID = f"{SITE}/#website"
@@ -293,6 +295,17 @@ def latest_start(app):
     return min(v for v in (d.get("started"), d.get("shipped"), d.get("updated"), "9999") if v)
 
 
+def meta_description(text, limit=160):
+    """Whole sentences of `text` up to `limit` characters, so search results do
+    not cut it mid-word. At least the first sentence, whatever its length."""
+    out = ""
+    for sentence in re.findall(r"[^.!?]+[.!?]+(?:\s+|$)|[^.!?]+$", text):
+        if out and len(out + sentence.rstrip()) > limit:
+            break
+        out += sentence
+    return out.strip()
+
+
 def draft_mark():
     return '<span class="draft-mark" title="Draft for Akhil to confirm">Draft</span>'
 
@@ -517,7 +530,7 @@ def head(title, description, path, og_image, graph, noindex=False, extra="", can
 <link rel="alternate" type="text/plain" href="/llms.txt" title="llms.txt">
 <link rel="preload" href="/assets/fonts/figtree-var.woff2" as="font" type="font/woff2" crossorigin>
 <style>{inline_css()}</style>
-<script>try{{var t=localStorage.getItem("theme");if(t)document.documentElement.setAttribute("data-theme",t)}}catch(e){{}}</script>
+<script>try{{var t=localStorage.getItem("theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}}catch(e){{}}</script>
 <script src="/assets/js/site.js" defer></script>
 {extra}{jsonld({"@context": "https://schema.org", "@graph": graph})}
 </head>
@@ -571,7 +584,7 @@ def footer(apps):
     </ul></div>
     {f'<div><h2>Legal</h2><ul>{legal}</ul></div>' if legal else ""}
   </div>
-  <div class="fine"><span>&copy; {SITE_DATE[:4]} Modrn Magic LLC</span><span><a href="mailto:{EMAIL}">{EMAIL}</a></span></div>
+  <div class="fine"><span>&copy; {YEAR} Modrn Magic LLC</span><span><a href="mailto:{EMAIL}">{EMAIL}</a></span></div>
 </footer>
 """
 
@@ -754,7 +767,7 @@ def render_home(apps):
     names = [a["name"] for a in live]
     makes = (names[0] if len(names) == 1 else " and ".join(names) if len(names) == 2
              else ", ".join(names[:-1]) + f", and {names[-1]}" if names else "apps")
-    description = f"Modrn Magic is an independent product studio founded by Akhil Jacob. It makes {makes} for iPhone, Android, and the web."
+    description = f"Modrn Magic is an independent product studio founded by Akhil Jacob. It makes {makes} for iPhone, Android, and web."
 
     graph = [
         org_node(),
@@ -990,9 +1003,7 @@ def render_product(app, apps):
             title = f"{app['name']} for {where} | Modrn Magic"
     else:
         title = f"{app['name']} ({STATUS_LABEL[app['status']].lower()}) | Modrn Magic"
-    description = app["summary"]
-    if len(description) > 230:
-        description = description[:description.rfind(".", 0, 230) + 1]
+    description = meta_description(app["summary"])
 
     body = f"""<body>
 {nav("products" if live else "work")}
@@ -1080,8 +1091,9 @@ def render_product_site(app, apps):
         p = app["price"]["appStore"]
         price = f'<p class="meta ps-price">{"Free on the App Store" if p == "0" else f"${p} on the App Store (US)"}</p>'
 
-    title = f"{data['title']}: {app['oneliner'].rstrip('.')}"
-    description = app["summary"]
+    # Its own title and description, so it does not duplicate the product page's.
+    title = f"{data['title']}: {data['headline'].rstrip('.')}"
+    description = meta_description(data["lead"])
     graph = [
         {"@type": "WebPage", "@id": SITE + base, "url": SITE + base, "name": title, "isPartOf": {"@id": SITE_ID},
          "about": {"@id": page_url(app) + "#app"}, "inLanguage": "en-US"},
@@ -1293,6 +1305,31 @@ def render_mvp():
 """
 
 
+def render_moved(target, name):
+    """A short URL that outside links use (the SkyWise Play listing names
+    /skywise): noindex, canonical to the real page, a meta refresh, and a
+    visible link for anyone whose browser ignores the refresh."""
+    return f"""<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{e(name)} | Modrn Magic</title>
+<meta name="robots" content="noindex, follow">
+<link rel="canonical" href="{SITE}{target}">
+<meta http-equiv="refresh" content="0; url={target}">
+<link rel="stylesheet" href="/assets/css/site.css">
+</head>
+<body>
+<main class="wrap page-hero">
+  <h1>{e(name)} has moved</h1>
+  <p class="lead">Its page is now <a href="{target}">modrnmagic.app{target}</a>.</p>
+</main>
+</body>
+</html>
+"""
+
+
 # ---------------------------------------------------------------- legal pages
 
 # Store listings link to these URLs. The Markdown next to each page is the
@@ -1338,6 +1375,8 @@ def md_to_html(md, title_words):
             html_out.append(heading(3 if len(m.group(1)) >= 3 else 2, m.group(2).strip()))
         elif re.fullmatch(r"\*\*[^*]+\*\*\s*", b):
             html_out.append(heading(2, b.strip()[2:-2].strip()))
+        elif re.fullmatch(r"\*[^*\s][^*]*\*\s*", b):   # an italic-only line is a subheading
+            html_out.append(heading(3, b.strip()[1:-1].strip()))
         elif all(re.match(r"^\s*[*+-]\s+", ln) for ln in lines):
             items = "".join("<li>" + md_inline(re.sub(r"^\s*[*+-]\s+", "", ln)) + "</li>" for ln in lines)
             html_out.append(f"<ul>{items}</ul>")
@@ -1348,7 +1387,7 @@ def md_to_html(md, title_words):
     return "\n".join(html_out)
 
 
-def legal_shell(app_name, aid, path, title, description, crumb, inner, apps, side="", elsewhere=None):
+def legal_shell(app_name, aid, path, title, description, crumb, inner, apps, side="", elsewhere=None, noindex=False):
     graph = [{"@type": "WebPage", "@id": SITE + path, "url": SITE + path, "name": title,
               "isPartOf": {"@id": SITE_ID}, "inLanguage": "en-US",
               "breadcrumb": {"@type": "BreadcrumbList", "itemListElement": [
@@ -1378,7 +1417,7 @@ def legal_shell(app_name, aid, path, title, description, crumb, inner, apps, sid
     if elsewhere:   # a pointer to the policy on the product's own domain: never indexed here
         refresh = f'<meta http-equiv="refresh" content="0; url={e(elsewhere)}">\n'
         return head(title, description, path, og, graph, noindex=True, extra=refresh, canonical_url=elsewhere) + body
-    return head(title, description, path, og, graph) + body
+    return head(title, description, path, og, graph, noindex=noindex) + body
 
 
 def render_legal(aid, apps):
@@ -1414,7 +1453,8 @@ def render_legal(aid, apps):
         side = f'        <p class="meta">Related</p>\n        <ul class="legal-links">{"".join(others)}</ul>'
         files[f"apps/{aid}/{key}/index.html"] = legal_shell(
             name, aid, path, f"{name} {label.lower()} | Modrn Magic",
-            f"The {label.lower()} for {name}, an app by Modrn Magic.", label, inner, apps, side)
+            f"The {label.lower()} for {name}, an app by Modrn Magic.", label, inner, apps, side,
+            noindex=not md.strip())   # a placeholder until the policy exists: kept out of search
     if os.path.exists(os.path.join(ROOT, "apps", aid, "privacy/delete-account/index.html")):
         path = f"/apps/{aid}/privacy/delete-account/"
         subject = "Account%20Deletion%20Request"
@@ -1469,29 +1509,47 @@ def legal_ids():
 
 # ---------------------------------------------------------------- sitemap, llms.txt
 
-def git_date(rel):
-    try:
-        out = subprocess.run(["git", "log", "-1", "--format=%cs", "--", rel], cwd=ROOT, capture_output=True, text=True).stdout.strip()
-        return out or SITE_DATE
-    except OSError:
-        return SITE_DATE
-
-
-def render_sitemap(apps):
+def render_sitemap(apps, files, previous):
+    """sitemap.xml and lastmod.json. `previous` is the committed lastmod.json;
+    an entry keeps its date while its source hash is unchanged. A URL new to
+    lastmod.json takes its date from the committed sitemap, if it is there."""
     apps = listed(apps)
-    urls = [("/", SITE_DATE, "1.0"), ("/work/", SITE_DATE, "0.8"), ("/contact/", SITE_DATE, "0.5")]
+    urls = [("/", "index.html", "1.0"), ("/work/", "work/index.html", "0.8"), ("/contact/", "contact/index.html", "0.5")]
     for a in apps:
-        urls.append((f"/apps/{a['id']}/", SITE_DATE, "0.9" if a["status"] == "live" else "0.5"))
+        urls.append((f"/apps/{a['id']}/", f"apps/{a['id']}/index.html", "0.9" if a["status"] == "live" else "0.5"))
     for a in apps:
         if a["links"].get("home"):
-            urls.append((f"/apps/{a['id']}/{a['links']['home']}", git_date(f"apps/{a['id']}/{a['links']['home']}index.html"), "0.7"))
+            urls.append((f"/apps/{a['id']}/{a['links']['home']}", f"apps/{a['id']}/{a['links']['home']}index.html", "0.7"))
         for key in LEGAL_KEYS:
             rel = a["legal"].get(key)
             if rel and not rel.startswith("https://"):   # a pointer page is noindex, so it stays out
                 src = "privacy-policy.md" if key == "privacy" else ("terms_of_service.md" if key == "terms" else "index.html")
-                urls.append((f"/apps/{a['id']}/{rel}", git_date(f"apps/{a['id']}/{rel}{src}"), "0.3"))
-    rows = "\n".join(f"  <url><loc>{SITE}{u}</loc><lastmod>{d}</lastmod><priority>{p}</priority></url>" for u, d, p in urls)
-    return f'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n{rows}\n</urlset>\n'
+                urls.append((f"/apps/{a['id']}/{rel}", f"apps/{a['id']}/{rel}{src}", "0.3"))
+    try:
+        committed = dict(re.findall(r"<loc>" + re.escape(SITE) + r"(/[^<]*)</loc><lastmod>([^<]+)</lastmod>",
+                                    open(os.path.join(ROOT, "sitemap.xml")).read()))
+    except OSError:
+        committed = {}
+    manifest, rows = {}, []
+    for url, src, prio in urls:
+        if src in files:
+            text = files[src]
+        else:
+            with open(os.path.join(ROOT, src), encoding="utf-8") as f:
+                text = f.read()
+        sha = lastmod.digest(text)
+        old = previous.get(url)
+        if old and old["src"] == src and old["sha"] == sha:
+            date = old["date"]
+        elif not old and url in committed:
+            date = committed[url]
+        else:
+            date = lastmod.today()
+        manifest[url] = {"src": src, "sha": sha, "date": date}
+        rows.append(f"  <url><loc>{SITE}{url}</loc><lastmod>{date}</lastmod><priority>{prio}</priority></url>")
+    sitemap = ('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+               + "\n".join(rows) + "\n</urlset>\n")
+    return sitemap, manifest
 
 
 def render_llms(apps):
@@ -1552,16 +1610,30 @@ Key facts:
 # ---------------------------------------------------------------- main
 
 def outputs():
-    global HOME_PRODUCTS
+    global HOME_PRODUCTS, YEAR
     apps = load_apps()
     HOME_PRODUCTS = home_products(apps)
+    previous = lastmod.load(ROOT)
+    YEAR = max((v["date"] for v in previous.values()), default=lastmod.today())[:4]
+    files = pages(apps)
+    sitemap, manifest = render_sitemap(apps, files, previous)
+    newest = max(v["date"] for v in manifest.values())[:4]
+    if newest != YEAR:   # the year is masked in the hashes, so one more pass settles it
+        YEAR = newest
+        files = pages(apps)
+    files["sitemap.xml"] = sitemap
+    files[lastmod.FILE] = lastmod.dump(manifest)
+    return files
+
+
+def pages(apps):
     files = {
         "index.html": render_home(apps),
         "contact/index.html": render_contact(apps),
         "work/index.html": render_work(apps),
         "404.html": render_404(apps),
         "mvp.html": render_mvp(),
-        "sitemap.xml": render_sitemap(apps),
+        "skywise/index.html": render_moved("/apps/skywise/", "SkyWise"),
         "llms.txt": render_llms(apps),
     }
     for a in shown(apps):

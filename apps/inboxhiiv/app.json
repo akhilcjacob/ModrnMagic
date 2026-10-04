@@ -13,7 +13,7 @@
   "features": [
     {
       "title": "Follow any show",
-      "body": "Subscribe to the podcasts you care about from one dashboard."
+      "body": "Subscribe to the podcasts you care about."
     },
     {
       "title": "Highlights and insights",
@@ -34,7 +34,7 @@
       "a": "A new episode triggers a pipeline on Firebase Functions and Firestore that processes the audio, generates structured summaries with Gemini, and sends the newsletter."
     }
   ],
-  "category": "WebApplication",
+  "category": "MultimediaApplication",
   "genre": "News",
   "stack": [
     "Next.js",
@@ -43,9 +43,9 @@
     "Gemini"
   ],
   "dates": {
-    "started": null,
+    "started": "2024-10",
     "shipped": null,
-    "updated": null,
+    "updated": "2026-10",
     "ended": null
   },
   "platforms": [

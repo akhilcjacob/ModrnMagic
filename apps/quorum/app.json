@@ -3,19 +3,18 @@
   "name": "Quorum",
   "status": "archived",
   "kind": "app",
-  "oneliner": "Live, interactive podcast conversations.",
-  "summary": "Quorum was a 2023 prototype for podcasts you could join: live conversations where listeners take part instead of only listening. It ran a waitlist and did not ship.",
+  "oneliner": "A 2023 chat app with AI personas.",
+  "summary": "Quorum was a 2023 chat app with AI personas, plus a landing page. It did not ship.",
   "description": [
-    "Quorum explored a question: what if a podcast were a conversation you could join? The prototype paired a mobile app with a landing page and a waitlist for early access.",
-    "It was built over a few weeks in December 2023 and January 2024 and did not go past the prototype stage."
+    "Quorum was a chat app with AI personas, paired with a landing page.",
+    "It was built over a few weeks in December 2023 and January 2024 and did not ship."
   ],
   "features": [],
   "faq": [],
   "category": "SocialNetworkingApplication",
-  "genre": "Podcasts",
+  "genre": "Chat",
   "stack": [
-    "Flutter",
-    "Python"
+    "Flutter"
   ],
   "dates": {
     "started": "2023-12",
@@ -24,8 +23,6 @@
     "ended": "2024-01"
   },
   "platforms": [
-    "ios",
-    "android",
     "web"
   ],
   "links": {

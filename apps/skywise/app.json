@@ -6,8 +6,8 @@
   "oneliner": "A weather app you can talk to.",
   "summary": "SkyWise is a weather app for iPhone and Android with a built-in AI assistant. Alongside the forecast, you can ask plain questions like whether it is a good day for a barbecue or which shoes to wear.",
   "description": [
-    "Most weather apps give you numbers and leave the interpretation to you. SkyWise adds an assistant that answers the question you actually have: is it a good day for a barbecue, do I need a jacket tonight, which shoes should I wear.",
-    "Under the assistant is a full forecast: current conditions, an hourly forecast, and a weather map. The app themes itself to fit your style, in light and dark.",
+    "Most weather apps give you numbers and leave the interpretation to you. SkyWise adds an assistant that answers the question you actually have: is it a good day for a barbecue, or which shoes should I wear.",
+    "Under the assistant is the forecast: current conditions and an hourly forecast. The app themes itself to fit your style, in light and dark.",
     "SkyWise is free to download on the App Store and Google Play."
   ],
   "features": [
@@ -16,8 +16,8 @@
       "body": "A chat assistant that turns the forecast into answers for your plans."
     },
     {
-      "title": "The full forecast",
-      "body": "Current conditions, an hourly forecast, and a weather map."
+      "title": "The forecast",
+      "body": "Current conditions and an hourly forecast."
     },
     {
       "title": "Themed to fit",

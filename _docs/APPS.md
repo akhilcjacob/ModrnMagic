@@ -22,7 +22,7 @@ python3 _scripts/check.py serve  # preview at http://localhost:8000
 Both commands need only Python 3, no installs:
 
 ```
-python3 _scripts/check.py serve   # serve the repo at http://localhost:8000 (PORT=xxxx to change)
+python3 _scripts/check.py serve   # serve what Pages would publish at http://localhost:8000 (PORT=xxxx to change); _ and dot paths and missing pages get 404.html
 python3 _scripts/check.py         # exit 1 if any internal link, asset, or sitemap URL is missing
 python3 _scripts/check.py --release  # also exit 1 on any draft in published data or HTML, or any leak of held drafts (see Launch checklist)
 python3 _scripts/check.py serve --drafts  # build _preview/ with the held drafts merged and serve that
@@ -128,9 +128,19 @@ Rehearse first: `python3 _tests/release.py` checks the committed tree, the draft
 
 1. Promote only what Akhil confirmed (`drafts.py promote <id>`). Everything else stays held.
 2. Build the public site: `python3 _scripts/render.py --release`. It leaves out any `draft` product or line still in `apps/` and deletes its page.
-3. `python3 _scripts/check.py --release` must print `READY`. It fails on any draft in published data (`DRAFT`), on published HTML that still carries a draft mark or banner (`DRAFT OUTPUT`), and on held draft content in the published tree (`DRAFT LEAK`: a held product's folder, page, card, or URL, or the text of a held line). It also fails on a drafts folder tracked by git (`DRAFT LEAK`), and on a sitemap date older than the last commit to its page (`STALE`; set `SITE_DATE` in `render.py` to the release date). Held drafts in `.drafts/` are listed but do not block.
+3. `python3 _scripts/check.py --release` must print `READY`. It fails on any draft in published data (`DRAFT`), on published HTML that still carries a draft mark or banner (`DRAFT OUTPUT`), and on held draft content in the published tree (`DRAFT LEAK`: a held product's folder, page, card, or URL, or the text of a held line). It also fails on a drafts folder tracked by git (`DRAFT LEAK`), and on a sitemap date that no longer matches its page's content (`STALE`: run `render.py`; see Sitemap dates). Held drafts in `.drafts/` are listed but do not block.
 4. `python3 _scripts/render.py --check` and `python3 _scripts/render.py --release --check` pass (the committed output is the release build).
 5. `python3 _tests/run.py` passes, then commit and open the PR.
+6. Merge with **squash merge only**, never a merge commit or a rebase merge. The repository is public, and branch history can hold content that was later removed (PR #1's history has held drafts; HQ accepted that exposure on the branch, not on `main`). `check.py --release` cannot see history, so this step is manual.
+7. Dated legal text: if a policy changed in the PR, its "effective as of" date must be the merge day. PR #1 sets the Astro Defender privacy policy to October 3, 2026; if it merges later, change that line in `apps/astrodefender/privacy/privacy-policy.md` and run `render.py` before merging.
+
+## Sitemap dates
+
+`sitemap.xml` lastmod follows content, not git and not the clock. `_scripts/lastmod.json` (unpublished) records, per sitemap URL, the file its date follows and a hash of it: the rendered page, or for privacy and terms pages their Markdown, so a site-wide style change does not move a policy's date. `render.py` keeps a URL's date while the hash matches and sets it to the build day when the content changes (`SOURCE_DATE_EPOCH` overrides the day). The footer year is the newest of these dates. So merging or checking on a later day changes nothing, and `check.py --release` and `render.py --check` only test that the sitemap, `lastmod.json`, and the files agree.
+
+## Decisions recorded
+
+- MVP offer: dropped (STUDIO.md, Akhil, 2026-09-30: no "work with us" pitch yet, only a simple contact link). `/mvp.html`, which main's MVP request page used, is now a noindex stub that redirects to `/contact/`. Bring the offer back only on a new decision.
 
 ## URLs that must keep working
 
@@ -138,8 +148,10 @@ Store listings and AdMob point at these. Do not move or delete them:
 
 - `apps/<id>/privacy/` and `apps/<id>/tos/` for every app that was on a store, plus `apps/skywise/privacy/delete-account/`
 
-Legal pages are generated: edit `apps/<id>/privacy/privacy-policy.md` or `apps/<id>/tos/terms_of_service.md` and run `render.py`. The text is reproduced verbatim inside the site chrome, and the `.md` files stay published at their paths. An empty Markdown file renders a page that says the policy is not published yet and gives the support address.
+Legal pages are generated: edit `apps/<id>/privacy/privacy-policy.md` or `apps/<id>/tos/terms_of_service.md` and run `render.py`. The text is reproduced verbatim inside the site chrome, and the `.md` files stay published at their paths. An empty Markdown file renders a noindex page that says the policy is not published yet and gives the support address. A line that is only `*italic*` renders as a subheading.
 - `app-ads.txt`
+- `skywise/`: the SkyWise Play listing names `https://modrnmagic.app/skywise` as its website. A noindex page that redirects to `/apps/skywise/`.
+- `mvp.html`: redirects to `/contact/` (see Decisions recorded).
 - `apps/flowmoro/home/` (rendered from `home/descriptions.json`; its `screenshots/*.png` stay at their old paths)
 
 Kept on purpose although no page links to them (`RETAINED` in `check.py`, which fails if one goes missing; do not delete them in a cleanup):
