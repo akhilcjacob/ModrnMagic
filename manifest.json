@@ -1,16 +1,13 @@
 {
-  "name": "Modrn Magic MVP Development",
-  "short_name": "Modrn MVP",
-  "description": "Get your MVP built in 1 week - Professional rapid prototyping and MVP development services",
+  "name": "Modrn Magic",
+  "short_name": "Modrn Magic",
+  "description": "An independent product studio founded by Akhil Jacob.",
   "start_url": "/",
-  "display": "standalone",
-  "background_color": "#1a202c",
-  "theme_color": "#2563eb",
+  "display": "browser",
+  "background_color": "#eef0f4",
+  "theme_color": "#eef0f4",
   "icons": [
-    {
-      "src": "/favicon.ico",
-      "sizes": "64x64",
-      "type": "image/x-icon"
-    }
+    { "src": "/assets/img/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/assets/img/icon-512.png", "sizes": "512x512", "type": "image/png" }
   ]
 }

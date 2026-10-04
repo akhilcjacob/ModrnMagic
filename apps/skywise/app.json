@@ -1,0 +1,111 @@
+{
+  "id": "skywise",
+  "name": "SkyWise",
+  "status": "live",
+  "kind": "app",
+  "oneliner": "A weather app you can talk to.",
+  "summary": "SkyWise is a weather app for iPhone and Android with a built-in AI assistant. Alongside the forecast, you can ask plain questions like whether it is a good day for a barbecue or which shoes to wear.",
+  "description": [
+    "Most weather apps give you numbers and leave the interpretation to you. SkyWise adds an assistant that answers the question you actually have: is it a good day for a barbecue, or which shoes should I wear.",
+    "Under the assistant is the forecast: current conditions and an hourly forecast. The app themes itself to fit your style, in light and dark.",
+    "SkyWise is free to download on the App Store and Google Play."
+  ],
+  "features": [
+    {
+      "title": "Ask the sky",
+      "body": "A chat assistant that turns the forecast into answers for your plans."
+    },
+    {
+      "title": "The forecast",
+      "body": "Current conditions and an hourly forecast."
+    },
+    {
+      "title": "Themed to fit",
+      "body": "Dynamic color themes that fit your style, in light and dark."
+    }
+  ],
+  "faq": [
+    {
+      "q": "What is SkyWise?",
+      "a": "SkyWise is a weather app for iPhone and Android by Modrn Magic. It pairs a standard forecast with an AI chat assistant that answers questions about your plans."
+    },
+    {
+      "q": "Is SkyWise free?",
+      "a": "Yes. SkyWise is free to download on the App Store and Google Play."
+    }
+  ],
+  "category": "WeatherApplication",
+  "genre": "Weather",
+  "stack": [
+    "Flutter",
+    "Firebase"
+  ],
+  "dates": {
+    "started": null,
+    "shipped": "2024-02-13",
+    "updated": "2024-07-17",
+    "ended": null
+  },
+  "platforms": [
+    "ios",
+    "android"
+  ],
+  "links": {
+    "appStore": "https://apps.apple.com/us/app/skywise/id6473301938",
+    "googlePlay": "https://play.google.com/store/apps/details?id=com.modrnmagic.skywise",
+    "web": null,
+    "writing": null,
+    "source": null
+  },
+  "price": {
+    "appStore": "0",
+    "currency": "USD"
+  },
+  "wasOn": [],
+  "icon": "icon.png",
+  "color": "#dceff3",
+  "tint": "#23c8f9",
+  "screenshots": [
+    {
+      "from": "marketing/1.jpg",
+      "alt": "SkyWise current conditions with the headline A new kind of weather app",
+      "w": 640,
+      "h": 1138,
+      "shape": "phone",
+      "src": "media/marketing-1.webp"
+    },
+    {
+      "from": "marketing/2.jpg",
+      "alt": "SkyWise assistant answering a question about the day's weather",
+      "w": 640,
+      "h": 1138,
+      "shape": "phone",
+      "src": "media/marketing-2.webp"
+    },
+    {
+      "from": "marketing/3.jpg",
+      "alt": "SkyWise in several color themes",
+      "w": 640,
+      "h": 1138,
+      "shape": "phone",
+      "src": "media/marketing-3.webp"
+    },
+    {
+      "from": "marketing/4.jpg",
+      "alt": "SkyWise forecast with the line Simply smart weather. Nothing more. Nothing less.",
+      "w": 640,
+      "h": 1138,
+      "shape": "phone",
+      "src": "media/marketing-4.webp"
+    }
+  ],
+  "lessons": [],
+  "outcome": null,
+  "cycle": null,
+  "flagship": false,
+  "legal": {
+    "privacy": "privacy/",
+    "terms": "tos/",
+    "deleteAccount": "privacy/delete-account/"
+  }
+}

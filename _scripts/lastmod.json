@@ -1,0 +1,97 @@
+{
+  "/": {
+    "date": "2026-10-03",
+    "sha": "b360ebba32b5bda8",
+    "src": "index.html"
+  },
+  "/apps/astrodefender/": {
+    "date": "2026-10-03",
+    "sha": "1c88a02a3b5e04a3",
+    "src": "apps/astrodefender/index.html"
+  },
+  "/apps/astrodefender/privacy/": {
+    "date": "2026-10-03",
+    "sha": "73e191cbf142afa1",
+    "src": "apps/astrodefender/privacy/privacy-policy.md"
+  },
+  "/apps/astrodefender/tos/": {
+    "date": "2024-02-23",
+    "sha": "44872da05d8f545f",
+    "src": "apps/astrodefender/tos/terms_of_service.md"
+  },
+  "/apps/flowmoro/": {
+    "date": "2026-10-03",
+    "sha": "dbe02e9b47ef8cc5",
+    "src": "apps/flowmoro/index.html"
+  },
+  "/apps/flowmoro/home/": {
+    "date": "2026-10-03",
+    "sha": "21f2f3d251a8d1dc",
+    "src": "apps/flowmoro/home/index.html"
+  },
+  "/apps/flowmoro/privacy/": {
+    "date": "2024-09-25",
+    "sha": "07002df4186dc789",
+    "src": "apps/flowmoro/privacy/privacy-policy.md"
+  },
+  "/apps/flowmoro/tos/": {
+    "date": "2024-09-25",
+    "sha": "7bd65ea87602facd",
+    "src": "apps/flowmoro/tos/terms_of_service.md"
+  },
+  "/apps/inboxhiiv/": {
+    "date": "2026-10-03",
+    "sha": "ef7bc4f931559832",
+    "src": "apps/inboxhiiv/index.html"
+  },
+  "/apps/nookly/": {
+    "date": "2026-10-03",
+    "sha": "59c4bc01a89e223b",
+    "src": "apps/nookly/index.html"
+  },
+  "/apps/quietdesk/": {
+    "date": "2026-10-03",
+    "sha": "dad6721896072d01",
+    "src": "apps/quietdesk/index.html"
+  },
+  "/apps/quorum/": {
+    "date": "2026-10-03",
+    "sha": "74dd622542727268",
+    "src": "apps/quorum/index.html"
+  },
+  "/apps/skywise/": {
+    "date": "2026-10-03",
+    "sha": "aafbf8c9da449dcd",
+    "src": "apps/skywise/index.html"
+  },
+  "/apps/skywise/privacy/": {
+    "date": "2024-02-23",
+    "sha": "195206e639ddfe8e",
+    "src": "apps/skywise/privacy/privacy-policy.md"
+  },
+  "/apps/skywise/privacy/delete-account/": {
+    "date": "2026-10-03",
+    "sha": "bb666cc9ac9bbbea",
+    "src": "apps/skywise/privacy/delete-account/index.html"
+  },
+  "/apps/skywise/tos/": {
+    "date": "2024-02-06",
+    "sha": "f1b713e89af31bb4",
+    "src": "apps/skywise/tos/terms_of_service.md"
+  },
+  "/apps/triply/": {
+    "date": "2026-10-03",
+    "sha": "6bde05e0bf3aa45f",
+    "src": "apps/triply/index.html"
+  },
+  "/contact/": {
+    "date": "2026-10-03",
+    "sha": "f846f3c942011220",
+    "src": "contact/index.html"
+  },
+  "/work/": {
+    "date": "2026-10-03",
+    "sha": "dd1e8c22e5aad94a",
+    "src": "work/index.html"
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "order": [
+    "flowmoro",
+    "astrodefender",
+    "skywise",
+    "inboxhiiv",
+    "sampleboard",
+    "samplenote",
+    "nookly",
+    "triply",
+    "quietdesk",
+    "quorum"
+  ],
+  "lines": {
+    "nookly": {
+      "outcome": {
+        "label": "Paused",
+        "date": "2026-10",
+        "line": "Example held outcome line for the test suite.",
+        "draft": true
+      },
+      "lessons": [
+        {
+          "text": "Example held lesson for the test suite.",
+          "draft": true
+        }
+      ]
+    },
+    "quorum": {
+      "lessons": [
+        {
+          "text": "Another example held lesson for the test suite.",
+          "draft": true
+        }
+      ],
+      "outcome": {
+        "label": "Archived",
+        "date": "2024-01",
+        "line": "Example held archive line for the test suite.",
+        "draft": true
+      }
+    }
+  }
+}

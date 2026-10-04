@@ -1,0 +1,46 @@
+{
+  "id": "quietdesk",
+  "name": "QuietDesk",
+  "status": "lab",
+  "kind": "app",
+  "oneliner": "A calm Android home screen with only the apps you choose.",
+  "summary": "QuietDesk is a minimal Android launcher prototype. It replaces the home screen with a clock and a short list of favorite apps, with search for everything else.",
+  "description": [
+    "Phones are loud by default. QuietDesk is an Android launcher that strips the home screen back to a clock and the handful of apps you pick as favorites. Everything else is one search away.",
+    "Settings cover 12 or 24 hour time and an optional seconds display. It is an unreleased prototype."
+  ],
+  "features": [],
+  "faq": [],
+  "category": "UtilitiesApplication",
+  "genre": "Utilities",
+  "stack": [
+    "Flutter",
+    "Kotlin"
+  ],
+  "dates": {
+    "started": "2024-07",
+    "shipped": null,
+    "updated": "2024-07",
+    "ended": null
+  },
+  "platforms": [
+    "android"
+  ],
+  "links": {
+    "appStore": null,
+    "googlePlay": null,
+    "web": null,
+    "writing": null,
+    "source": null
+  },
+  "price": null,
+  "wasOn": [],
+  "icon": null,
+  "color": "#c9c3f0",
+  "screenshots": [],
+  "lessons": [],
+  "outcome": null,
+  "cycle": null,
+  "flagship": false,
+  "legal": {}
+}

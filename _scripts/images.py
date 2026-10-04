@@ -1,0 +1,93 @@
+#!/usr/bin/env python3
+"""Make web-sized copies of product images and the site icons.
+
+Reads each apps/<id>/app.json (and each held draft product in the gitignored
+.drafts/apps/<id>/, whose copies and originals stay there) and writes media/*.webp from the
+`from` path of every screenshot, plus a small icon. Those originals live in
+_src/apps/<id>/, outside the published tree, so only the WebP copies ship. Also writes favicons and
+the nav mark from _src/favicon.ico (the 500px original), and a small favicon.ico. Needs Pillow (with WebP support). Only rerun
+when source images change; the output is committed.
+
+    python3 _scripts/images.py
+"""
+import json
+import os
+
+from PIL import Image
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+PHONE_W = 640   # phone shots display at ~300px wide; 2x plus a little
+WIDE_W = 1600   # wide shots display at up to ~760px wide
+
+
+TOUR_W = 480    # framed phone shots on product sites display at ~240px wide
+
+
+def save_webp(im, path, width, quality=80):
+    if im.width > width:
+        im = im.resize((width, round(im.height * width / im.width)), Image.LANCZOS)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    im.save(path, "WEBP", quality=quality, method=6)
+    return im.size
+
+
+def main():
+    ids = json.load(open(os.path.join(ROOT, "apps/index.json")))
+    held = os.path.join(ROOT, ".drafts/apps")
+    folders = [(i, os.path.join(ROOT, "apps", i), os.path.join(ROOT, "_src/apps", i)) for i in ids]
+    folders += [(i, os.path.join(held, i), os.path.join(ROOT, ".drafts/src/apps", i))
+                for i in sorted(os.listdir(held))] if os.path.isdir(held) else []
+    for app_id, folder, src in folders:
+        path = os.path.join(folder, "app.json")
+        app = json.load(open(path))
+        for shot in app.get("screenshots", []):
+            if not shot.get("src"):   # media/<folder>-<name>.webp, the same scheme as existing shots
+                stem = os.path.splitext(shot["from"])[0].replace("/", "-")
+                shot["src"] = f"media/{stem}.webp"
+            im = Image.open(os.path.join(src, shot["from"])).convert("RGB")
+            width = WIDE_W if shot.get("shape") == "wide" else PHONE_W
+            shot["w"], shot["h"] = save_webp(im, os.path.join(folder, shot["src"]), width)
+        if app.get("icon"):
+            icon = Image.open(os.path.join(src, app["icon"])).convert("RGBA")
+            for size in (96, 256):
+                out = os.path.join(folder, "media", f"icon-{size}.webp")
+                icon.resize((size, size), Image.LANCZOS).save(out, "WEBP", quality=88, method=6)
+        with open(path, "w") as f:
+            json.dump(app, f, indent=2, ensure_ascii=False)
+            f.write("\n")
+        print("ok", app_id)
+
+        # Product site tour (apps/<id>/home/descriptions.json): framed shots keep their transparency.
+        home = os.path.join(folder, "home")
+        data_path = os.path.join(home, "descriptions.json")
+        if os.path.exists(data_path):
+            data = json.load(open(data_path))
+            for shot in data.get("tour", []):
+                name = os.path.splitext(os.path.basename(shot["from"]))[0]
+                shot["src"] = f"media/tour-{name}.webp"
+                im = Image.open(os.path.join(home, shot["from"])).convert("RGBA")
+                shot["w"], shot["h"] = save_webp(im, os.path.join(home, shot["src"]), TOUR_W, quality=82)
+            with open(data_path, "w") as f:
+                json.dump(data, f, indent=2, ensure_ascii=False)
+                f.write("\n")
+            print("ok", app_id, "home")
+
+    # The 500px mark lives in _src/; the published favicon.ico is a small multi-size icon.
+    mark = Image.open(os.path.join(ROOT, "_src/favicon.ico")).convert("RGBA")
+    mark.save(os.path.join(ROOT, "favicon.ico"), sizes=[(16, 16), (32, 32), (48, 48)])
+    out = os.path.join(ROOT, "assets/img")
+    os.makedirs(out, exist_ok=True)
+    mark.resize((96, 96), Image.LANCZOS).save(os.path.join(out, "mark-96.webp"), "WEBP", quality=90, method=6)
+    mark.resize((32, 32), Image.LANCZOS).save(os.path.join(out, "favicon-32.png"))
+    for size in (180, 192, 512):
+        tile = Image.new("RGBA", (size, size), (250, 251, 252, 255))
+        inner = round(size * 0.78)
+        m = mark.resize((inner, inner), Image.LANCZOS)
+        tile.paste(m, ((size - inner) // 2, (size - inner) // 2), m)
+        name = "apple-touch-icon.png" if size == 180 else f"icon-{size}.png"
+        tile.convert("RGB").save(os.path.join(out, name), optimize=True)
+    print("ok icons")
+
+
+if __name__ == "__main__":
+    main()

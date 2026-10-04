@@ -1,44 +1,70 @@
 {
   "title": "Flowmoro",
-  "googlePlayLink": "https://play.google.com/store/apps/details?id=com.modrnmagic.flowmoro",
-  "appleStoreLink": "https://apps.apple.com/us/app/flowmoro/id6717611672",
-  "screenshots": [
-    "1.png",
-    "1.png",
-    "6.png",
-    "4.png",
-    "2.png",
-    "3.png",
-    "5.png"
+  "headline": "Master your productivity.",
+  "lead": "A simple, minimalist Pomodoro timer for iPhone and Android. One timer, one button, and nothing else on the screen.",
+  "hero": [
+    0,
+    5,
+    4
   ],
-  "textSections": [
+  "tour": [
     {
-      "title": "Master Your Productivity",
-      "oneliner": "Simple, minimalist pomodoro timer."
+      "from": "screenshots/1.png",
+      "title": "Stay focused",
+      "text": "An uncluttered interface that keeps you on the task in front of you.",
+      "alt": "Flowmoro timer at 9:56 with a blue fill and a single pause button",
+      "src": "media/tour-1.webp",
+      "w": 480,
+      "h": 1021
     },
     {
-      "title": "Stay Focused",
-      "oneliner":  "An uncluttered interface that keeps you concentrated on your tasks"
+      "from": "screenshots/6.png",
+      "title": "Custom sessions",
+      "text": "Set work length, break length, and the number of sessions to fit how you work.",
+      "alt": "Flowmoro settings sliders for total, work, break, and session count",
+      "src": "media/tour-6.webp",
+      "w": 480,
+      "h": 1021
     },
     {
-      "title": "Customized Sessions",
-      "oneliner": "Customize work, breaks, and sessions to fit your workflow."
+      "from": "screenshots/4.png",
+      "title": "Simple theming",
+      "text": "Pick a theme color from the palette.",
+      "alt": "Flowmoro theme color picker with a grid of colors",
+      "src": "media/tour-4.webp",
+      "w": 480,
+      "h": 1021
     },
     {
-      "title": "Simple Theming",
-      "oneliner": "Themes tailored to your style."
+      "from": "screenshots/2.png",
+      "title": "Themes for your style",
+      "text": "The timer, controls, and fill all follow the color you pick.",
+      "alt": "Flowmoro timer at 9:46 in an indigo theme",
+      "src": "media/tour-2.webp",
+      "w": 480,
+      "h": 1021
     },
     {
-      "title": "Simple Theming",
-      "oneliner": "Themes tailored to your style."
+      "from": "screenshots/3.png",
+      "title": "Warm or cool",
+      "text": "Switch colors any time from settings.",
+      "alt": "Flowmoro timer at 10:09 in a coral theme",
+      "src": "media/tour-3.webp",
+      "w": 480,
+      "h": 1021
     },
     {
-      "title": "Simple Theming",
-      "oneliner": "Themes tailored to your style."
-    },
-    {
-      "title": "Dark Mode",
-      "oneliner": "Clean dark mode."
+      "from": "screenshots/5.png",
+      "title": "Dark mode",
+      "text": "A clean dark mode for late sessions.",
+      "alt": "Flowmoro timer at 10:29 in dark mode with an orange fill",
+      "src": "media/tour-5.webp",
+      "w": 480,
+      "h": 1021
     }
-  ]
+  ],
+  "closing": {
+    "title": "No account. No tracking.",
+    "text": "Flowmoro does not collect or share any data. Notifications stay on your device."
+  }
 }

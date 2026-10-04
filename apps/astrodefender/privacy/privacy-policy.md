@@ -1,65 +1,86 @@
 **Privacy Policy**
 
-Modrn Magic LLC built the Astro Defender: Cosmic Crusade app as a Commercial app. This SERVICE is provided by Modrn Magic LLC and is intended for use as is.
+Modrn Magic LLC built the Astro Defender: Cosmic Crusade app as a commercial app. This service is provided by Modrn Magic LLC and is intended for use as is.
 
-This page is used to inform visitors regarding our policies with the collection, use, and disclosure of Personal Information if anyone decided to use our Service.
+This page explains what information the app collects, how it is used, and the choices you have. It covers every version of the app that is available today, and it says where a newer version works differently from an older one.
 
-If you choose to use our Service, then you agree to the collection and use of information in relation to this policy. The Personal Information that we collect is used for providing and improving the Service. We will not use or share your information with anyone except as described in this Privacy Policy.
-
-The terms used in this Privacy Policy have the same meanings as in our Terms and Conditions, which are accessible at Astro Defender: Cosmic Crusade unless otherwise defined in this Privacy Policy.
+If you use the app, you agree to the collection and use of information as described in this policy. We do not use or share your information except as described here.
 
 **Information Collection and Use**
 
-For a better experience, while using our Service, we may require you to provide us with certain personally identifiable information, including but not limited to No PII is collected. The information that we request will be retained by us and used as described in this privacy policy.
+Astro Defender has no accounts and no sign-in. It does not ask for your name, email address, or any other personal details, and it does not use Game Center or Google Play Games.
 
-The app does use third-party services that may collect information used to identify you.
+The app uses two Google services that collect information from your device: Google AdMob, which shows ads, and Google Analytics for Firebase, which tells us how the app is used.
 
-Link to the privacy policy of third-party service providers used by the app
+*Ads (Google AdMob)*
+
+The app shows ads from Google AdMob. To choose and measure ads, AdMob can collect information such as your device's advertising ID, IP address, device model, operating system version, and how you interact with ads.
+
+- In versions before 1.4 (the Google Play build from July 2024 and iPhone version 1.3), the app does not show a consent form. On iPhone these versions do not ask for permission to track, so they do not have access to the advertising identifier (IDFA).
+- In version 1.4 and later, the app does not request any ads until it has checked whether consent is needed. If you are in a region where the law requires consent, such as the European Economic Area, the United Kingdom, or Switzerland, the app shows Google's consent form first. If you decline, you only see limited or non-personalized ads.
+
+*Your consent choices (version 1.4 and later)*
+
+When the consent form applies to you, a Privacy button appears on the main menu. Use it at any time to review or change your choices. If you withdraw consent there, the app stops using your data for personalized ads and analytics from then on.
+
+*Tracking on iPhone (version 1.4 and later)*
+
+Version 1.4 and later can show Apple's tracking prompt, after the consent form when one applies. If you allow tracking, AdMob can read your device's advertising identifier (IDFA) to show ads that are more relevant to you. If you decline, the game works the same, and the identifier is not shared. You can change this at any time in your iPhone's Settings under Privacy and Security, Tracking.
+
+*Analytics (Google Analytics for Firebase)*
+
+Every version of the app uses Google Analytics for Firebase. We do not add any custom tracking. Firebase records its standard events, such as the first time the app opens and each session, along with information about the app and your device: the app version, device model, operating system, an app instance ID, and your approximate country, which Google works out from your IP address.
+
+- In versions before 1.4, analytics run whenever you use the app.
+- In version 1.4 and later, analytics follow your consent choices. Analytics and ad storage start limited: Firebase sends only basic signals without identifiers until consent allows more. If you are in a region where consent is required, they stay limited unless you agree in the consent form, and they return to limited if you withdraw consent with the Privacy button. Outside those regions, where no consent is required, they are on once the consent check completes.
+
+*Game data stored on your device*
+
+Your top scores are saved only on your device. They are not sent to us or to any server, and they are deleted when you delete the app.
+
+Links to the privacy policies of the third-party services the app uses:
 
 *   [Google Play Services](https://www.google.com/policies/privacy/)
 *   [AdMob](https://support.google.com/admob/answer/6128543?hl=en)
+*   [Google Analytics for Firebase](https://firebase.google.com/support/privacy)
 
 **Log Data**
 
-We want to inform you that whenever you use our Service, in a case of an error in the app we collect data and information (through third-party products) on your phone called Log Data. This Log Data may include information such as your device Internet Protocol (“IP”) address, device name, operating system version, the configuration of the app when utilizing our Service, the time and date of your use of the Service, and other statistics.
+The app does not include a crash reporting tool, and we do not collect error logs from your device. The information that Google AdMob and Google Analytics for Firebase receive is described above.
 
 **Cookies**
 
-Cookies are files with a small amount of data that are commonly used as anonymous unique identifiers. These are sent to your browser from the websites that you visit and are stored on your device's internal memory.
+Cookies are files with a small amount of data that are commonly used as anonymous unique identifiers.
 
-This Service does not use these “cookies” explicitly. However, the app may use third-party code and libraries that use “cookies” to collect information and improve their services. You have the option to either accept or refuse these cookies and know when a cookie is being sent to your device. If you choose to refuse our cookies, you may not be able to use some portions of this Service.
+The app does not use cookies itself. The Google services it uses may use similar identifiers on your device, such as the advertising ID and the Firebase app instance ID, as described above. In version 1.4 and later you can limit their use for ads and analytics with the consent form and the Privacy button, and on iPhone with Apple's tracking setting.
 
 **Service Providers**
 
-We may employ third-party companies and individuals due to the following reasons:
+We use these third-party companies to provide the app:
 
-*   To facilitate our Service;
-*   To provide the Service on our behalf;
-*   To perform Service-related services; or
-*   To assist us in analyzing how our Service is used.
+*   Google AdMob, to show ads; and
+*   Google Analytics for Firebase, to understand how the app is used.
 
-We want to inform users of this Service that these third parties have access to their Personal Information. The reason is to perform the tasks assigned to them on our behalf. However, they are obligated not to disclose or use the information for any other purpose.
+They receive the information described above only to perform these tasks for us, under their own privacy policies linked above.
 
 **Security**
 
-We value your trust in providing us your Personal Information, thus we are striving to use commercially acceptable means of protecting it. But remember that no method of transmission over the internet, or method of electronic storage is 100% secure and reliable, and we cannot guarantee its absolute security.
+We value your trust and use commercially acceptable means to protect information. No method of sending data over the internet or storing it electronically is 100% secure, so we cannot guarantee absolute security.
 
 **Links to Other Sites**
 
-This Service may contain links to other sites. If you click on a third-party link, you will be directed to that site. Note that these external sites are not operated by us. Therefore, we strongly advise you to review the Privacy Policy of these websites. We have no control over and assume no responsibility for the content, privacy policies, or practices of any third-party sites or services.
+The app may contain links to other sites, including ads. If you click a third-party link, you will be directed to that site. These sites are not operated by us, so we strongly advise you to review their privacy policies. We have no control over and assume no responsibility for the content, privacy policies, or practices of any third-party sites or services.
 
-**Children’s Privacy**
+**Children's Privacy**
 
-These Services do not address anyone under the age of 13. We do not knowingly collect personally identifiable information from children under 13 years of age. In the case we discover that a child under 13 has provided us with personal information, we immediately delete this from our servers. If you are a parent or guardian and you are aware that your child has provided us with personal information, please contact us so that we will be able to do the necessary actions.
+The app is not directed to anyone under the age of 13. We do not knowingly collect personal information from children under 13. Because the app has no accounts and we run no servers of our own, we do not hold personal information about any player. If you are a parent or guardian and believe your child has provided personal information through the app, contact us and we will help you have it removed from the services described above.
 
 **Changes to This Privacy Policy**
 
-We may update our Privacy Policy from time to time. Thus, you are advised to review this page periodically for any changes. We will notify you of any changes by posting the new Privacy Policy on this page.
+We may update this policy from time to time, for example when a new version of the app changes what it collects. We will post the new policy on this page, so please review it periodically.
 
-This policy is effective as of 2024-02-23
+This policy is effective as of October 3, 2026.
 
 **Contact Us**
 
-If you have any questions or suggestions about our Privacy Policy, do not hesitate to contact us at support@modrnmagic.app.
-
-This privacy policy page was created at [privacypolicytemplate.net](https://privacypolicytemplate.net) and modified/generated by [App Privacy Policy Generator](https://app-privacy-policy-generator.nisrulz.com/)
+If you have any questions or suggestions about this privacy policy, contact us at support@modrnmagic.app.

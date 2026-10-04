@@ -1,0 +1,45 @@
+{
+  "id": "quorum",
+  "name": "Quorum",
+  "status": "archived",
+  "kind": "app",
+  "oneliner": "A 2023 chat app with AI personas.",
+  "summary": "Quorum was a 2023 chat app with AI personas, plus a landing page. It did not ship.",
+  "description": [
+    "Quorum was a chat app with AI personas, paired with a landing page.",
+    "It was built over a few weeks in December 2023 and January 2024 and did not ship."
+  ],
+  "features": [],
+  "faq": [],
+  "category": "SocialNetworkingApplication",
+  "genre": "Chat",
+  "stack": [
+    "Flutter"
+  ],
+  "dates": {
+    "started": "2023-12",
+    "shipped": null,
+    "updated": "2024-01",
+    "ended": "2024-01"
+  },
+  "platforms": [
+    "web"
+  ],
+  "links": {
+    "appStore": null,
+    "googlePlay": null,
+    "web": null,
+    "writing": null,
+    "source": null
+  },
+  "price": null,
+  "wasOn": [],
+  "icon": null,
+  "color": "#f3c98b",
+  "screenshots": [],
+  "lessons": [],
+  "outcome": null,
+  "cycle": null,
+  "flagship": false,
+  "legal": {}
+}

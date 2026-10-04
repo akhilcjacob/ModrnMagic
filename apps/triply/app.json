@@ -1,0 +1,47 @@
+{
+  "id": "triply",
+  "name": "Triply",
+  "status": "lab",
+  "kind": "app",
+  "oneliner": "An AI trip planner that builds day-by-day itineraries.",
+  "summary": "Triply is a trip planning prototype. It generates personalized day plans and multi-day itineraries from your preferences, such as how you get around, budget, and the kinds of places you like.",
+  "description": [
+    "Planning a trip usually means juggling a map, a spreadsheet, and a dozen open tabs. Triply takes your preferences (transport, distance, cost, ratings, cuisine) and drafts a day-by-day itinerary with AI.",
+    "It is a Flutter prototype and has not been released."
+  ],
+  "features": [],
+  "faq": [],
+  "category": "TravelApplication",
+  "genre": "Travel",
+  "stack": [
+    "Flutter",
+    "Firebase"
+  ],
+  "dates": {
+    "started": "2025-02",
+    "shipped": null,
+    "updated": "2025-02",
+    "ended": null
+  },
+  "platforms": [
+    "ios",
+    "android"
+  ],
+  "links": {
+    "appStore": null,
+    "googlePlay": null,
+    "web": null,
+    "writing": null,
+    "source": null
+  },
+  "price": null,
+  "wasOn": [],
+  "icon": null,
+  "color": "#9fd8c8",
+  "screenshots": [],
+  "lessons": [],
+  "outcome": null,
+  "cycle": null,
+  "flagship": false,
+  "legal": {}
+}

@@ -1,0 +1,110 @@
+{
+  "id": "astrodefender",
+  "name": "Astro Defender",
+  "storeName": "Astro Defender: Cosmic Crusade",
+  "status": "live",
+  "kind": "game",
+  "oneliner": "A fast arcade space shooter. Rotate, aim, and defend Earth.",
+  "summary": "Astro Defender is an arcade space shooter for iPhone and Android. You hold the center of the screen, rotate, and shoot down incoming enemies before they reach Earth, earning upgrades as you go.",
+  "description": [
+    "Earth sits in the middle of the screen and enemies close in. You rotate your ship around it and fire.",
+    "As you play you earn upgrades for your ship. The game plays offline, so you can play anywhere.",
+    "It is free to download on the App Store and Google Play and is supported by ads."
+  ],
+  "features": [
+    {
+      "title": "Pick up and play",
+      "body": "One-thumb controls: rotate and shoot. Easy to pick up, hard to put down."
+    },
+    {
+      "title": "Upgrades",
+      "body": "Earn upgrades for your ship as you play."
+    },
+    {
+      "title": "Plays offline",
+      "body": "No Wi-Fi needed. Play anywhere."
+    }
+  ],
+  "faq": [
+    {
+      "q": "What is Astro Defender?",
+      "a": "Astro Defender: Cosmic Crusade is an arcade space shooter for iPhone and Android by Modrn Magic. You rotate around Earth and shoot down incoming enemies."
+    },
+    {
+      "q": "Is Astro Defender free?",
+      "a": "Yes. It is free to download on the App Store and Google Play and shows ads."
+    },
+    {
+      "q": "Does Astro Defender need an internet connection?",
+      "a": "No. The game plays offline."
+    }
+  ],
+  "category": "GameApplication",
+  "genre": "Action",
+  "stack": [
+    "Flutter",
+    "Flame",
+    "Firebase",
+    "Google Mobile Ads"
+  ],
+  "dates": {
+    "started": null,
+    "shipped": "2024-02-29",
+    "updated": "2025-08-15",
+    "ended": null
+  },
+  "platforms": [
+    "ios",
+    "android"
+  ],
+  "links": {
+    "appStore": "https://apps.apple.com/us/app/astro-defender-cosmic-crusade/id6478248785",
+    "googlePlay": "https://play.google.com/store/apps/details?id=com.modrnmagic.astrodefender",
+    "web": null,
+    "writing": null,
+    "source": null
+  },
+  "price": {
+    "appStore": "0",
+    "currency": "USD"
+  },
+  "wasOn": [],
+  "icon": "icon.png",
+  "color": "rgb(1,5,28)",
+  "tint": "#2a85c7",
+  "stars": true,
+  "screenshots": [
+    {
+      "from": "marketing/1.png",
+      "alt": "Astro Defender: Earth at the center of a starfield with the headline Become Earth's Defender",
+      "w": 640,
+      "h": 1138,
+      "shape": "phone",
+      "src": "media/marketing-1.webp"
+    },
+    {
+      "from": "marketing/2.png",
+      "alt": "Astro Defender upgrade screen with the headline Earn Upgrades",
+      "w": 640,
+      "h": 1138,
+      "shape": "phone",
+      "src": "media/marketing-2.webp"
+    },
+    {
+      "from": "marketing/3.png",
+      "alt": "Astro Defender mid-battle with the headline Shoot down enemies",
+      "w": 640,
+      "h": 1138,
+      "shape": "phone",
+      "src": "media/marketing-3.webp"
+    }
+  ],
+  "lessons": [],
+  "outcome": null,
+  "cycle": null,
+  "flagship": false,
+  "legal": {
+    "privacy": "privacy/",
+    "terms": "tos/"
+  }
+}

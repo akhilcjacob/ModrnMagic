@@ -1,0 +1,79 @@
+{
+  "id": "nookly",
+  "name": "Nookly OS",
+  "status": "lab",
+  "kind": "web",
+  "oneliner": "A back office for trade businesses that you run by talking to your own AI.",
+  "summary": "Nookly OS is a CRM and back office for trade businesses, such as leads, estimates, jobs, scheduling, invoices, and follow-ups. The owner drives it from their own Claude or Codex session through an MCP server. It is in development.",
+  "description": [
+    "Nookly OS is being built as the operating system for a trade business. It notices what needs doing, does it, and follows up, so the operator stays on the tools while the software runs the back office.",
+    "It covers the day-to-day records of a service business: leads and customers, estimates from the business's own price book, jobs and the schedule, invoices, recurring plans, follow-ups, and a daily brief of what needs attention.",
+    "Instead of building an assistant into the app, Nookly OS exposes the same tools the web app uses through an MCP server. The owner connects their own Claude or Codex session and runs the business by talking to it. Nookly never runs an AI model itself, and deterministic code owns every price and total, so the AI proposes and the operator approves."
+  ],
+  "features": [
+    {
+      "title": "Bring your own AI",
+      "body": "Connect your own Claude or Codex session to your business through an MCP endpoint and an access token."
+    },
+    {
+      "title": "The whole back office",
+      "body": "Leads, customers, estimates, jobs, schedule, invoices, recurring plans, and follow-ups in one place."
+    },
+    {
+      "title": "Numbers you control",
+      "body": "Estimates come from your own price book. The AI drafts; your prices and totals are computed, not guessed."
+    }
+  ],
+  "faq": [
+    {
+      "q": "What is Nookly OS?",
+      "a": "Nookly OS is a CRM and back office for trade businesses from Modrn Magic. The owner runs it by talking to their own AI assistant through an MCP server."
+    },
+    {
+      "q": "Does Nookly OS include its own AI?",
+      "a": "No. Nookly OS never runs an AI model. You connect your own Claude or Codex session, which calls Nookly's tools."
+    }
+  ],
+  "category": "BusinessApplication",
+  "genre": "Business",
+  "stack": [
+    "Next.js",
+    "Firebase",
+    "Model Context Protocol"
+  ],
+  "dates": {
+    "started": null,
+    "shipped": null,
+    "updated": "2026-09",
+    "ended": null
+  },
+  "platforms": [
+    "web"
+  ],
+  "links": {
+    "appStore": null,
+    "googlePlay": null,
+    "web": null,
+    "writing": null,
+    "source": null
+  },
+  "price": null,
+  "wasOn": [],
+  "icon": "icon-os.png",
+  "color": "#237a50",
+  "screenshots": [
+    {
+      "from": "screenshots/os-connect-ai-token.png",
+      "alt": "Nookly OS Connect your AI screen: name an access token for your own AI tool and create it, shown once so you can copy it",
+      "w": 904,
+      "h": 232,
+      "shape": "wide",
+      "src": "media/screenshots-os-connect-ai-token.webp"
+    }
+  ],
+  "lessons": [],
+  "outcome": null,
+  "cycle": null,
+  "flagship": false,
+  "legal": {}
+}
