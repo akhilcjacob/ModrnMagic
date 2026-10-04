@@ -167,6 +167,7 @@ a {
 a:hover { color: var(--accent); }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
 h1, h2, h3 { margin: 0; font-weight: 620; text-wrap: balance; overflow-wrap: break-word; }
+p, li, dd, summary { overflow-wrap: break-word; }   /* a long word or URL wraps instead of widening the page under large text */
 p { margin: 0; text-wrap: pretty; }
 ul { margin: 0; padding: 0; list-style: none; }
 dl, dd { margin: 0; }
@@ -726,7 +727,8 @@ dl, dd { margin: 0; }
 .legal-body li + li { margin-top: var(--s-1); }
 .legal-body a, .legal-side a { text-decoration: underline; text-decoration-color: color-mix(in srgb, currentColor 28%, transparent); }
 .legal-side { position: sticky; top: var(--nav-clear); }
-.legal-side .facts { display: grid; gap: var(--s-2); overflow-wrap: anywhere; }
+.legal-side .facts { display: grid; gap: var(--s-2); }
+.legal-side .facts, .legal-side .facts * { overflow-wrap: anywhere; }
 .legal-side .meta + * { margin-bottom: var(--s-3); }
 .legal-side .facts > :last-child { margin-bottom: 0; }
 .legal-links { display: grid; gap: var(--s-1); font-size: var(--t-small); }
