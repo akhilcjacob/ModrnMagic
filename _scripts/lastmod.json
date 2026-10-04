@@ -1,12 +1,12 @@
 {
   "/": {
     "date": "2026-10-03",
-    "sha": "37dcb44bddd3a58d",
+    "sha": "b360ebba32b5bda8",
     "src": "index.html"
   },
   "/apps/astrodefender/": {
     "date": "2026-10-03",
-    "sha": "9d0d2ff4f8dea8f1",
+    "sha": "1c88a02a3b5e04a3",
     "src": "apps/astrodefender/index.html"
   },
   "/apps/astrodefender/privacy/": {
@@ -21,12 +21,12 @@
   },
   "/apps/flowmoro/": {
     "date": "2026-10-03",
-    "sha": "90402445d256927c",
+    "sha": "dbe02e9b47ef8cc5",
     "src": "apps/flowmoro/index.html"
   },
   "/apps/flowmoro/home/": {
     "date": "2026-10-03",
-    "sha": "93859c5d60dcfea6",
+    "sha": "21f2f3d251a8d1dc",
     "src": "apps/flowmoro/home/index.html"
   },
   "/apps/flowmoro/privacy/": {
@@ -41,27 +41,27 @@
   },
   "/apps/inboxhiiv/": {
     "date": "2026-10-03",
-    "sha": "ee3db4b09987b7e8",
+    "sha": "ef7bc4f931559832",
     "src": "apps/inboxhiiv/index.html"
   },
   "/apps/nookly/": {
     "date": "2026-10-03",
-    "sha": "80a3832796c002d5",
+    "sha": "59c4bc01a89e223b",
     "src": "apps/nookly/index.html"
   },
   "/apps/quietdesk/": {
     "date": "2026-10-03",
-    "sha": "3e38f839bd351efb",
+    "sha": "dad6721896072d01",
     "src": "apps/quietdesk/index.html"
   },
   "/apps/quorum/": {
     "date": "2026-10-03",
-    "sha": "dfa7ed863bcf5c08",
+    "sha": "74dd622542727268",
     "src": "apps/quorum/index.html"
   },
   "/apps/skywise/": {
     "date": "2026-10-03",
-    "sha": "4505667cf65a5aa5",
+    "sha": "aafbf8c9da449dcd",
     "src": "apps/skywise/index.html"
   },
   "/apps/skywise/privacy/": {
@@ -71,7 +71,7 @@
   },
   "/apps/skywise/privacy/delete-account/": {
     "date": "2026-10-03",
-    "sha": "17ffb970d7b4bc68",
+    "sha": "bb666cc9ac9bbbea",
     "src": "apps/skywise/privacy/delete-account/index.html"
   },
   "/apps/skywise/tos/": {
@@ -81,17 +81,17 @@
   },
   "/apps/triply/": {
     "date": "2026-10-03",
-    "sha": "c022c6653c883fe4",
+    "sha": "6bde05e0bf3aa45f",
     "src": "apps/triply/index.html"
   },
   "/contact/": {
     "date": "2026-10-03",
-    "sha": "ef7920e30f390caa",
+    "sha": "f846f3c942011220",
     "src": "contact/index.html"
   },
   "/work/": {
     "date": "2026-10-03",
-    "sha": "d5481f890718f4b2",
+    "sha": "dd1e8c22e5aad94a",
     "src": "work/index.html"
   }
 }

@@ -340,6 +340,7 @@ dl, dd { margin: 0; }
 .cell:hover { transform: translateY(-2px); color: var(--ink); }
 .cell:active { transform: scale(.98); }
 .cell .top { display: flex; align-items: center; gap: var(--s-3); }
+.cell .top > :last-child { min-width: 0; }   /* a long name wraps under large text instead of widening the cell */
 .cell .name { font-size: var(--t-h3); font-weight: 620; letter-spacing: -.01em; line-height: 1.2; }
 .cell .one { color: var(--ink-2); font-size: var(--t-small); max-width: 36ch; }
 .cell .foot { margin-top: auto; display: flex; flex-wrap: wrap; gap: var(--s-2); align-items: center; }
