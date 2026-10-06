@@ -18,3 +18,6 @@ __pycache__/
 
 # Held drafts: unconfirmed content, local only (see _docs/APPS.md, Held drafts)
 /.drafts/
+
+# Dev environment (make bootstrap)
+/.venv/

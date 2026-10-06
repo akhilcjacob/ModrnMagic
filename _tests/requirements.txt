@@ -1,0 +1,3 @@
+# Dev and test dependencies. The site itself needs none: render.py and check.py use only the standard library.
+playwright==1.60.0
+Pillow==12.2.0
