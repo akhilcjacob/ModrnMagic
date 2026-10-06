@@ -28,7 +28,7 @@ python3 _scripts/check.py --release  # also exit 1 on any draft in published dat
 python3 _scripts/check.py serve --drafts  # build _preview/ with the held drafts merged and serve that
 ```
 
-Click tests (dev only, need Playwright for Python with Chromium: `pip install playwright && playwright install chromium`):
+Click tests (dev only, need Playwright for Python with Chromium: `make bootstrap` sets up `.venv`, and `make test` runs the release checks and the Chromium suite):
 
 ```
 python3 _tests/run.py      # click every link, button, toggle, FAQ, and rail control on every page; exit 1 on failure
@@ -122,7 +122,7 @@ The tests never read your local drafts for their draft scenarios. `_tests/fixtur
 
 ## Launch checklist
 
-GitHub Pages publishes whatever lands on `main`, and there is no CI, so a merge publishes exactly what is committed. Before any merge to `main`:
+GitHub Pages publishes whatever lands on `main`, so a merge publishes exactly what is committed. CI (`.github/workflows/ci.yml`) runs steps 3 to 5 in Chromium on every PR, but it does not run the draft steps or other engines. Before any merge to `main`:
 
 Rehearse first: `python3 _tests/release.py` checks the committed tree, the draft preview, and steps 2 to 5 below in a temp copy with every held draft promoted.
 
