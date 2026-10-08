@@ -10,7 +10,7 @@ The direction is Arc-inspired: soft color behind frosted surfaces, generous roun
 2. Real material only. Real screenshots, real store facts. No mock UI, no invented numbers, no testimonials.
 3. One accent. Coral from the Modrn mark (`--accent`) is the only studio accent. Product tints appear only inside that product's surfaces.
 4. Content is in the HTML. Pages are readable with JavaScript off and by crawlers. JS adds polish only.
-5. Fast by default. One font file, one CSS file, one small deferred JS file, lazy images with fixed dimensions and `srcset` (icons at 96, 192, and 256px; phone shots at 320 and 640; wide shots at 800 and 1600).
+5. Fast by default. One font file, one CSS file, one small deferred JS file, images with fixed dimensions and `srcset` (icons at 96, 192, and 256px; phone shots at 320 and 640; wide shots at 800 and 1600): lazy below the fold, eager with `fetchpriority="high"` above it (the home hero phones).
 
 ## Color
 
@@ -42,7 +42,7 @@ Product tint: each product sets `--tint` inline from `app.json` `color`, used fo
 
 ## Type
 
-One family: Figtree (variable, 300 to 900, OFL, self-hosted at `assets/fonts/figtree-var.woff2`, `font-display: swap`). Numbers and metadata use `font-variant-numeric: tabular-nums`, not a second family.
+One family: Figtree (variable, 300 to 900, OFL, self-hosted at `assets/fonts/figtree-var.woff2`, `font-display: swap`). Until it loads, text uses "Figtree Fallback": local Arial with `size-adjust` and ascent and descent overrides measured against Figtree (one face for regular weights, one for bold), so lines wrap the same and nothing moves when Figtree swaps in. Widths that must hold across that swap (the hero headline, `.lead`) are in `em`, not `ch`, because `ch` is the width of "0" in whichever font is showing. Numbers and metadata use `font-variant-numeric: tabular-nums`, not a second family.
 
 | Token | Size | Weight | Tracking | Line height |
 |---|---|---|---|---|

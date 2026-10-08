@@ -1004,6 +1004,18 @@ def data_tests(browser):
                 if not os.path.isfile(path) or PILImage.open(path).width != int(w):
                     bad.append(f"{os.path.relpath(f, ROOT)}: {url} is not {w}px wide")
     record(count > 0 and not bad, f"every srcset ({count} images) has sizes and true w descriptors", "; ".join(sorted(set(bad))[:5]))
+    # Home hero: the phone shots are above the fold at every width, so none is lazy and all are
+    # high priority (#11). The fallback font is sized to Figtree and the hero widths are in em,
+    # so text painted before Figtree loads wraps the same way and the hero does not shift.
+    home = open(os.path.join(ROOT, "index.html"), encoding="utf-8").read()
+    art = re.search(r'<div class="hero-art"[^>]*>(.*?)\n</div>', home, re.S)
+    imgs = re.findall(r"<img [^>]*>", art.group(1)) if art else []
+    record(len(imgs) == 3 and all('fetchpriority="high"' in i and 'loading="lazy"' not in i for i in imgs),
+           "home hero phone shots load eagerly with fetchpriority=high", str(imgs)[:200])
+    css = open(os.path.join(ROOT, "assets/css/site.css"), encoding="utf-8").read()
+    record(css.count('font-family: "Figtree Fallback"') == 2 and '"Figtree", "Figtree Fallback",' in css
+           and "max-width: 8.408em" in css and "max-width: 29.477em" in css,
+           "site.css keeps the metric-matched Figtree fallback and em-based hero widths")
 
     # Share cards: og.py --check (no Chrome) passes on the committed cards and fails on a stale,
     # missing, hand-edited, or orphaned card, naming it.

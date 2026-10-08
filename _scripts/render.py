@@ -772,7 +772,9 @@ def render_home(apps):
                          key=latest, reverse=True)[:3]
 
     def shot(app, s, eager=False, sizes=None):
-        load = 'decoding="async"' if eager else 'loading="lazy" decoding="async"'
+        # Eager shots are the hero phones, above the fold at every width. On phones the rotated side
+        # phone is the largest paint (its box grows with the rotation), so all three load first.
+        load = 'fetchpriority="high" decoding="async"' if eager else 'loading="lazy" decoding="async"'
         return (f'<img src="/apps/{e(app["id"])}/{e(s["src"])}"{shot_srcset(app["id"], s, sizes)} alt="{e(s["alt"])}" '
                 f'width="{e(str(s["w"]))}" height="{e(str(s["h"]))}" {load}>')
 
@@ -816,7 +818,7 @@ def render_home(apps):
     if trio:
         places = ("p0", "p1", "p2")
         hero_art = '<div class="hero-art" aria-hidden="true">\n' + "\n".join(
-            f'  <div class="phone {p}">{shot(a, s, eager=p == "p0")}</div>'
+            f'  <div class="phone {p}">{shot(a, s, eager=True)}</div>'
             for p, (a, s) in reversed(list(zip(places, trio)))) + "\n</div>"
 
     body = f"""<body>
