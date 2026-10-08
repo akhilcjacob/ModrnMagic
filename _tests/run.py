@@ -987,6 +987,24 @@ def data_tests(browser):
            "check.py fails when a retained legacy file is deleted", r.stdout.strip()[-160:])
     shutil.rmtree(tmp)
 
+    # Responsive images (#12): every srcset has sizes, and each candidate file is as wide as its
+    # w descriptor says (a wrong descriptor makes the browser pick a blurry or oversized file).
+    from PIL import Image as PILImage
+    bad = []
+    count = 0
+    for f in published_text():
+        if not f.endswith(".html"):
+            continue
+        for tag in re.findall(r"<img [^>]*srcset=[^>]*>", open(f, encoding="utf-8").read()):
+            count += 1
+            if 'sizes="' not in tag:
+                bad.append(f"{os.path.relpath(f, ROOT)}: srcset without sizes")
+            for url, w in re.findall(r"(/[^\s,\"]+) (\d+)w", re.search(r'srcset="([^"]*)"', tag).group(1)):
+                path = os.path.join(ROOT, url.lstrip("/"))
+                if not os.path.isfile(path) or PILImage.open(path).width != int(w):
+                    bad.append(f"{os.path.relpath(f, ROOT)}: {url} is not {w}px wide")
+    record(count > 0 and not bad, f"every srcset ({count} images) has sizes and true w descriptors", "; ".join(sorted(set(bad))[:5]))
+
     # Share cards: og.py --check (no Chrome) passes on the committed cards and fails on a stale,
     # missing, hand-edited, or orphaned card, naming it.
     def og_check(dest):

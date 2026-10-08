@@ -9,7 +9,7 @@ Every product on modrnmagic.app comes from one file: `apps/<id>/app.json`. `apps
 3. Run:
 
 ```
-python3 _scripts/images.py   # web-sized WebP copies in apps/<id>/media/ (needs Pillow)
+python3 _scripts/images.py   # web-sized WebP copies in apps/<id>/media/, plus smaller srcset copies (needs Pillow)
 python3 _scripts/render.py   # pages, /work/, sitemap.xml, llms.txt, JSON-LD
 python3 _scripts/og.py       # 1200x630 share cards in assets/og/ and their record in _scripts/og.json (needs Chrome and Pillow)
 python3 _scripts/check.py serve  # preview at http://localhost:8000

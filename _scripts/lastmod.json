@@ -1,12 +1,12 @@
 {
   "/": {
-    "date": "2026-10-03",
-    "sha": "b360ebba32b5bda8",
+    "date": "2026-10-08",
+    "sha": "0360fb8781bb56c7",
     "src": "index.html"
   },
   "/apps/astrodefender/": {
-    "date": "2026-10-03",
-    "sha": "1c88a02a3b5e04a3",
+    "date": "2026-10-08",
+    "sha": "73cedc23b058d08c",
     "src": "apps/astrodefender/index.html"
   },
   "/apps/astrodefender/privacy/": {
@@ -20,13 +20,13 @@
     "src": "apps/astrodefender/tos/terms_of_service.md"
   },
   "/apps/flowmoro/": {
-    "date": "2026-10-03",
-    "sha": "dbe02e9b47ef8cc5",
+    "date": "2026-10-08",
+    "sha": "97685927cfe37c51",
     "src": "apps/flowmoro/index.html"
   },
   "/apps/flowmoro/home/": {
-    "date": "2026-10-03",
-    "sha": "21f2f3d251a8d1dc",
+    "date": "2026-10-08",
+    "sha": "736a662e250a617d",
     "src": "apps/flowmoro/home/index.html"
   },
   "/apps/flowmoro/privacy/": {
@@ -40,28 +40,28 @@
     "src": "apps/flowmoro/tos/terms_of_service.md"
   },
   "/apps/inboxhiiv/": {
-    "date": "2026-10-03",
-    "sha": "ef7bc4f931559832",
+    "date": "2026-10-08",
+    "sha": "3f05b92b0aca80de",
     "src": "apps/inboxhiiv/index.html"
   },
   "/apps/nookly/": {
-    "date": "2026-10-03",
-    "sha": "59c4bc01a89e223b",
+    "date": "2026-10-08",
+    "sha": "99bbf01b0baf5f31",
     "src": "apps/nookly/index.html"
   },
   "/apps/quietdesk/": {
-    "date": "2026-10-03",
-    "sha": "dad6721896072d01",
+    "date": "2026-10-08",
+    "sha": "71327262e7a5d991",
     "src": "apps/quietdesk/index.html"
   },
   "/apps/quorum/": {
-    "date": "2026-10-03",
-    "sha": "74dd622542727268",
+    "date": "2026-10-08",
+    "sha": "860d0a88f3dd09fb",
     "src": "apps/quorum/index.html"
   },
   "/apps/skywise/": {
-    "date": "2026-10-03",
-    "sha": "aafbf8c9da449dcd",
+    "date": "2026-10-08",
+    "sha": "51da141c15662d61",
     "src": "apps/skywise/index.html"
   },
   "/apps/skywise/privacy/": {
@@ -80,18 +80,18 @@
     "src": "apps/skywise/tos/terms_of_service.md"
   },
   "/apps/triply/": {
-    "date": "2026-10-03",
-    "sha": "6bde05e0bf3aa45f",
+    "date": "2026-10-08",
+    "sha": "70645cc0c71a4b23",
     "src": "apps/triply/index.html"
   },
   "/contact/": {
-    "date": "2026-10-03",
-    "sha": "f846f3c942011220",
+    "date": "2026-10-08",
+    "sha": "df5a0c73c9544f5a",
     "src": "contact/index.html"
   },
   "/work/": {
-    "date": "2026-10-03",
-    "sha": "dd1e8c22e5aad94a",
+    "date": "2026-10-08",
+    "sha": "ed3ef19fdc424601",
     "src": "work/index.html"
   }
 }

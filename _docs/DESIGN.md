@@ -10,7 +10,7 @@ The direction is Arc-inspired: soft color behind frosted surfaces, generous roun
 2. Real material only. Real screenshots, real store facts. No mock UI, no invented numbers, no testimonials.
 3. One accent. Coral from the Modrn mark (`--accent`) is the only studio accent. Product tints appear only inside that product's surfaces.
 4. Content is in the HTML. Pages are readable with JavaScript off and by crawlers. JS adds polish only.
-5. Fast by default. One font file, one CSS file, one small deferred JS file, lazy images with fixed dimensions.
+5. Fast by default. One font file, one CSS file, one small deferred JS file, lazy images with fixed dimensions and `srcset` (icons at 96, 192, and 256px; phone shots at 320 and 640; wide shots at 800 and 1600).
 
 ## Color
 
