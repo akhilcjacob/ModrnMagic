@@ -1,0 +1,38 @@
+{
+  "assets/og/astrodefender.jpg": {
+    "inputs": "5ff999ddd640f336",
+    "card": "778ffcf4e1f18f8c"
+  },
+  "assets/og/flowmoro.jpg": {
+    "inputs": "c632f8c30df53b4e",
+    "card": "60a1ce754b3b5be8"
+  },
+  "assets/og/home.jpg": {
+    "inputs": "054850ee3f63c67e",
+    "card": "31ac7b9e72884a44"
+  },
+  "assets/og/inboxhiiv.jpg": {
+    "inputs": "0d6576b34a2efa88",
+    "card": "4f9b75bbfb91b1b6"
+  },
+  "assets/og/nookly.jpg": {
+    "inputs": "28b170e931c11bd1",
+    "card": "0ab9779dd2d7eb7d"
+  },
+  "assets/og/quietdesk.jpg": {
+    "inputs": "5511d828885ddbe2",
+    "card": "ee768dd237d38577"
+  },
+  "assets/og/quorum.jpg": {
+    "inputs": "2fff1153e2f31a8c",
+    "card": "742ec297131110d6"
+  },
+  "assets/og/skywise.jpg": {
+    "inputs": "6ecf1c68b39e43ae",
+    "card": "164fb872d8efc2f8"
+  },
+  "assets/og/triply.jpg": {
+    "inputs": "19c7ef103755a7ac",
+    "card": "09ff01fda1aff094"
+  }
+}

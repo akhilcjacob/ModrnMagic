@@ -11,6 +11,7 @@ Checks and the click suite last run with Python 3.14.7 and Playwright 1.60.0.
 ### What works
 
 - `check.py --release` prints READY, and `render.py --check` and `render.py --release --check` pass: the committed tree is the release build.
+- `og.py --check` passes: every share card in `assets/og/` was rendered from the current product data.
 - The click suite `_tests/run.py` passes in Chromium, Firefox, and WebKit.
 
 Checked on the live site on 2026-10-08:
@@ -24,7 +25,6 @@ Each gap is a GitHub Issue; the issue list is the work queue.
 
 - Real Safari is not tested. The suite runs Playwright's WebKit, not Safari.
 - Jekyll also renders each legal Markdown source as a separate, unstyled `.html` page (for example `privacy-policy.html` next to `privacy/`), which search engines can index.
-- Share cards (`og.py`) need a local Chrome and are not checked in CI.
 
 ## Run
 
@@ -47,7 +47,7 @@ make verify      # the full verify on a clean checkout, saved as a log
 
 On a fresh Linux machine, Chromium also needs system libraries before `make test` can launch it: run `.venv/bin/python -m playwright install-deps chromium` once (it uses sudo to install packages). macOS needs nothing extra. CI does this with `playwright install --with-deps`.
 
-`make test` runs `check.py --release`, `render.py --check`, `render.py --release --check`, and `_tests/run.py`. `ENGINE=firefox make e2e` or `ENGINE=webkit make e2e` runs the suite in another engine (install it first with `ENGINES="chromium firefox webkit" make bootstrap`). `python3 _tests/release.py` rehearses the full launch checklist.
+`make test` runs `check.py --release`, `render.py --check`, `render.py --release --check`, `og.py --check`, and `_tests/run.py`. `ENGINE=firefox make e2e` or `ENGINE=webkit make e2e` runs the suite in another engine (install it first with `ENGINES="chromium firefox webkit" make bootstrap`). `python3 _tests/release.py` rehearses the full launch checklist.
 
 `make verify` refuses to run on a working tree with uncommitted or untracked changes (ignored files such as `.venv` are fine). It runs `make bootstrap` if `.venv` is missing, then `make test`, and fails if `HEAD` or the working tree changed during the run. It writes everything to `_verify/verify-<time>-<commit>-pass.log` or `-fail.log` (gitignored). The log starts with the full commit hash and the UTC date, so it can be matched to the exact commit it tested. Set `VERIFY_DIR` to save it elsewhere. An old `.venv` is reused as is; `make clean` removes it.
 

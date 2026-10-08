@@ -30,6 +30,7 @@ jobs:
       - run: python3 _scripts/check.py --release
       - run: python3 _scripts/render.py --check
       - run: python3 _scripts/render.py --release --check
+      - run: python3 _scripts/og.py --check
       - id: scope
         name: Docs-only change?
         # HEAD is the PR merged into its base, so HEAD^1 is the base.

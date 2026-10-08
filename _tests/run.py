@@ -987,6 +987,34 @@ def data_tests(browser):
            "check.py fails when a retained legacy file is deleted", r.stdout.strip()[-160:])
     shutil.rmtree(tmp)
 
+    # Share cards: og.py --check (no Chrome) passes on the committed cards and fails on a stale,
+    # missing, hand-edited, or orphaned card, naming it.
+    def og_check(dest):
+        return subprocess.run([sys.executable, "_scripts/og.py", "--check"], cwd=dest, capture_output=True, text=True)
+    tmp, dest, _ = temp_copy(merge=False)
+    r = og_check(dest)
+    record(r.returncode == 0, "og.py --check passes on the committed share cards", r.stdout.strip()[-200:])
+    edit_app(os.path.join(dest, "apps"), "skywise", lambda a: a.update(oneliner=a["oneliner"] + " Now with more."))
+    r = og_check(dest)
+    record(r.returncode == 1 and "assets/og/skywise.jpg: stale" in r.stdout and "home.jpg" not in r.stdout,
+           "og.py --check fails on a changed one-liner, naming only that card", r.stdout.strip()[-200:])
+    shutil.rmtree(tmp)
+    tmp, dest, _ = temp_copy(merge=False)
+    edit_app(os.path.join(dest, "apps"), "flowmoro", lambda a: a.update(status="archived"))
+    r = og_check(dest)
+    record(r.returncode == 1 and "assets/og/flowmoro.jpg: stale" in r.stdout and "assets/og/home.jpg: stale" in r.stdout,
+           "og.py --check fails on a status change, naming the card and the home card (its live icons)", r.stdout.strip()[-200:])
+    shutil.rmtree(tmp)
+    tmp, dest, _ = temp_copy(merge=False)
+    with open(os.path.join(dest, "assets/og/nookly.jpg"), "ab") as f:
+        f.write(b"\0")
+    os.remove(os.path.join(dest, "assets/og/quorum.jpg"))
+    shutil.copy(os.path.join(dest, "assets/og/home.jpg"), os.path.join(dest, "assets/og/gone.jpg"))
+    r = og_check(dest)
+    record(r.returncode == 1 and all(m in r.stdout for m in ("nookly.jpg: the JPEG changed", "quorum.jpg: missing", "gone.jpg: a card for no published product")),
+           "og.py --check fails on a hand-edited, missing, or orphaned card", r.stdout.strip()[-300:])
+    shutil.rmtree(tmp)
+
     # The release gate never reads git dates or today's date: a squash merge committed on a later
     # day, checked on a later day, is still READY. It fails on a page changed without re-rendering
     # and on drafts committed to git.

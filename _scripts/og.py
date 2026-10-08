@@ -7,15 +7,23 @@ or color changes; the output is committed.
 
     python3 _scripts/og.py                    # every card
     python3 _scripts/og.py ramble hypebridge  # only these products (no home card)
+    python3 _scripts/og.py --check            # exit 1 if a published card is stale (no Chrome or Pillow needed)
+
+Each render records, in _scripts/og.json, a hash of the card's inputs (its HTML, which holds the
+product's name, one-liner, color, tint, status, and platforms, plus the bytes of every file the HTML
+loads: icon, mark, font) and a hash of the JPEG it wrote. --check rebuilds the HTML from the current
+data and fails when an input hash differs (the card needs a rerender), when a JPEG no longer matches
+its recorded hash, or when a published product has no card or a card has no product. It compares
+inputs, not pixels, so it gives the same answer on any OS and Chrome version.
 """
+import hashlib
 import html
 import json
 import os
+import re
 import subprocess
 import sys
 import tempfile
-
-from PIL import Image
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from render import fill, glow, listed, load_apps  # noqa: E402  validated data with {name} filled in, and the site's tint rule
@@ -45,7 +53,12 @@ body {{ font-family: F, sans-serif; color: #14161b; background: #eef0f4; positio
 """
 
 
+MANIFEST = "_scripts/og.json"
+FILE_REF = re.compile(r"file://" + re.escape(ROOT) + r"/([^\"')\s]+)")
+
+
 def shoot(markup, out_jpg):
+    from PIL import Image   # only rendering needs Pillow; --check runs on the standard library
     with tempfile.TemporaryDirectory() as tmp:
         page = os.path.join(tmp, "og.html")
         png = os.path.join(tmp, "og.png")
@@ -66,12 +79,13 @@ def icon_markup(app, size, base="apps"):
             f'{e(app["name"][0])}</div>')
 
 
-def main():
-    out_dir = os.path.join(ROOT, "assets/og")
-    os.makedirs(out_dir, exist_ok=True)
+def cards(only=()):
+    """(card path relative to ROOT, HTML) for each card: home first, then each product.
+    Held drafts' cards go to .drafts/assets/og/, as rendering puts them."""
+    out_dir = "assets/og"
     apps = load_apps()
-    only = sys.argv[1:]
     mark = f"file://{ROOT}/assets/img/mark-96.webp"
+    out = []
 
     live_icons = "".join(icon_markup(a, 92) for a in listed(apps) if a["status"] == "live")
     home = f"""<!doctype html><html><head><style>{BASE_CSS}
@@ -84,8 +98,7 @@ h1 span {{ color: #5f6674; }}
 <div class="foot"><div class="row">{live_icons}</div><span>modrnmagic.app</span></div>
 </div></body></html>"""
     if not only:
-        shoot(home, os.path.join(out_dir, "home.jpg"))
-        print("ok home")
+        out.append((f"{out_dir}/home.jpg", home))
 
     status = {"live": "", "lab": "Experiment", "archived": "Archived"}
     held = os.path.join(ROOT, ".drafts/apps")
@@ -93,7 +106,7 @@ h1 span {{ color: #5f6674; }}
     if os.path.isdir(held):
         for aid in sorted(os.listdir(held)):
             a = json.load(open(os.path.join(held, aid, "app.json")))
-            jobs.append((fill(a, a["name"]), ".drafts/apps", os.path.join(ROOT, ".drafts/assets/og")))
+            jobs.append((fill(a, a["name"]), ".drafts/apps", ".drafts/assets/og"))
     for app, base, card_dir in jobs:
         if only and app["id"] not in only:
             continue
@@ -113,10 +126,76 @@ p {{ font-size: 36px; line-height: 1.25; color: #474d59; margin-top: 18px; max-w
 <div class="main">{icon_markup(app, 200, base)}<div><h1>{e(app["name"])}{badge}</h1><p>{e(app["oneliner"])}</p></div></div>
 <div class="foot"><span>{e(", ".join({"ios": "iPhone", "android": "Android", "web": "Web"}[p] for p in app["platforms"]))}</span><span>modrnmagic.app/apps/{app["id"]}</span></div>
 </div></body></html>"""
-        os.makedirs(card_dir, exist_ok=True)
-        shoot(markup, os.path.join(card_dir, f"{app['id']}.jpg"))
-        print("ok", app["id"])
+        out.append((f"{card_dir}/{app['id']}.jpg", markup))
+    return out
+
+
+def sha(data):
+    return hashlib.sha256(data).hexdigest()[:16]
+
+
+def inputs(markup):
+    """A hash of everything that decides how a card looks: its HTML (with this checkout's
+    path taken out) and the bytes of each file it loads."""
+    h = hashlib.sha256(markup.replace(ROOT, "ROOT").encode("utf-8"))
+    for rel in sorted(set(FILE_REF.findall(markup))):
+        path = os.path.join(ROOT, rel)
+        h.update(f"\0{rel}\0".encode() + (open(path, "rb").read() if os.path.isfile(path) else b"missing"))
+    return h.hexdigest()[:16]
+
+
+def load_manifest():
+    path = os.path.join(ROOT, MANIFEST)
+    return json.load(open(path)) if os.path.isfile(path) else {}
+
+
+def main(only):
+    manifest = load_manifest()
+    for rel, markup in cards(only):
+        out = os.path.join(ROOT, rel)
+        os.makedirs(os.path.dirname(out), exist_ok=True)
+        shoot(markup, out)
+        if rel.startswith("assets/og/"):   # held drafts' cards stay out of the published record
+            manifest[rel] = {"inputs": inputs(markup), "card": sha(open(out, "rb").read())}
+        print("ok", rel)
+    published = {rel for rel, _ in cards() if rel.startswith("assets/og/")}
+    manifest = {k: v for k, v in sorted(manifest.items()) if k in published}
+    with open(os.path.join(ROOT, MANIFEST), "w") as f:
+        json.dump(manifest, f, indent=2)
+        f.write("\n")
+
+
+def check():
+    """Problems with the published cards, as lines; empty when every card is current."""
+    manifest = load_manifest()
+    want = {rel: markup for rel, markup in cards() if rel.startswith("assets/og/")}
+    out = []
+    for rel, markup in want.items():
+        path = os.path.join(ROOT, rel)
+        entry = manifest.get(rel)
+        redo = "run python3 _scripts/og.py" + ("" if rel.endswith("/home.jpg") else f" {os.path.basename(rel)[:-4]}")
+        if not os.path.isfile(path):
+            out.append(f"{rel}: missing; {redo}")
+        elif not entry:
+            out.append(f"{rel}: not in {MANIFEST}; {redo}")
+        elif entry["inputs"] != inputs(markup):
+            out.append(f"{rel}: stale (its name, one-liner, color, status, platforms, icon, or template changed); {redo}")
+        elif entry["card"] != sha(open(path, "rb").read()):
+            out.append(f"{rel}: the JPEG changed outside og.py; {redo}")
+    for rel in sorted(set(manifest) - set(want)):
+        out.append(f"{rel}: in {MANIFEST} but no published product uses it; run python3 _scripts/og.py")
+    published_dir = os.path.join(ROOT, "assets/og")
+    for name in sorted(os.listdir(published_dir)) if os.path.isdir(published_dir) else ():
+        if name.endswith(".jpg") and f"assets/og/{name}" not in want:
+            out.append(f"assets/og/{name}: a card for no published product")
+    return out
 
 
 if __name__ == "__main__":
-    main()
+    if sys.argv[1:] == ["--check"]:
+        problems = check()
+        for line in problems:
+            print("STALE CARD", line)
+        print(f"{'FAILED' if problems else 'OK'}: {len(problems)} share card problem(s)")
+        sys.exit(1 if problems else 0)
+    main(sys.argv[1:])
