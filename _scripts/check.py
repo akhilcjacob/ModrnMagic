@@ -48,6 +48,16 @@ RETAINED = {
 }
 
 
+def pages_exclude():
+    """Top-level names _config.yml keeps off the site (Jekyll `exclude`)."""
+    try:
+        text = open(os.path.join(ROOT, "_config.yml"), encoding="utf-8").read()
+    except OSError:
+        return set()
+    block = re.search(r"^exclude:\n((?:[ \t]+- .+\n?)+)", text, re.M)
+    return set(re.findall(r"- (\S+)", block.group(1))) if block else set()
+
+
 def published_files():
     for dirpath, dirnames, filenames in os.walk(ROOT):
         dirnames[:] = [d for d in dirnames if not d.startswith((".", "_"))]
@@ -285,11 +295,13 @@ def release():
 
 class PagesHandler(http.server.SimpleHTTPRequestHandler):
     """Serves only what GitHub Pages would publish: `_` and dot folders and
-    files are 404, and a missing path gets 404.html, as on Pages."""
+    files, and the names _config.yml excludes, are 404, and a missing path gets
+    404.html, as on Pages."""
     def send_head(self):
         parts = [p for p in self.path.split("?", 1)[0].split("#", 1)[0].split("/") if p]
         local = self.translate_path(self.path)
         hidden = any(p.startswith((".", "_", "%2e", "%2E", "%5f", "%5F")) for p in parts)
+        hidden = hidden or (bool(parts) and unquote(parts[0]) in pages_exclude())
         if hidden or not (os.path.isfile(local) or os.path.isfile(os.path.join(local, "index.html"))):
             body = b"Not found"
             page = os.path.join(self.directory, "404.html")

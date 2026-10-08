@@ -21,3 +21,6 @@ __pycache__/
 
 # Dev environment (make bootstrap)
 /.venv/
+
+# make verify logs
+/_verify/

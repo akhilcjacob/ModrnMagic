@@ -1,11 +1,10 @@
-# Lean CI: the launch checklist gates (_docs/APPS.md) on every PR and on main.
-# No secrets. The click suite runs in Chromium only; Firefox and WebKit run locally through qa-run.
+# Lean CI: the launch checklist gates (_docs/APPS.md) on every pull request.
+# No secrets. The click suite runs in Chromium only; Firefox and WebKit run locally (make e2e).
+# A pull request that changes only docs (README.md, LICENSE, _docs/*.md) runs the checks and skips the suite.
 name: ci
 
 on:
   pull_request:
-  push:
-    branches: [main]
 
 permissions:
   contents: read
@@ -18,8 +17,12 @@ jobs:
   checks:
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    outputs:
+      e2e: ${{ steps.scope.outputs.e2e }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
       - uses: actions/setup-python@v5
         with:
           python-version: "3.14"
@@ -27,9 +30,21 @@ jobs:
       - run: python3 _scripts/check.py --release
       - run: python3 _scripts/render.py --check
       - run: python3 _scripts/render.py --release --check
+      - id: scope
+        name: Docs-only change?
+        # HEAD is the PR merged into its base, so HEAD^1 is the base.
+        run: |
+          git diff --name-only HEAD^1 HEAD | tee changed.txt
+          if grep -qvE '^(README\.md|LICENSE|_docs/[^/]+\.md)$' changed.txt; then
+            echo "e2e=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "docs only: skipping the click suite"
+            echo "e2e=false" >> "$GITHUB_OUTPUT"
+          fi
 
   e2e-chromium:
     needs: checks
+    if: needs.checks.outputs.e2e == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -39,6 +54,11 @@ jobs:
           python-version: "3.14"
           cache: pip
           cache-dependency-path: _tests/requirements.txt
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ms-playwright-${{ runner.os }}-${{ hashFiles('_tests/requirements.txt') }}
       - run: pip install -r _tests/requirements.txt
+      # Skips the browser download on a cache hit; still installs the system packages Chromium needs.
       - run: python3 -m playwright install --with-deps chromium
       - run: python3 _tests/run.py --browser=chromium

@@ -49,7 +49,7 @@ It also fails on any request off the local server, any console error, sideways s
 
 The check reads every published HTML, CSS, JS, JSON, XML, TXT, and MD file (anything outside `_` and dot folders). It resolves each internal `href`, `src`, `srcset`, CSS `url()`, `https://modrnmagic.app/` URL, and relative path in `apps/**/*.json`, confirms each `sitemap.xml` URL maps to a file, and fails on any mention of the removed `00_Future App Template` folder. Run it before every push.
 
-GitHub Pages serves the committed files as they are. Its default Jekyll pass copies plain HTML untouched and skips `_`-prefixed folders, so `_docs/` and `_scripts/` are not published. Do not add a `.nojekyll` file unless those folders move out of the repo root.
+GitHub Pages serves the committed files as they are. Its default Jekyll pass copies plain HTML untouched and skips `_`-prefixed folders, so `_docs/` and `_scripts/` are not published. `_config.yml` also excludes `README.md` and the `Makefile`; `check.py serve` honors that list. Do not add a `.nojekyll` file unless those folders move out of the repo root.
 
 ## Fields
 
@@ -122,7 +122,7 @@ The tests never read your local drafts for their draft scenarios. `_tests/fixtur
 
 ## Launch checklist
 
-GitHub Pages publishes whatever lands on `main`, so a merge publishes exactly what is committed. CI (`.github/workflows/ci.yml`) runs steps 3 to 5 in Chromium on every PR, but it does not run the draft steps or other engines. Before any merge to `main`:
+GitHub Pages publishes whatever lands on `main`, so a merge publishes exactly what is committed. CI (`.github/workflows/ci.yml`) runs steps 3 to 5 in Chromium on every PR (a docs-only PR skips the click suite), but it does not run the draft steps or other engines. Before any merge to `main`:
 
 Rehearse first: `python3 _tests/release.py` checks the committed tree, the draft preview, and steps 2 to 5 below in a temp copy with every held draft promoted.
 
