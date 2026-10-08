@@ -11,11 +11,11 @@ Every product on modrnmagic.app comes from one file: `apps/<id>/app.json`. `apps
 ```
 python3 _scripts/images.py   # web-sized WebP copies in apps/<id>/media/ (needs Pillow)
 python3 _scripts/render.py   # pages, /work/, sitemap.xml, llms.txt, JSON-LD
-python3 _scripts/og.py       # 1200x630 share cards in assets/og/ (needs Chrome)
+python3 _scripts/og.py       # 1200x630 share cards in assets/og/ and their record in _scripts/og.json (needs Chrome and Pillow)
 python3 _scripts/check.py serve  # preview at http://localhost:8000
 ```
 
-4. Commit the JSON and the generated files together. `python3 _scripts/render.py --check` fails if the committed HTML is stale.
+4. Commit the JSON and the generated files together. `python3 _scripts/render.py --check` fails if the committed HTML is stale, and `python3 _scripts/og.py --check` fails if a share card is stale (a product's name, one-liner, color, tint, status, platforms, or icon changed since its card was drawn), missing, edited by hand, or left over from a removed product. The check compares a hash of each card's inputs with `_scripts/og.json`, not pixels, so it needs no browser and runs in CI. On a stale card, run the `og.py` command it prints and commit the card and `_scripts/og.json` together.
 
 ## Serve and check
 

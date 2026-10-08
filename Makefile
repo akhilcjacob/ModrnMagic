@@ -1,7 +1,7 @@
 # One command to set up, one to verify. See README.md.
 #
 #   make bootstrap   # .venv with Playwright and Pillow, plus the Chromium build Playwright uses
-#   make test        # check.py --release, render.py --check (both builds), then the click suite in Chromium
+#   make test        # check.py --release, render.py --check (both builds), og.py --check, then the click suite in Chromium
 #   make verify      # on a clean checkout: bootstrap if needed, then make test, logged to _verify/
 #
 # ENGINES="chromium firefox webkit" make bootstrap installs more engines; ENGINE=webkit make e2e runs one.
@@ -28,7 +28,7 @@ bootstrap:
 	@echo "bootstrap ok: $$($(PY) --version), engines: $(ENGINES)"
 
 check:
-	$(BUILD_JOB) bash -exc '$(PY) _scripts/check.py --release; $(PY) _scripts/render.py --check; $(PY) _scripts/render.py --release --check'
+	$(BUILD_JOB) bash -exc '$(PY) _scripts/check.py --release; $(PY) _scripts/render.py --check; $(PY) _scripts/render.py --release --check; $(PY) _scripts/og.py --check'
 
 e2e:
 	$(BROWSER_JOB) $(PY) _tests/run.py --browser=$(ENGINE)
