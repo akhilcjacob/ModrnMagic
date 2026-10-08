@@ -17,6 +17,8 @@ names _config.yml excludes):
   app.json `icon` and screenshot `from` point at originals in _src/apps/<id>/
 - every sitemap.xml <loc> maps to a file
 - nothing still mentions the removed "00_Future App Template" folder
+- _config.yml keeps Jekyll from rendering published Markdown into extra .html
+  pages, and published Markdown has no front matter (see pages_config)
 - the files in RETAINED, which no page links to but outside links may, still exist
 - with --release: sitemap.xml, _scripts/lastmod.json, and the pages on disk
   agree, so every lastmod matches its page's current content. This never
@@ -63,6 +65,29 @@ def pages_exclude():
             item = item[1:-1]
         names.add(item)
     return names
+
+
+def pages_config():
+    """Problems with the _config.yml settings that keep Jekyll from adding pages
+    (see _config.yml): Markdown must be copied as is, never rendered to .html."""
+    try:
+        text = open(os.path.join(ROOT, "_config.yml"), encoding="utf-8").read()
+    except OSError:
+        text = ""
+    out = []
+    md = [f for f in published_files() if f.endswith((".md", ".markdown"))]
+    if md and not re.search(r"^optional_front_matter:[ \t]*(?:#.*)?\n[ \t]+enabled:[ \t]*false\b", text, re.M):
+        out.append(f"_config.yml: optional_front_matter.enabled is not false, so GitHub Pages renders "
+                   f"{len(md)} Markdown file(s) as extra unstyled .html pages")
+    if re.search(r"^require_front_matter:[ \t]*true\b", text, re.M):
+        out.append("_config.yml: require_front_matter removes the raw .md files that legal URLs serve")
+    for f in md:
+        with open(f, encoding="utf-8", errors="replace") as fh:
+            if fh.read(4).startswith("---"):
+                out.append(f"{os.path.relpath(f, ROOT)}: front matter makes Jekyll render it and drop the raw .md URL")
+    if os.path.isfile(os.path.join(ROOT, "CNAME")) and "CNAME" not in pages_exclude():
+        out.append("_config.yml: exclude replaces the github-pages default, so it must list CNAME")
+    return out
 
 
 def published_files():
@@ -184,6 +209,8 @@ def check():
                 refs += list(json_paths(data))
         for ref in dict.fromkeys(refs):
             need(target(ref, f), f, ref)
+
+    errors += pages_config()
 
     for rel, why in RETAINED.items():
         if not os.path.isfile(os.path.join(ROOT, rel)):
