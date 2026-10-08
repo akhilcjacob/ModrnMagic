@@ -987,6 +987,48 @@ def data_tests(browser):
            "check.py fails when a retained legacy file is deleted", r.stdout.strip()[-160:])
     shutil.rmtree(tmp)
 
+    # Responsive images (#12): every product icon and screenshot <img> carries exactly the srcset its
+    # data implies (icons 96/192/256; shots their 320w or 800w copy plus the full file, when the full
+    # file is wider), each candidate file is as wide as its w descriptor, and sizes is set. A missing
+    # smaller copy fails check.py.
+    from PIL import Image as PILImage
+    want = {}
+    for aid in json.load(open(os.path.join(ROOT, "apps/index.json"))):
+        a = json.load(open(os.path.join(ROOT, "apps", aid, "app.json")))
+        if a.get("icon"):
+            want[f"/apps/{aid}/media/icon-256.webp"] = [(f"/apps/{aid}/media/icon-{n}.webp", n) for n in (96, 192, 256)]
+        for sh in a["screenshots"]:
+            small = {"phone": 320, "wide": 800}.get(sh["shape"])
+            full = f"/apps/{aid}/{sh['src']}"
+            want[full] = [(f"{full[:-5]}-{small}.webp", small), (full, sh["w"])] if small and sh["w"] > small else None
+    bad, count = [], 0
+    for f in published_text():
+        if not f.endswith(".html"):
+            continue
+        rel = os.path.relpath(f, ROOT)
+        for tag in re.findall(r"<img [^>]*>", open(f, encoding="utf-8").read()):
+            src = re.search(r'src="([^"]*)"', tag).group(1)
+            if src not in want:
+                continue
+            count += 1
+            m = re.search(r'srcset="([^"]*)"', tag)
+            got = [(u, int(w)) for u, w in re.findall(r"(/[^\s,]+) (\d+)w", m.group(1))] if m else None
+            if got != want[src]:
+                bad.append(f"{rel}: {src} srcset {got} != {want[src]}")
+            if got and 'sizes="' not in tag:
+                bad.append(f"{rel}: {src} srcset without sizes")
+            for u, w in got or []:
+                path = os.path.join(ROOT, u.lstrip("/"))
+                if not os.path.isfile(path) or PILImage.open(path).width != w:
+                    bad.append(f"{rel}: {u} is missing or not {w}px wide")
+    record(count > 0 and not bad, f"every product icon and screenshot ({count} images) has its exact srcset, true widths, and sizes",
+           "; ".join(sorted(set(bad))[:4]))
+    tmp, dest, _ = temp_copy(merge=False)
+    os.remove(os.path.join(dest, "apps/skywise/media/marketing-1-320.webp"))
+    r = subprocess.run([sys.executable, "_scripts/check.py"], cwd=dest, capture_output=True, text=True)
+    record(r.returncode == 1 and "marketing-1-320.webp" in r.stdout, "check.py fails when a srcset copy is missing", r.stdout.strip()[-200:])
+    shutil.rmtree(tmp)
+
     # Home hero: the phone shots are above the fold at every width, so none is lazy and all are
     # high priority (#11). The fallback font is sized to Figtree and the hero widths are in em,
     # so text painted before Figtree loads wraps the same way and the hero does not shift.

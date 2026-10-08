@@ -386,14 +386,46 @@ def tint_style(app):
     return e(f"--tint:{app['color']};" + (f"--glow:{g};" if g else ""))
 
 
-def icon_html(app, size_cls="", vt=True):
+# srcset for product images (#12). images.py writes the smaller copies. Each sizes value is the
+# width the image renders at in site.css, so no screen picks a file smaller than it shows. The
+# srcset is always written, so a missing smaller copy fails check.py instead of vanishing.
+SMALL_W = {"phone": 320, "wide": 800}   # keep in step with images.py
+PHONE_SIZES = "320px"   # phone shots render at most 316px wide (.rail .phone img, home cells)
+CELL_WIDE_SIZES = "(max-width: 600px) 92vw, 800px"   # a home cell renders a wide shot up to 766px
+FLAGSHIP_WIDE_SIZES = "(max-width: 767px) 100vw, 1120px"   # .fl-art.wide img is 100% of its column: an upper bound
+ICON_SIZES = (96, 192, 256)
+W_CONTENT = 1120   # --w-content in site.css
+
+
+def rail_wide_sizes(s):
+    """.rail .wide img: 86vw up to 600px, then height min(440px, 52vw, ...) at the shot's aspect ratio,
+    never wider than the content column."""
+    return f"(max-width: 600px) 86vw, {min(round(440 * s['w'] / s['h']), W_CONTENT)}px"
+
+
+def shot_srcset(aid, s, sizes=None):
+    """srcset and sizes for a screenshot <img>, or "" when the shot is no wider than its smaller copy."""
+    small = SMALL_W.get(s.get("shape"))
+    if not small or s["w"] <= small:
+        return ""
+    src = f'{s["src"][:-len(".webp")]}-{small}.webp'
+    sizes = sizes or (PHONE_SIZES if s["shape"] == "phone" else rail_wide_sizes(s))
+    return f' srcset="/apps/{e(aid)}/{e(src)} {small}w, /apps/{e(aid)}/{e(s["src"])} {s["w"]}w" sizes="{e(sizes)}"'
+
+
+def icon_srcset(aid, sizes):
+    return f' srcset="{e(", ".join(f"/apps/{aid}/media/icon-{n}.webp {n}w" for n in ICON_SIZES))}" sizes="{e(sizes)}"'
+
+
+def icon_html(app, size_cls="", vt=True, sizes="56px"):
+    """sizes is the icon's rendered width in that context (.icon is 56px; see site.css)."""
     style = f"--tint:{app['color']};"
     if vt:
         style += f"view-transition-name:icon-{app['id']};"
     style = e(style)
     if app.get("icon"):
         return (f'<span class="icon {size_cls}" style="{style}">'
-                f'<img src="/apps/{e(app["id"])}/media/icon-256.webp" alt="" width="256" height="256" loading="lazy" decoding="async"></span>')
+                f'<img src="/apps/{e(app["id"])}/media/icon-256.webp"{icon_srcset(app["id"], sizes)} alt="" width="256" height="256" loading="lazy" decoding="async"></span>')
     return f'<span class="icon mono {size_cls}" style="{style}" aria-hidden="true">{e(app["name"][0])}</span>'
 
 
@@ -671,12 +703,12 @@ def flagship_html(app):
                f'width="{e(str(framed["w"]))}" height="{e(str(framed["h"]))}" loading="lazy" decoding="async"></div>')
     elif app["screenshots"]:
         s0 = app["screenshots"][0]
-        art = (f'<div class="fl-art {e(s0["shape"])}" aria-hidden="true"><img src="/apps/{e(aid)}/{e(s0["src"])}" alt="" '
+        art = (f'<div class="fl-art {e(s0["shape"])}" aria-hidden="true"><img src="/apps/{e(aid)}/{e(s0["src"])}"{shot_srcset(aid, s0, FLAGSHIP_WIDE_SIZES if s0["shape"] == "wide" else None)} alt="" '
                f'width="{e(str(s0["w"]))}" height="{e(str(s0["h"]))}" loading="lazy" decoding="async"></div>')
     return f"""<section class="flagship glass reveal{' has-art' if art else ''}" aria-labelledby="flagship-title" style="{tint_style(app)}">
   <div class="fl-copy">
     <p class="meta fl-eyebrow">Flagship{" " + draft_mark() if app.get("draft") else ""}</p>
-    <div class="fl-head">{icon_html(app, vt=False)}<div><h2 class="h2" id="flagship-title"><a href="/apps/{e(aid)}/">{e(app['name'])}</a></h2>{status_html(app, app.get("outcome"))}</div></div>
+    <div class="fl-head">{icon_html(app, vt=False, sizes="64px")}<div><h2 class="h2" id="flagship-title"><a href="/apps/{e(aid)}/">{e(app['name'])}</a></h2>{status_html(app, app.get("outcome"))}</div></div>
     <p class="lead">{e(app['oneliner'])}</p>
     {news}
     <div class="btns">{cta}</div>
@@ -690,7 +722,7 @@ def strip_card(app, i=0):
     o = app.get("outcome")
     tag = f'<span class="chip outcome-tag">{e(o["label"])} {fmt_date(o["date"])}</span>' if o and o["label"] != STATUS_LABEL[app["status"]] else ""
     return f"""<a class="card glass reveal" style="--i:{i};{tint_style(app)}" href="/apps/{e(app['id'])}/">
-  <div class="card-top">{icon_html(app, vt=False)}<div><h3 class="name">{e(app['name'])}</h3><div class="card-status">{status_html(app, o)}{tag}{draft_mark() if app.get("draft") else ""}</div></div></div>
+  <div class="card-top">{icon_html(app, vt=False, sizes="48px")}<div><h3 class="name">{e(app['name'])}</h3><div class="card-status">{status_html(app, o)}{tag}{draft_mark() if app.get("draft") else ""}</div></div></div>
   <p class="one">{e(app['oneliner'])}</p>
   <div class="foot">{f'<span class="meta tnum">{years(app)}</span>' if years(app) else ""}{chips(app)}</div>
 </a>"""
@@ -720,11 +752,11 @@ def bento_cell(app, size, shot):
         pair = (phones[0], phones[2] if len(phones) > 2 else phones[1])
         art = f'<div class="cell-shots pair">{"".join(shot(app, s) for s in pair)}</div>'
     elif size != "half" and wides:
-        art = f'<div class="cell-shots">{shot(app, wides[0])}</div>'
+        art = f'<div class="cell-shots">{shot(app, wides[0], sizes=CELL_WIDE_SIZES)}</div>'
     elif phones:
         art = f'<div class="peek-clip" aria-hidden="true"><div class="peek">{shot(app, phones[-1])}</div></div>'
     elif wides:   # a half: the top of the wide shot peeks in, clipped, so it never sets the row height
-        art = f'<div class="peek-clip" aria-hidden="true"><div class="peek wide">{shot(app, wides[0])}</div></div>'
+        art = f'<div class="peek-clip" aria-hidden="true"><div class="peek wide">{shot(app, wides[0], sizes=CELL_WIDE_SIZES)}</div></div>'
     cls = f"cell cell-{size} glass reveal" + (" dark" if is_dark(app) else "") + (" stars" if app.get("stars") else "") + (" has-peek" if "peek" in art else "")
     return f"""<a class="{cls}" href="/apps/{e(app['id'])}/" data-app="{e(app['id'])}" style="{tint_style(app)}">
   {icon("arrow-up-right", "arrow")}
@@ -742,11 +774,11 @@ def render_home(apps):
     experiments = sorted((a for a in apps if a["status"] == "lab" and a is not flag and (not flag or a["id"] != flag["id"])),
                          key=latest, reverse=True)[:3]
 
-    def shot(app, s, eager=False):
+    def shot(app, s, eager=False, sizes=None):
         # Eager shots are the hero phones, above the fold at every width. On phones the rotated side
         # phone is the largest paint (its box grows with the rotation), so all three load first.
         load = 'fetchpriority="high" decoding="async"' if eager else 'loading="lazy" decoding="async"'
-        return (f'<img src="/apps/{e(app["id"])}/{e(s["src"])}" alt="{e(s["alt"])}" '
+        return (f'<img src="/apps/{e(app["id"])}/{e(s["src"])}"{shot_srcset(app["id"], s, sizes)} alt="{e(s["alt"])}" '
                 f'width="{e(str(s["w"]))}" height="{e(str(s["h"]))}" {load}>')
 
     # The flagship gets the panel above, so it leaves the bento. Every other
@@ -871,7 +903,7 @@ def render_product(app, apps):
         figs = "\n".join(
             # A wide shot carries its aspect ratio, so CSS can cap its height to fit the content column before it loads.
             f'<figure class="{e(s["shape"])}"' + (f' style="--ar:{s["w"] / s["h"]:.3f}"' if s["shape"] == "wide" else "")
-            + f'><img src="/apps/{e(aid)}/{e(s["src"])}" alt="{e(s["alt"])}" width="{e(str(s["w"]))}" height="{e(str(s["h"]))}" '
+            + f'><img src="/apps/{e(aid)}/{e(s["src"])}"{shot_srcset(aid, s)} alt="{e(s["alt"])}" width="{e(str(s["w"]))}" height="{e(str(s["h"]))}" '
             + ('fetchpriority="high"' if i == 0 else 'loading="lazy" decoding="async"') + "></figure>"
             for i, s in enumerate(app["screenshots"]))
         rail = rail_html(figs, f"{app['name']} screenshots", len(app["screenshots"]))
@@ -933,7 +965,7 @@ def render_product(app, apps):
 </section>"""
 
     others = [a for a in listed(apps) if a["id"] != aid and (a["status"] == "live" or not live)][:5]
-    more = "\n".join(f'<a href="/apps/{e(a["id"])}/">{icon_html(a, vt=False)}<div><div style="font-weight:600">{e(a["name"])}</div><div class="one">{e(a["oneliner"])}</div></div></a>' for a in others)
+    more = "\n".join(f'<a href="/apps/{e(a["id"])}/">{icon_html(a, vt=False, sizes="44px")}<div><div style="font-weight:600">{e(a["name"])}</div><div class="one">{e(a["oneliner"])}</div></div></a>' for a in others)
 
     prose = "\n".join(f"<p>{e(p)}</p>" for p in app["description"])
 
@@ -1014,7 +1046,7 @@ def render_product(app, apps):
   {banner}
   <nav class="crumbs" aria-label="Breadcrumb"><a href="/">Modrn Magic</a> / <a href="{crumb_mid[1]}">{crumb_mid[0]}</a> / <span aria-current="page">{e(app['name'])}</span></nav>
   <section class="p-hero">
-    {icon_html(app)}
+    {icon_html(app, sizes="132px")}
     <div>
       <h1>{e(app['name'])}</h1>
       <p class="lead">{e(app['oneliner'])}</p>
@@ -1108,7 +1140,7 @@ def render_product_site(app, apps):
   <nav class="crumbs" aria-label="Breadcrumb"><a href="/">Modrn Magic</a> / <a href="/apps/{e(aid)}/">{e(app['name'])}</a> / <span aria-current="page">Product site</span></nav>
   <section class="hero ps-hero">
     <div>
-      <div class="ps-brand">{icon_html(app)}<span class="h3">{e(data['title'])}</span></div>
+      <div class="ps-brand">{icon_html(app, sizes="48px")}<span class="h3">{e(data['title'])}</span></div>
       <h1>{e(data['headline'])}</h1>
       <p class="lead">{e(data['lead'])}</p>
       {store_buttons(app, home=False)}
@@ -1238,7 +1270,7 @@ def render_work(apps):
 
 def render_contact(apps):
     live = [a for a in listed(apps) if a["status"] == "live"]
-    support = "\n".join(f'<a href="mailto:{EMAIL}?subject={e(a["name"])}">{icon_html(a, vt=False)}<div><div style="font-weight:600">{e(a["name"])}</div><div class="one">Email about {e(a["name"])}</div></div></a>' for a in live)
+    support = "\n".join(f'<a href="mailto:{EMAIL}?subject={e(a["name"])}">{icon_html(a, vt=False, sizes="44px")}<div><div style="font-weight:600">{e(a["name"])}</div><div class="one">Email about {e(a["name"])}</div></div></a>' for a in live)
     description = f"Contact Modrn Magic at {EMAIL} for app support, feedback, or press."
     graph = [
         {"@type": "ContactPage", "@id": f"{SITE}/contact/", "url": f"{SITE}/contact/", "name": "Contact Modrn Magic",

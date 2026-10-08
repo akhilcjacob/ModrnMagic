@@ -21,6 +21,15 @@ WIDE_W = 1600   # wide shots display at up to ~760px wide
 
 
 TOUR_W = 480    # framed phone shots on product sites display at ~240px wide
+# A smaller copy of each shot, <src>-<width>.webp, for srcset (render.py picks by display size):
+# phone shots render at most ~316px wide, wide shots at most ~1114px (a product rail), ~766px in a home cell.
+SMALL_W = {"phone": 320, "wide": 800}
+ICON_SIZES = (96, 192, 256)   # icons render at 44 to 64px (132px on a product page): 1x, up to 3x, product page
+
+
+def small_src(src, width):
+    """media/x.webp -> media/x-320.webp (render.py uses the same name)."""
+    return f"{src[:-len('.webp')]}-{width}.webp"
 
 
 def save_webp(im, path, width, quality=80):
@@ -47,9 +56,12 @@ def main():
             im = Image.open(os.path.join(src, shot["from"])).convert("RGB")
             width = WIDE_W if shot.get("shape") == "wide" else PHONE_W
             shot["w"], shot["h"] = save_webp(im, os.path.join(folder, shot["src"]), width)
+            small = SMALL_W.get(shot.get("shape"))
+            if small and shot["w"] > small:
+                save_webp(im, os.path.join(folder, small_src(shot["src"], small)), small)
         if app.get("icon"):
             icon = Image.open(os.path.join(src, app["icon"])).convert("RGBA")
-            for size in (96, 256):
+            for size in ICON_SIZES:
                 out = os.path.join(folder, "media", f"icon-{size}.webp")
                 icon.resize((size, size), Image.LANCZOS).save(out, "WEBP", quality=88, method=6)
         with open(path, "w") as f:
