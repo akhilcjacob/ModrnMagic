@@ -1,0 +1,5 @@
+# GitHub Pages runs Jekyll on this repo. Keep the repo's dev files off the site:
+# without this, Pages publishes /README.md, /README.html, and /Makefile.
+exclude:
+  - README.md
+  - Makefile

@@ -280,7 +280,7 @@ def temp_copy(edit=None, merge=True):
     edit), apply edit(apps_dir), and render it there."""
     tmp = tempfile.mkdtemp(prefix="modrn-site-test-")
     dest = os.path.join(tmp, "site")
-    shutil.copytree(ROOT, dest, ignore=shutil.ignore_patterns(".git", "__pycache__", "_attic", "_preview", ".drafts"))
+    shutil.copytree(ROOT, dest, ignore=shutil.ignore_patterns(".git", "__pycache__", "_attic", "_preview", ".drafts", ".venv", "_verify"))
     shutil.copytree(FIXTURE, os.path.join(dest, held_drafts.DRAFTS))
     if merge:
         held_drafts.merge(dest)

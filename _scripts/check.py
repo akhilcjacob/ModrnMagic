@@ -7,7 +7,8 @@
                                          # or while held draft content (.drafts/, gitignored) leaks into it
 
 Python 3 standard library only. The checks cover the files GitHub Pages would
-publish (everything outside `_`-prefixed and hidden folders):
+publish (everything outside `_`-prefixed and hidden folders, minus the top-level
+names _config.yml excludes):
 
 - every href, src, srcset, and CSS url() that points inside the site resolves
   to a file, including absolute https://modrnmagic.app/ URLs in meta tags and
@@ -48,11 +49,29 @@ RETAINED = {
 }
 
 
+def pages_exclude():
+    """Top-level names _config.yml keeps off the site (Jekyll `exclude`)."""
+    try:
+        text = open(os.path.join(ROOT, "_config.yml"), encoding="utf-8").read()
+    except OSError:
+        return set()
+    block = re.search(r"^exclude:[ \t]*(?:#.*)?\n((?:[ \t]+- .+\n?)+)", text, re.M)
+    names = set()
+    for item in re.findall(r"^[ \t]+- (.+)$", block.group(1), re.M) if block else ():
+        item = re.sub(r"\s+#.*$", "", item).strip()   # a trailing YAML comment
+        if len(item) > 1 and item[0] == item[-1] and item[0] in "'\"":
+            item = item[1:-1]
+        names.add(item)
+    return names
+
+
 def published_files():
+    excluded = pages_exclude()
     for dirpath, dirnames, filenames in os.walk(ROOT):
-        dirnames[:] = [d for d in dirnames if not d.startswith((".", "_"))]
+        top = dirpath == ROOT
+        dirnames[:] = [d for d in dirnames if not d.startswith((".", "_")) and not (top and d in excluded)]
         for name in filenames:
-            if not name.startswith("."):
+            if not name.startswith(".") and not (top and name in excluded):
                 yield os.path.join(dirpath, name)
 
 
@@ -285,11 +304,13 @@ def release():
 
 class PagesHandler(http.server.SimpleHTTPRequestHandler):
     """Serves only what GitHub Pages would publish: `_` and dot folders and
-    files are 404, and a missing path gets 404.html, as on Pages."""
+    files, and the names _config.yml excludes, are 404, and a missing path gets
+    404.html, as on Pages."""
     def send_head(self):
         parts = [p for p in self.path.split("?", 1)[0].split("#", 1)[0].split("/") if p]
         local = self.translate_path(self.path)
         hidden = any(p.startswith((".", "_", "%2e", "%2E", "%5f", "%5F")) for p in parts)
+        hidden = hidden or (bool(parts) and unquote(parts[0]) in pages_exclude())
         if hidden or not (os.path.isfile(local) or os.path.isfile(os.path.join(local, "index.html"))):
             body = b"Not found"
             page = os.path.join(self.directory, "404.html")
