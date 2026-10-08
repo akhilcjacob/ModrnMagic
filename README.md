@@ -2,7 +2,7 @@
 
 The studio site for Modrn Magic: a home page, a /work/ index, one page per product, contact, and the privacy and terms pages that app store listings link to. It is a static site. GitHub Pages serves `main` as committed at https://modrnmagic.app, so a merge to `main` publishes.
 
-Product data lives in `apps/<id>/app.json`; `_scripts/render.py` generates the HTML, sitemap, and `llms.txt` from it. `_docs/APPS.md` is the full guide (fields, launch checklist) and `_docs/DESIGN.md` is the design system. `_config.yml` keeps this README and the Makefile off the published site.
+Product data lives in `apps/<id>/app.json`; `_scripts/render.py` generates the HTML, sitemap, and `llms.txt` from it. `_docs/APPS.md` is the full guide (fields, launch checklist) and `_docs/DESIGN.md` is the design system. `_config.yml` keeps this README and the Makefile off the published site and stops Jekyll from rendering Markdown into extra pages.
 
 ## Status
 
@@ -24,7 +24,6 @@ Checked on the live site on 2026-10-08:
 Each gap is a GitHub Issue; the issue list is the work queue.
 
 - Real Safari is not tested. The suite runs Playwright's WebKit, not Safari.
-- Jekyll also renders each legal Markdown source as a separate, unstyled `.html` page (for example `privacy-policy.html` next to `privacy/`), which search engines can index.
 
 ## Run
 
