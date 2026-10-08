@@ -1015,6 +1015,21 @@ def data_tests(browser):
            "og.py --check fails on a hand-edited, missing, or orphaned card", r.stdout.strip()[-300:])
     shutil.rmtree(tmp)
 
+    tmp, dest, _ = temp_copy(merge=False)
+    os.remove(os.path.join(dest, "apps/nookly/media/icon-256.webp"))
+    r = og_check(dest)
+    record(r.returncode == 1 and "assets/og/nookly.jpg: missing input apps/nookly/media/icon-256.webp" in r.stdout and "nookly.jpg: stale" not in r.stdout,
+           "og.py --check names a missing icon as a missing input, not a stale card", r.stdout.strip()[-200:])
+    shutil.rmtree(tmp)
+    tmp, dest, _ = temp_copy(merge=False)
+    held_apps = os.path.join(dest, held_drafts.DRAFTS, "apps")
+    os.makedirs(os.path.join(held_apps, "halfmade"), exist_ok=True)   # a draft folder without app.json
+    open(os.path.join(held_apps, ".DS_Store"), "w").write("x")
+    r = og_check(dest)
+    record(r.returncode == 0 and "Traceback" not in r.stderr,
+           "og.py --check ignores stray .drafts/apps entries (.DS_Store, a folder without app.json)", (r.stdout + r.stderr).strip()[-200:])
+    shutil.rmtree(tmp)
+
     # The release gate never reads git dates or today's date: a squash merge committed on a later
     # day, checked on a later day, is still READY. It fails on a page changed without re-rendering
     # and on drafts committed to git.
