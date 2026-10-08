@@ -1,12 +1,12 @@
 {
   "/": {
     "date": "2026-10-08",
-    "sha": "8b6cbd1ae2b188cc",
+    "sha": "54967c876f93c3bd",
     "src": "index.html"
   },
   "/apps/astrodefender/": {
     "date": "2026-10-08",
-    "sha": "a8f97c576eaa7f71",
+    "sha": "2872fb65c75c2ffc",
     "src": "apps/astrodefender/index.html"
   },
   "/apps/astrodefender/privacy/": {
@@ -21,12 +21,12 @@
   },
   "/apps/flowmoro/": {
     "date": "2026-10-08",
-    "sha": "d17964977b702ee8",
+    "sha": "9775e3d38a0b01bc",
     "src": "apps/flowmoro/index.html"
   },
   "/apps/flowmoro/home/": {
     "date": "2026-10-08",
-    "sha": "fefddca14bf132f4",
+    "sha": "0b9b0776ae0b6893",
     "src": "apps/flowmoro/home/index.html"
   },
   "/apps/flowmoro/privacy/": {
@@ -41,27 +41,27 @@
   },
   "/apps/inboxhiiv/": {
     "date": "2026-10-08",
-    "sha": "02b3be9e0767c16a",
+    "sha": "dd4bb4e1984ed769",
     "src": "apps/inboxhiiv/index.html"
   },
   "/apps/nookly/": {
     "date": "2026-10-08",
-    "sha": "528915879e58c483",
+    "sha": "1e3add0a4fccd86f",
     "src": "apps/nookly/index.html"
   },
   "/apps/quietdesk/": {
     "date": "2026-10-08",
-    "sha": "eafa5630d5d5eb4e",
+    "sha": "751c6954ff3d1bcf",
     "src": "apps/quietdesk/index.html"
   },
   "/apps/quorum/": {
     "date": "2026-10-08",
-    "sha": "a7a12ea708774c15",
+    "sha": "1655fb0b4adc95c5",
     "src": "apps/quorum/index.html"
   },
   "/apps/skywise/": {
     "date": "2026-10-08",
-    "sha": "a4a11ac407526499",
+    "sha": "4d5b7037150e7424",
     "src": "apps/skywise/index.html"
   },
   "/apps/skywise/privacy/": {
@@ -81,17 +81,17 @@
   },
   "/apps/triply/": {
     "date": "2026-10-08",
-    "sha": "6ba95c8e9ac57647",
+    "sha": "cffcb99fc88b9724",
     "src": "apps/triply/index.html"
   },
   "/contact/": {
     "date": "2026-10-08",
-    "sha": "c623a33ad777420f",
+    "sha": "b05b29591c87eff9",
     "src": "contact/index.html"
   },
   "/work/": {
     "date": "2026-10-08",
-    "sha": "d550f385be6d2e10",
+    "sha": "b2d5641d6d737c8b",
     "src": "work/index.html"
   }
 }
