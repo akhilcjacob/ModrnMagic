@@ -54,8 +54,14 @@ def pages_exclude():
         text = open(os.path.join(ROOT, "_config.yml"), encoding="utf-8").read()
     except OSError:
         return set()
-    block = re.search(r"^exclude:\n((?:[ \t]+- .+\n?)+)", text, re.M)
-    return set(re.findall(r"- (\S+)", block.group(1))) if block else set()
+    block = re.search(r"^exclude:[ \t]*(?:#.*)?\n((?:[ \t]+- .+\n?)+)", text, re.M)
+    names = set()
+    for item in re.findall(r"^[ \t]+- (.+)$", block.group(1), re.M) if block else ():
+        item = re.sub(r"\s+#.*$", "", item).strip()   # a trailing YAML comment
+        if len(item) > 1 and item[0] == item[-1] and item[0] in "'\"":
+            item = item[1:-1]
+        names.add(item)
+    return names
 
 
 def published_files():

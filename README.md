@@ -42,6 +42,8 @@ make test        # release checks, then the click suite in Chromium
 make verify      # the full verify on a clean checkout, saved as a log
 ```
 
+On a fresh Linux machine, Chromium also needs system libraries before `make test` can launch it: run `.venv/bin/python -m playwright install-deps chromium` once (it uses sudo to install packages). macOS needs nothing extra. CI does this with `playwright install --with-deps`.
+
 `make test` runs `check.py --release`, `render.py --check`, `render.py --release --check`, and `_tests/run.py`. `ENGINE=firefox make e2e` or `ENGINE=webkit make e2e` runs the suite in another engine (install it first with `ENGINES="chromium firefox webkit" make bootstrap`). `python3 _tests/release.py` rehearses the full launch checklist.
 
 `make verify` refuses to run on a working tree with uncommitted changes. It runs `make bootstrap` if `.venv` is missing, then `make test`, and writes everything to `_verify/verify-<time>-<commit>.log` (gitignored). The log starts with the full commit hash and the UTC date, so it can be matched to the exact commit it tested. Set `VERIFY_DIR` to save it elsewhere.
