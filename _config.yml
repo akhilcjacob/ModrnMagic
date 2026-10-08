@@ -1,5 +1,15 @@
-# GitHub Pages runs Jekyll on this repo. Keep the repo's dev files off the site:
-# without this, Pages publishes /README.md, /README.html, and /Makefile.
+# GitHub Pages builds this repo with Jekyll (the github-pages gem). These settings keep
+# the published site to the committed static files:
+#
+# - exclude: the repo's dev files stay off the site. Setting `exclude` replaces the
+#   github-pages default, which is just CNAME, so CNAME is listed here too.
+# - optional_front_matter.enabled false: the jekyll-optional-front-matter plugin (on by
+#   default in github-pages) would otherwise render every Markdown file without front
+#   matter, such as each legal privacy-policy.md, as an extra unstyled .html page. Off,
+#   those files are only copied as they are, so each .md URL still serves the raw text.
 exclude:
   - README.md
   - Makefile
+  - CNAME
+optional_front_matter:
+  enabled: false
