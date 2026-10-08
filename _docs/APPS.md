@@ -49,7 +49,7 @@ It also fails on any request off the local server, any console error, sideways s
 
 The check reads every published HTML, CSS, JS, JSON, XML, TXT, and MD file (anything outside `_` and dot folders). It resolves each internal `href`, `src`, `srcset`, CSS `url()`, `https://modrnmagic.app/` URL, and relative path in `apps/**/*.json`, confirms each `sitemap.xml` URL maps to a file, and fails on any mention of the removed `00_Future App Template` folder. Run it before every push.
 
-GitHub Pages serves the committed files as they are. Its default Jekyll pass copies plain HTML untouched and skips `_`-prefixed folders, so `_docs/` and `_scripts/` are not published. `_config.yml` also excludes `README.md` and the `Makefile`; `check.py serve` honors that list. Do not add a `.nojekyll` file unless those folders move out of the repo root.
+GitHub Pages serves the committed files as they are. Its default Jekyll pass copies plain HTML untouched and skips `_`-prefixed folders, so `_docs/` and `_scripts/` are not published. `_config.yml` also excludes `README.md` and the `Makefile`; `check.py` (its checks and `serve`) honors that list. Do not add a `.nojekyll` file unless those folders move out of the repo root.
 
 ## Fields
 

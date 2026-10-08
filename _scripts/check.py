@@ -7,7 +7,8 @@
                                          # or while held draft content (.drafts/, gitignored) leaks into it
 
 Python 3 standard library only. The checks cover the files GitHub Pages would
-publish (everything outside `_`-prefixed and hidden folders):
+publish (everything outside `_`-prefixed and hidden folders, minus the top-level
+names _config.yml excludes):
 
 - every href, src, srcset, and CSS url() that points inside the site resolves
   to a file, including absolute https://modrnmagic.app/ URLs in meta tags and
@@ -65,10 +66,12 @@ def pages_exclude():
 
 
 def published_files():
+    excluded = pages_exclude()
     for dirpath, dirnames, filenames in os.walk(ROOT):
-        dirnames[:] = [d for d in dirnames if not d.startswith((".", "_"))]
+        top = dirpath == ROOT
+        dirnames[:] = [d for d in dirnames if not d.startswith((".", "_")) and not (top and d in excluded)]
         for name in filenames:
-            if not name.startswith("."):
+            if not name.startswith(".") and not (top and name in excluded):
                 yield os.path.join(dirpath, name)
 
 
