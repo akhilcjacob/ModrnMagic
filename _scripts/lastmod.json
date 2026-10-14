@@ -10,8 +10,8 @@
     "src": "apps/astrodefender/index.html"
   },
   "/apps/astrodefender/privacy/": {
-    "date": "2026-10-03",
-    "sha": "73e191cbf142afa1",
+    "date": "2026-10-14",
+    "sha": "d0b145ce852292ba",
     "src": "apps/astrodefender/privacy/privacy-policy.md"
   },
   "/apps/astrodefender/tos/": {
